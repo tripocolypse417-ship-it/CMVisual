@@ -1,0 +1,273 @@
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 25% 6%;
+    --foreground: 160 100% 75%;
+    --card: 220 20% 10%;
+    --card-foreground: 160 100% 75%;
+    --popover: 220 20% 10%;
+    --popover-foreground: 160 100% 75%;
+    --primary: 160 100% 50%;
+    --primary-foreground: 220 25% 6%;
+    --secondary: 200 80% 30%;
+    --secondary-foreground: 160 100% 85%;
+    --muted: 220 15% 15%;
+    --muted-foreground: 160 40% 50%;
+    --accent: 180 100% 40%;
+    --accent-foreground: 220 25% 6%;
+    --destructive: 0 80% 55%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 160 40% 18%;
+    --input: 160 40% 18%;
+    --ring: 160 100% 50%;
+    --chart-1: 160 100% 50%;
+    --chart-2: 180 100% 40%;
+    --chart-3: 200 80% 50%;
+    --chart-4: 140 70% 45%;
+    --chart-5: 120 60% 40%;
+    --radius: 0.5rem;
+    --font-mono: 'Share Tech Mono', monospace;
+    --font-display: 'Orbitron', sans-serif;
+    --sidebar-background: 220 20% 8%;
+    --sidebar-foreground: 160 100% 75%;
+    --sidebar-primary: 160 100% 50%;
+    --sidebar-primary-foreground: 220 25% 6%;
+    --sidebar-accent: 220 15% 15%;
+    --sidebar-accent-foreground: 160 100% 75%;
+    --sidebar-border: 160 40% 18%;
+    --sidebar-ring: 160 100% 50%;
+  }
+
+  .dark {
+    --background: 220 25% 6%;
+    --foreground: 160 100% 75%;
+    --card: 220 20% 10%;
+    --card-foreground: 160 100% 75%;
+    --popover: 220 20% 10%;
+    --popover-foreground: 160 100% 75%;
+    --primary: 160 100% 50%;
+    --primary-foreground: 220 25% 6%;
+    --secondary: 200 80% 30%;
+    --secondary-foreground: 160 100% 85%;
+    --muted: 220 15% 15%;
+    --muted-foreground: 160 40% 50%;
+    --accent: 180 100% 40%;
+    --accent-foreground: 220 25% 6%;
+    --destructive: 0 80% 55%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 160 40% 18%;
+    --input: 160 40% 18%;
+    --ring: 160 100% 50%;
+    --chart-1: 160 100% 50%;
+    --chart-2: 180 100% 40%;
+    --chart-3: 200 80% 50%;
+    --chart-4: 140 70% 45%;
+    --chart-5: 120 60% 40%;
+    --sidebar-background: 220 20% 8%;
+    --sidebar-foreground: 160 100% 75%;
+    --sidebar-primary: 160 100% 50%;
+    --sidebar-primary-foreground: 220 25% 6%;
+    --sidebar-accent: 220 15% 15%;
+    --sidebar-accent-foreground: 160 100% 75%;
+    --sidebar-border: 160 40% 18%;
+    --sidebar-ring: 160 100% 50%;
+  }
+}
+
+
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* ── Premium animations ── */
+@keyframes scanline {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+@keyframes hud-pulse {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
+}
+@keyframes corner-ping {
+  0%   { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+@keyframes data-scroll {
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+@keyframes grid-pan {
+  0%   { background-position: 0 0; }
+  100% { background-position: 40px 40px; }
+}
+@keyframes border-flow {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ── AR overlay animations (GPU-composited, JS-free) ── */
+@keyframes ar-sweep {
+  0%   { transform: scale(0); opacity: 0.55; }
+  100% { transform: scale(1); opacity: 0; }
+}
+.ar-sweep { animation: ar-sweep 3.5s ease-out infinite; transform-origin: center; will-change: transform, opacity; }
+
+@keyframes ar-ring {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50%      { transform: scale(1.5); opacity: 0; }
+}
+.ar-ring { animation: ar-ring 2s ease-out infinite; will-change: transform, opacity; }
+
+@keyframes ar-shimmer {
+  0%, 100% { opacity: 0.15; }
+  50%      { opacity: 0.55; }
+}
+.ar-shimmer { animation: ar-shimmer 2.5s ease-in-out infinite; }
+
+@keyframes ar-label {
+  0%, 100% { opacity: 0.85; }
+  50%      { opacity: 1; }
+}
+.ar-label { animation: ar-label 2s ease-in-out infinite; }
+
+@keyframes ar-box-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50%      { transform: scale(1.06); opacity: 0; }
+}
+.ar-box-pulse { animation: ar-box-pulse 1.4s ease-out infinite; transform-origin: center; will-change: transform, opacity; }
+
+@keyframes proximity-pulse {
+  0%   { transform: scale(0.35); opacity: 0.85; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+.proximity-pulse { animation: proximity-pulse 1.3s ease-out infinite; transform-origin: center; will-change: transform, opacity; }
+
+@keyframes ar-threat {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.35; }
+}
+.ar-threat { animation: ar-threat 0.7s ease-in-out infinite; }
+
+.scanline {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(transparent, rgba(0,255,136,0.08), transparent);
+  animation: scanline 4s linear infinite;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.hud-grid-bg {
+  background-image:
+    linear-gradient(rgba(0,255,136,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,136,0.035) 1px, transparent 1px);
+  background-size: 40px 40px;
+  animation: grid-pan 8s linear infinite;
+}
+
+.glass-panel {
+  background: rgba(3, 14, 9, 0.75);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(0, 255, 136, 0.12);
+  box-shadow:
+    0 0 0 1px rgba(0,255,136,0.04) inset,
+    0 8px 32px rgba(0,0,0,0.6),
+    0 0 60px rgba(0,255,136,0.04);
+}
+
+.glow-text {
+  text-shadow: 0 0 20px currentColor, 0 0 40px currentColor;
+}
+
+.corner-decoration::before,
+.corner-decoration::after {
+  content: '';
+  position: absolute;
+  width: 12px; height: 12px;
+  border-color: rgba(0,255,136,0.5);
+  border-style: solid;
+}
+.corner-decoration::before {
+  top: 0; left: 0;
+  border-width: 2px 0 0 2px;
+  border-radius: 2px 0 0 0;
+}
+.corner-decoration::after {
+  bottom: 0; right: 0;
+  border-width: 0 2px 2px 0;
+  border-radius: 0 0 2px 0;
+}
+
+/* ── Leaflet floor-plan theming ── */
+.leaflet-container {
+  background: transparent;
+  font-family: 'Share Tech Mono', monospace;
+}
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5) !important;
+}
+.leaflet-control-zoom a {
+  background: rgba(0,0,0,0.72) !important;
+  color: #00ff88 !important;
+  border: 1px solid rgba(0,255,136,0.3) !important;
+  backdrop-filter: blur(6px);
+}
+.leaflet-control-zoom a:hover {
+  background: rgba(0,255,136,0.16) !important;
+}
+.leaflet-control-zoom-in { border-radius: 6px 6px 0 0 !important; }
+.leaflet-control-zoom-out { border-radius: 0 0 6px 6px !important; }
+.leaflet-tooltip {
+  background: rgba(0,0,0,0.8);
+  border: 1px solid rgba(0,255,136,0.3);
+  color: #00ff88;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+}
+.leaflet-tooltip-top:before { border-top-color: rgba(0,255,136,0.3); }
+.floor-label, .room-label, .detection-marker { background: transparent !important; border: none !important; }
+
+/* ── CMVisual unified command deck ── */
+.cm-no-scrollbar { scrollbar-width: none; }
+.cm-no-scrollbar::-webkit-scrollbar { display: none; }
+.cm-command-deck { box-shadow: 0 10px 40px rgba(0,0,0,.45), 0 0 0 1px rgba(0,255,136,.05) inset; }
+.cm-mode-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+  min-height: 34px; padding: 0 .75rem; border-radius: .65rem;
+  border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.025);
+  color: rgba(255,255,255,.48); font: 600 8px/1 'Share Tech Mono', monospace;
+  letter-spacing: .12em; transition: all .18s ease; white-space: nowrap;
+}
+.cm-mode-btn:hover { color: rgba(255,255,255,.85); border-color: rgba(255,255,255,.18); background: rgba(255,255,255,.05); }
+.cm-mode-btn[data-active="true"] { color: var(--cm-color); border-color: color-mix(in srgb, var(--cm-color) 45%, transparent); background: color-mix(in srgb, var(--cm-color) 9%, transparent); box-shadow: 0 0 18px color-mix(in srgb, var(--cm-color) 8%, transparent) inset; }
+.cm-stat { display: inline-flex; align-items: center; gap: .3rem; color: rgba(255,255,255,.42); white-space: nowrap; }
+.cm-stat svg { color: rgba(0,255,136,.65); }
+.cm-camera-dot { width: 6px; height: 6px; border-radius: 999px; background: rgba(255,255,255,.18); }
+.cm-camera-dot[data-on="true"] { background: #00ff88; box-shadow: 0 0 10px #00ff88; }
+.cm-primary-focus { box-shadow: 0 0 0 1px rgba(0,255,136,.2) inset, 0 0 45px rgba(0,255,136,.07); }
+.cm-mode-focus > .grid { transition: opacity .2s ease, filter .2s ease; }
+.cm-mode-focus > .grid:first-child { opacity: .92; }
+.cm-mode-focus[data-workspace-mode="camera"] > .grid:first-child > :first-child { box-shadow: 0 0 0 1px rgba(0,255,136,.2), 0 0 50px rgba(0,255,136,.08); }
+.cm-mode-focus[data-workspace-mode="spatial"] > div:nth-child(2) { box-shadow: 0 0 0 1px rgba(0,255,136,.2), 0 0 50px rgba(0,255,136,.08); }
+.cm-mode-focus[data-workspace-mode="floorplan"] > div:nth-child(3) { box-shadow: 0 0 0 1px rgba(0,255,136,.2), 0 0 50px rgba(0,255,136,.08); }
+@media (max-width: 640px) {
+  .cm-command-deck { padding: .4rem; }
+  .cm-mode-btn { min-height: 31px; padding: 0 .55rem; }
+  .cm-stat { font-size: 7px; }
+}
