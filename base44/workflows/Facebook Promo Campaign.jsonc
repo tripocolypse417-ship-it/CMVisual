@@ -1,0 +1,47 @@
+{
+  "name": "Facebook Promo Campaign",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "facebook_promo_campaign",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "tick": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "facebookPromo",
+            "args": {
+              "action": "campaignTick"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Run campaign tick",
+            "description": "Post next promo to due campaigns"
+          }
+        }
+      }
+    ]
+  },
+  "description": "Continuously auto-posts the next promo from the rotating library to each enabled Facebook Page campaign on schedule.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "*/30 * * * *",
+      "one_time_date": null,
+      "timezone": "America/Chicago",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "properties": {
+    "mode": {
+      "type": "string"
+    },
+    "fps": {
+      "type": "number"
+    }
+  },
+  "required": [],
+  "name": "PerformanceSession2"
+}

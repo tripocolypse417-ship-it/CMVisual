@@ -1,0 +1,31 @@
+{
+  "type": "object",
+  "properties": {
+    "observed_at": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string"
+    },
+    "score": {
+      "type": "number"
+    },
+    "confidence": {
+      "type": "number"
+    },
+    "validation_score": {
+      "type": "number"
+    },
+    "metrics_json": {
+      "type": "string"
+    },
+    "limitations_json": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [],
+  "name": "EvidenceAssessmentV5"
+}

@@ -1,0 +1,43 @@
+{
+  "name": "SensorReliability",
+  "type": "object",
+  "properties": {
+    "sensor_id": {
+      "type": "string"
+    },
+    "sensor_type": {
+      "type": "string"
+    },
+    "quality_score": {
+      "type": "number"
+    },
+    "freshness_score": {
+      "type": "number"
+    },
+    "agreement_score": {
+      "type": "number"
+    },
+    "repeatability_score": {
+      "type": "number"
+    },
+    "calibration_status": {
+      "type": "string"
+    },
+    "sample_count": {
+      "type": "number"
+    },
+    "method_version": {
+      "type": "string"
+    },
+    "limitations_json": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "sensor_id",
+    "sensor_type",
+    "quality_score",
+    "calibration_status",
+    "method_version"
+  ]
+}

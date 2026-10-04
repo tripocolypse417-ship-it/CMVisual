@@ -1,0 +1,58 @@
+{
+  "name": "ValidationTest",
+  "type": "object",
+  "properties": {
+    "test_id": {
+      "type": "string"
+    },
+    "sensor_id": {
+      "type": "string"
+    },
+    "test_type": {
+      "type": "string",
+      "enum": [
+        "STATIC_REFERENCE",
+        "KNOWN_DISTANCE",
+        "KNOWN_MOTION",
+        "CROSS_SENSOR",
+        "REPEATABILITY"
+      ]
+    },
+    "started_at": {
+      "type": "string"
+    },
+    "completed_at": {
+      "type": "string"
+    },
+    "result": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "FAIL",
+        "INCONCLUSIVE"
+      ]
+    },
+    "expected_json": {
+      "type": "string"
+    },
+    "measured_json": {
+      "type": "string"
+    },
+    "error_json": {
+      "type": "string"
+    },
+    "operator_notes": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "test_id",
+    "sensor_id",
+    "test_type",
+    "result",
+    "method_version"
+  ]
+}

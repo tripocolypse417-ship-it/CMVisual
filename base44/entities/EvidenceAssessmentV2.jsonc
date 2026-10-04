@@ -1,0 +1,44 @@
+{
+  "type": "object",
+  "properties": {
+    "observed_at": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "INSUFFICIENT_EVIDENCE",
+        "STABLE",
+        "CHANGING",
+        "ELEVATED_ACTIVITY",
+        "HIGH_CONCERN"
+      ]
+    },
+    "score": {
+      "type": "number"
+    },
+    "confidence": {
+      "type": "number"
+    },
+    "validation_score": {
+      "type": "number"
+    },
+    "sensor_count": {
+      "type": "number"
+    },
+    "corroborated_targets": {
+      "type": "number"
+    },
+    "metrics_json": {
+      "type": "string"
+    },
+    "limitations_json": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [],
+  "name": "EvidenceAssessmentV2"
+}

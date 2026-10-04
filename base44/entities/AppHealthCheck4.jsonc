@@ -1,0 +1,27 @@
+{
+  "type": "object",
+  "properties": {
+    "check_name": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "details": {
+      "type": "string"
+    },
+    "checked_at": {
+      "type": "string"
+    },
+    "build_commit": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "check_name",
+    "status",
+    "details",
+    "checked_at"
+  ],
+  "name": "AppHealthCheck4"
+}

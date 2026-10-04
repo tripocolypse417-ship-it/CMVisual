@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "latency_ms": {
+      "type": "number"
+    },
+    "quality": {
+      "type": "number"
+    },
+    "details": {
+      "type": "string"
+    }
+  },
+  "required": [],
+  "name": "SensorDiagnostic"
+}

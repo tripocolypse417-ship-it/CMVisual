@@ -1,0 +1,42 @@
+{
+  "name": "Slack Critical Radar Alerts",
+  "description": "Posts a summary to #general in Slack whenever a critical radar DetectionEvent is created (new target, movement start, alert, or high signal intensity).",
+  "trigger": {
+    "config": {
+      "trigger_type": "entity",
+      "entity_name": "DetectionEvent",
+      "events": [
+        "create"
+      ]
+    },
+    "condition": "${ .trigger.data.event_type == \"new_target\" or .trigger.data.event_type == \"movement_start\" or .trigger.data.event_type == \"alert\" or (.trigger.data.intensity // 0) >= 80 }"
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "slack_critical_radar_alerts",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "post_alert": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "slackAlert",
+            "args": {
+              "action": "post",
+              "channel": "C0BP55Y5R3M",
+              "event": "${ .trigger.data }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Post critical event to Slack",
+            "description": "#general channel"
+          }
+        }
+      }
+    ]
+  }
+}
