@@ -1,0 +1,38 @@
+{
+  "name": "AssessmentExplanation",
+  "type": "object",
+  "properties": {
+    "assessment_id": {
+      "type": "string"
+    },
+    "track_id": {
+      "type": "string"
+    },
+    "observed_at": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "supporting_factors_json": {
+      "type": "string"
+    },
+    "contradicting_factors_json": {
+      "type": "string"
+    },
+    "unknowns_json": {
+      "type": "string"
+    },
+    "limitations_json": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "assessment_id",
+    "summary",
+    "method_version"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "type": "object",
+  "properties": {
+    "recommendation_id": {
+      "type": "string"
+    },
+    "observation_id": {
+      "type": "string"
+    },
+    "relation": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "recommendation_id",
+    "observation_id",
+    "relation",
+    "method_version"
+  ],
+  "name": "WorldRecommendationLink"
+}

@@ -1,0 +1,46 @@
+{
+  "type": "object",
+  "properties": {
+    "hazard_id": {
+      "type": "string"
+    },
+    "observed_at": {
+      "type": "string"
+    },
+    "hazard_type": {
+      "type": "string"
+    },
+    "location_json": {
+      "type": "string"
+    },
+    "evidence_class": {
+      "type": "string",
+      "enum": [
+        "MEASURED",
+        "DERIVED",
+        "PREDICTED",
+        "UNAVAILABLE"
+      ]
+    },
+    "validated": {
+      "type": "boolean"
+    },
+    "severity": {
+      "type": "number"
+    },
+    "evidence_json": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "hazard_id",
+    "observed_at",
+    "hazard_type",
+    "evidence_class",
+    "method_version"
+  ],
+  "name": "WorldHazard"
+}

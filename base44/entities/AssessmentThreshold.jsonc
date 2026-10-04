@@ -1,0 +1,54 @@
+{
+  "name": "AssessmentThreshold",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "activity_min": {
+      "type": "number"
+    },
+    "validation_min": {
+      "type": "number"
+    },
+    "confidence_min": {
+      "type": "number"
+    },
+    "disagreement_max": {
+      "type": "number"
+    },
+    "persistence_min": {
+      "type": "number"
+    },
+    "required_corroboration": {
+      "type": "number"
+    },
+    "requires_objective_hazard": {
+      "type": "boolean"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "DRAFT",
+        "VALIDATING",
+        "APPROVED",
+        "RETIRED"
+      ]
+    },
+    "rationale": {
+      "type": "string"
+    },
+    "validation_evidence_json": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "version",
+    "status",
+    "rationale"
+  ]
+}

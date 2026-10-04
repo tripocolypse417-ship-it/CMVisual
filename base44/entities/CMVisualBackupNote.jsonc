@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "properties": {
+    "note": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "note",
+    "created_at"
+  ],
+  "name": "CMVisualBackupNote"
+}

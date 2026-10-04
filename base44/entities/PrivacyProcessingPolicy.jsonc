@@ -1,0 +1,55 @@
+{
+  "name": "PrivacyProcessingPolicy",
+  "type": "object",
+  "properties": {
+    "policy_version": {
+      "type": "string"
+    },
+    "raw_video_default": {
+      "type": "string",
+      "enum": [
+        "LOCAL_ONLY",
+        "DISABLED",
+        "OPT_IN"
+      ]
+    },
+    "biometric_default": {
+      "type": "string",
+      "enum": [
+        "DISABLED",
+        "LOCAL_ONLY",
+        "OPT_IN"
+      ]
+    },
+    "federation_default": {
+      "type": "string",
+      "enum": [
+        "DISABLED",
+        "OPT_IN"
+      ]
+    },
+    "retention_days": {
+      "type": "number"
+    },
+    "identity_matching": {
+      "type": "string",
+      "enum": [
+        "DISABLED"
+      ]
+    },
+    "psychological_inference": {
+      "type": "string",
+      "enum": [
+        "DISABLED"
+      ]
+    },
+    "purpose_json": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "policy_version",
+    "identity_matching",
+    "psychological_inference"
+  ]
+}

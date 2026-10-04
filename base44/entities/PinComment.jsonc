@@ -1,0 +1,29 @@
+{
+  "name": "PinComment",
+  "type": "object",
+  "properties": {
+    "pin_id": {
+      "type": "string"
+    },
+    "text": {
+      "type": "string"
+    },
+    "author": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "pin_id",
+    "text"
+  ],
+  "rls": {
+    "read": {},
+    "create": {},
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

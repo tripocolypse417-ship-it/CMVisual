@@ -1,0 +1,48 @@
+{
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string"
+    },
+    "sensor_id": {
+      "type": "string"
+    },
+    "observed_at": {
+      "type": "string"
+    },
+    "capability": {
+      "type": "string"
+    },
+    "packet_rate_hz": {
+      "type": "number"
+    },
+    "latency_ms": {
+      "type": "number"
+    },
+    "dropout_pct": {
+      "type": "number"
+    },
+    "agreement_pct": {
+      "type": "number"
+    },
+    "freshness_pct": {
+      "type": "number"
+    },
+    "calibration_status": {
+      "type": "string"
+    },
+    "reliability_score": {
+      "type": "number"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "sensor_id",
+    "observed_at",
+    "reliability_score",
+    "method_version"
+  ],
+  "name": "SensorReliabilitySampleV2"
+}

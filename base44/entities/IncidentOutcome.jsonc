@@ -1,0 +1,31 @@
+{
+  "name": "IncidentOutcome",
+  "type": "object",
+  "properties": {
+    "assessment_id": {
+      "type": "string"
+    },
+    "outcome": {
+      "type": "string"
+    },
+    "confirmed_hazard": {
+      "type": "boolean"
+    },
+    "false_positive": {
+      "type": "boolean"
+    },
+    "false_negative": {
+      "type": "boolean"
+    },
+    "reviewer_notes": {
+      "type": "string"
+    },
+    "observed_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "assessment_id",
+    "outcome"
+  ]
+}

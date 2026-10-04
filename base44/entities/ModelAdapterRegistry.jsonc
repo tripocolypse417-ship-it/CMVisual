@@ -1,0 +1,63 @@
+{
+  "name": "ModelAdapterRegistry",
+  "type": "object",
+  "properties": {
+    "model_id": {
+      "type": "string"
+    },
+    "model_name": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "task": {
+      "type": "string",
+      "enum": [
+        "POSE",
+        "OBJECT_DETECTION",
+        "DEPTH",
+        "MOTION_PREDICTION",
+        "TRAJECTORY",
+        "MULTIMODAL"
+      ]
+    },
+    "license": {
+      "type": "string"
+    },
+    "source_url": {
+      "type": "string"
+    },
+    "runtime": {
+      "type": "string"
+    },
+    "validation_status": {
+      "type": "string",
+      "enum": [
+        "UNTESTED",
+        "INTERNAL",
+        "EXTERNAL",
+        "REPLICATED"
+      ]
+    },
+    "production_enabled": {
+      "type": "boolean"
+    },
+    "limitations_json": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "model_id",
+    "model_name",
+    "version",
+    "task",
+    "license",
+    "validation_status",
+    "production_enabled",
+    "method_version"
+  ]
+}

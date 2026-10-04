@@ -1,0 +1,43 @@
+{
+  "name": "OutcomeEvidenceLink",
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string"
+    },
+    "assessment_id": {
+      "type": "string"
+    },
+    "track_id": {
+      "type": "string"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "MEASURED",
+        "DERIVED",
+        "HISTORICAL",
+        "SCIENTIFIC_PRIOR",
+        "PREDICTED",
+        "SPECULATIVE"
+      ]
+    },
+    "source_id": {
+      "type": "string"
+    },
+    "contribution": {
+      "type": "number"
+    },
+    "explanation": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "assessment_id",
+    "source_type",
+    "method_version"
+  ]
+}

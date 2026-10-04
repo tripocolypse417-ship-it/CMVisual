@@ -1,0 +1,71 @@
+{
+  "name": "DetectionEvent",
+  "type": "object",
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "new_target",
+        "movement_start",
+        "shift",
+        "alert"
+      ]
+    },
+    "target_type": {
+      "type": "string",
+      "enum": [
+        "human",
+        "animal",
+        "object",
+        "unknown"
+      ]
+    },
+    "distance": {
+      "type": "number"
+    },
+    "bearing": {
+      "type": "number"
+    },
+    "intensity": {
+      "type": "number"
+    },
+    "moving": {
+      "type": "boolean"
+    },
+    "speed": {
+      "type": "number"
+    },
+    "scan_mode": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "evidence_score": {
+      "type": "number"
+    },
+    "validation_score": {
+      "type": "number"
+    },
+    "confidence": {
+      "type": "number"
+    },
+    "corroboration_count": {
+      "type": "number"
+    },
+    "signal_quality": {
+      "type": "number"
+    },
+    "metrics_json": {
+      "type": "string"
+    },
+    "limitations_json": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_type",
+    "target_type",
+    "summary"
+  ]
+}

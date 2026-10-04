@@ -1,0 +1,38 @@
+{
+  "name": "HumanReviewDecision",
+  "type": "object",
+  "properties": {
+    "assessment_id": {
+      "type": "string"
+    },
+    "reviewed_at": {
+      "type": "string"
+    },
+    "reviewer_role": {
+      "type": "string"
+    },
+    "decision": {
+      "type": "string",
+      "enum": [
+        "ACCEPT",
+        "REJECT",
+        "DEFER",
+        "REQUEST_MORE_DATA"
+      ]
+    },
+    "rationale": {
+      "type": "string"
+    },
+    "overrides_json": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "assessment_id",
+    "decision",
+    "method_version"
+  ]
+}

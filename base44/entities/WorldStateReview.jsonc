@@ -1,0 +1,44 @@
+{
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string"
+    },
+    "reviewed_at": {
+      "type": "string"
+    },
+    "reviewer_id": {
+      "type": "string"
+    },
+    "scope": {
+      "type": "string"
+    },
+    "finding_class": {
+      "type": "string",
+      "enum": [
+        "OBSERVATION",
+        "DERIVED",
+        "PREDICTION",
+        "CONFLICT",
+        "HAZARD",
+        "LIMITATION"
+      ]
+    },
+    "finding_json": {
+      "type": "string"
+    },
+    "decision": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "scope",
+    "finding_class",
+    "decision",
+    "method_version"
+  ],
+  "name": "WorldStateReview"
+}

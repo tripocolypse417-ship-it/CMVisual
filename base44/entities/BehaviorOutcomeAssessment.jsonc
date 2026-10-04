@@ -1,0 +1,64 @@
+{
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string"
+    },
+    "track_id": {
+      "type": "string"
+    },
+    "observed_at": {
+      "type": "string"
+    },
+    "outcome_class": {
+      "type": "string",
+      "enum": [
+        "CONTINUE_CURRENT",
+        "SLOW_OR_STOP",
+        "CHANGE_DIRECTION",
+        "APPROACH_OBJECT",
+        "LEAVE_AREA",
+        "INTERACT_WITH_OBJECT",
+        "UNKNOWN"
+      ]
+    },
+    "probability": {
+      "type": "number"
+    },
+    "confidence": {
+      "type": "number"
+    },
+    "evidence_json": {
+      "type": "string"
+    },
+    "biometric_support_json": {
+      "type": "string"
+    },
+    "historical_context_json": {
+      "type": "string"
+    },
+    "scientific_prior_json": {
+      "type": "string"
+    },
+    "confounders_json": {
+      "type": "string"
+    },
+    "limitations_json": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    },
+    "human_review_required": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "outcome_class",
+    "probability",
+    "confidence",
+    "method_version",
+    "human_review_required"
+  ],
+  "name": "BehaviorOutcomeAssessment"
+}

@@ -1,0 +1,31 @@
+{
+  "type": "object",
+  "properties": {
+    "device_id": {
+      "type": "string"
+    },
+    "coordinate_frame": {
+      "type": "string"
+    },
+    "scale": {
+      "type": "number"
+    },
+    "rotation_deg": {
+      "type": "number"
+    },
+    "translation_x": {
+      "type": "number"
+    },
+    "translation_z": {
+      "type": "number"
+    },
+    "configured_at": {
+      "type": "string"
+    },
+    "operator_action": {
+      "type": "string"
+    }
+  },
+  "required": [],
+  "name": "FederationAlignmentAudit"
+}

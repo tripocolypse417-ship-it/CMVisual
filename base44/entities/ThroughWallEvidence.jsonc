@@ -1,0 +1,57 @@
+{
+  "name": "ThroughWallEvidence",
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string"
+    },
+    "observed_at": {
+      "type": "string"
+    },
+    "source_id": {
+      "type": "string"
+    },
+    "measurement_class": {
+      "type": "string",
+      "enum": [
+        "MEASURED_RANGE",
+        "MEASURED_MOTION",
+        "DERIVED",
+        "SCIENTIFIC_PRIOR",
+        "UNAVAILABLE"
+      ]
+    },
+    "range_m": {
+      "type": "number"
+    },
+    "bearing_deg": {
+      "type": "number"
+    },
+    "motion_score": {
+      "type": "number"
+    },
+    "uncertainty_json": {
+      "type": "string"
+    },
+    "validation_status": {
+      "type": "string",
+      "enum": [
+        "UNTESTED",
+        "INTERNAL",
+        "EXTERNAL",
+        "REPLICATED"
+      ]
+    },
+    "limitations_json": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "measurement_class",
+    "validation_status",
+    "method_version"
+  ]
+}

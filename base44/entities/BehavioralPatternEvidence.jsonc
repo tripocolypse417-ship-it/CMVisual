@@ -1,0 +1,41 @@
+{
+  "type": "object",
+  "properties": {
+    "pattern_id": {
+      "type": "string"
+    },
+    "observed_at": {
+      "type": "string"
+    },
+    "feature_vector_json": {
+      "type": "string"
+    },
+    "match_score": {
+      "type": "number"
+    },
+    "evidence_strength": {
+      "type": "number"
+    },
+    "validation_status": {
+      "type": "string"
+    },
+    "confounders_json": {
+      "type": "string"
+    },
+    "source_references_json": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "pattern_id",
+    "observed_at",
+    "match_score",
+    "evidence_strength",
+    "validation_status",
+    "method_version"
+  ],
+  "name": "BehavioralPatternEvidence"
+}

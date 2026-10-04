@@ -1,0 +1,41 @@
+{
+  "name": "PredictionCalibrationAudit",
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string"
+    },
+    "observed_at": {
+      "type": "string"
+    },
+    "track_id": {
+      "type": "string"
+    },
+    "horizon_seconds": {
+      "type": "number"
+    },
+    "predicted_json": {
+      "type": "string"
+    },
+    "measured_json": {
+      "type": "string"
+    },
+    "position_error_m": {
+      "type": "number"
+    },
+    "uncertainty_m": {
+      "type": "number"
+    },
+    "calibrated": {
+      "type": "boolean"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "track_id",
+    "horizon_seconds",
+    "method_version"
+  ]
+}

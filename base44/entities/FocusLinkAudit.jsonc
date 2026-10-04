@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string"
+    },
+    "track_id": {
+      "type": "string"
+    },
+    "selected_at": {
+      "type": "string"
+    },
+    "source_count": {
+      "type": "number"
+    },
+    "association_basis": {
+      "type": "string"
+    },
+    "operator_action": {
+      "type": "string"
+    }
+  },
+  "required": [],
+  "name": "FocusLinkAudit"
+}

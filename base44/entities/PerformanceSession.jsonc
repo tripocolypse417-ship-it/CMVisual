@@ -1,0 +1,37 @@
+{
+  "type": "object",
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": [
+        "live",
+        "scan",
+        "analyze",
+        "review"
+      ]
+    },
+    "device_class": {
+      "type": "string"
+    },
+    "fps": {
+      "type": "number"
+    },
+    "frame_time_ms": {
+      "type": "number"
+    },
+    "memory_mb": {
+      "type": "number"
+    },
+    "battery_pct": {
+      "type": "number"
+    },
+    "thermal_state": {
+      "type": "string"
+    },
+    "timestamp": {
+      "type": "string"
+    }
+  },
+  "required": [],
+  "name": "PerformanceSession"
+}

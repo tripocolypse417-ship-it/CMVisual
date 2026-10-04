@@ -1,0 +1,38 @@
+{
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string"
+    },
+    "observed_at": {
+      "type": "string"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "OBSERVATION_ACCEPTED",
+        "OBSERVATION_QUARANTINED",
+        "CONFLICT_DETECTED",
+        "PREDICTION_EVALUATED",
+        "REPLAY_REVIEWED"
+      ]
+    },
+    "track_id": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string"
+    },
+    "policy_version": {
+      "type": "string"
+    },
+    "details_json": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_type",
+    "policy_version"
+  ],
+  "name": "WorldStateAudit"
+}

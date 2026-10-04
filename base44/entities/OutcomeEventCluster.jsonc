@@ -1,0 +1,44 @@
+{
+  "name": "OutcomeEventCluster",
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string"
+    },
+    "track_id": {
+      "type": "string"
+    },
+    "started_at": {
+      "type": "string"
+    },
+    "ended_at": {
+      "type": "string"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "APPEARED",
+        "DISAPPEARED",
+        "MOVED",
+        "STOPPED",
+        "DIRECTION_CHANGED",
+        "SENSOR_CONFLICT",
+        "HAZARD_CHANGED",
+        "PREDICTION_ERROR"
+      ]
+    },
+    "severity": {
+      "type": "number"
+    },
+    "evidence_json": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_type",
+    "method_version"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string"
+    },
+    "started_at": {
+      "type": "string"
+    },
+    "ended_at": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "event_ids_json": {
+      "type": "string"
+    },
+    "track_ids_json": {
+      "type": "string"
+    },
+    "timeline_json": {
+      "type": "string"
+    },
+    "evidence_summary_json": {
+      "type": "string"
+    },
+    "limitations_json": {
+      "type": "string"
+    },
+    "created_by": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "session_id",
+    "method_version"
+  ],
+  "name": "IncidentReconstruction"
+}

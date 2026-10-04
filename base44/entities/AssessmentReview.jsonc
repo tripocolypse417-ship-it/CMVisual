@@ -1,0 +1,31 @@
+{
+  "name": "AssessmentReview",
+  "type": "object",
+  "properties": {
+    "assessment_id": {
+      "type": "string"
+    },
+    "review_status": {
+      "type": "string"
+    },
+    "reviewer_notes": {
+      "type": "string"
+    },
+    "outcome": {
+      "type": "string"
+    },
+    "confirmed_hazard": {
+      "type": "boolean"
+    },
+    "false_positive": {
+      "type": "boolean"
+    },
+    "false_negative": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "assessment_id",
+    "review_status"
+  ]
+}

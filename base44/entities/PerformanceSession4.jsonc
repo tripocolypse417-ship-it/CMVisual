@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "mode": {
+      "type": "string"
+    }
+  },
+  "required": [],
+  "name": "PerformanceSession4"
+}

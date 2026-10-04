@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "properties": {
+    "capability_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "required_evidence": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "validation_state": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string"
+    }
+  },
+  "required": [],
+  "name": "InferenceCapabilityAudit"
+}

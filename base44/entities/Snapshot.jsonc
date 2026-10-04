@@ -1,0 +1,96 @@
+{
+  "name": "Snapshot",
+  "type": "object",
+  "properties": {
+    "label": {
+      "type": "string"
+    },
+    "scan_mode": {
+      "type": "string"
+    },
+    "detection_count": {
+      "type": "number"
+    },
+    "detections_json": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "team_id": {
+      "type": "string"
+    },
+    "shared_emails": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "team_admin_emails": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "label",
+    "scan_mode"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.shared_emails": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {},
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.team_admin_emails": {
+            "$in": [
+              "{{user.email}}"
+            ]
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.team_admin_emails": {
+            "$in": [
+              "{{user.email}}"
+            ]
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

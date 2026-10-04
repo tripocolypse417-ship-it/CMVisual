@@ -1,0 +1,41 @@
+{
+  "name": "AssessmentPolicyVersion",
+  "type": "object",
+  "properties": {
+    "policy_id": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "speculation_allowed": {
+      "type": "boolean"
+    },
+    "person_level_threat_label_allowed": {
+      "type": "boolean"
+    },
+    "observable_outcome_forecast_allowed": {
+      "type": "boolean"
+    },
+    "human_review_required": {
+      "type": "boolean"
+    },
+    "required_evidence_json": {
+      "type": "string"
+    },
+    "prohibited_inferences_json": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "policy_id",
+    "version",
+    "speculation_allowed",
+    "person_level_threat_label_allowed",
+    "observable_outcome_forecast_allowed",
+    "human_review_required"
+  ]
+}

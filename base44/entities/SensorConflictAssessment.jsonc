@@ -1,0 +1,41 @@
+{
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string"
+    },
+    "observed_at": {
+      "type": "string"
+    },
+    "track_id": {
+      "type": "string"
+    },
+    "source_count": {
+      "type": "number"
+    },
+    "agreement_score": {
+      "type": "number"
+    },
+    "disagreement_score": {
+      "type": "number"
+    },
+    "consensus_json": {
+      "type": "string"
+    },
+    "source_observations_json": {
+      "type": "string"
+    },
+    "resolution_json": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "agreement_score",
+    "disagreement_score",
+    "method_version"
+  ],
+  "name": "SensorConflictAssessment"
+}

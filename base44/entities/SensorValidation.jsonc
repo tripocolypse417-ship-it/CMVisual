@@ -1,0 +1,55 @@
+{
+  "name": "SensorValidation",
+  "type": "object",
+  "properties": {
+    "sensor_id": {
+      "type": "string"
+    },
+    "sensor_type": {
+      "type": "string"
+    },
+    "observed_at": {
+      "type": "string"
+    },
+    "quality_score": {
+      "type": "number"
+    },
+    "freshness_score": {
+      "type": "number"
+    },
+    "agreement_score": {
+      "type": "number"
+    },
+    "repeatability_score": {
+      "type": "number"
+    },
+    "calibration_status": {
+      "type": "string",
+      "enum": [
+        "UNVERIFIED",
+        "PROVISIONAL",
+        "VERIFIED",
+        "DEGRADED"
+      ]
+    },
+    "sample_count": {
+      "type": "number"
+    },
+    "metrics_json": {
+      "type": "string"
+    },
+    "limitations_json": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "sensor_id",
+    "sensor_type",
+    "quality_score",
+    "calibration_status",
+    "method_version"
+  ]
+}

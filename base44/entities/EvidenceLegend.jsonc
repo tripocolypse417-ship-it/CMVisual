@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "properties": {
+    "label": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "label",
+    "description",
+    "category"
+  ],
+  "name": "EvidenceLegend"
+}

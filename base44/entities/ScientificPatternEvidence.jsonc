@@ -1,0 +1,63 @@
+{
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string"
+    },
+    "track_id": {
+      "type": "string"
+    },
+    "observed_at": {
+      "type": "string"
+    },
+    "pattern_id": {
+      "type": "string"
+    },
+    "pattern_class": {
+      "type": "string",
+      "enum": [
+        "MOTION",
+        "POSTURE",
+        "GAIT",
+        "ACTIVITY",
+        "PHYSIOLOGY",
+        "ENVIRONMENT",
+        "MULTIMODAL"
+      ]
+    },
+    "prior_strength": {
+      "type": "number"
+    },
+    "feature_agreement": {
+      "type": "number"
+    },
+    "evidence_strength": {
+      "type": "number"
+    },
+    "validation_status": {
+      "type": "string",
+      "enum": [
+        "UNTESTED",
+        "INTERNAL",
+        "EXTERNAL",
+        "REPLICATED"
+      ]
+    },
+    "source_reference_json": {
+      "type": "string"
+    },
+    "limitations_json": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "pattern_id",
+    "pattern_class",
+    "validation_status",
+    "method_version"
+  ],
+  "name": "ScientificPatternEvidence"
+}

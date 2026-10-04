@@ -1,0 +1,45 @@
+{
+  "name": "ScientificSourceRegistry",
+  "type": "object",
+  "properties": {
+    "source_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "reference": {
+      "type": "string"
+    },
+    "domain": {
+      "type": "string"
+    },
+    "source_url": {
+      "type": "string"
+    },
+    "validation_status": {
+      "type": "string",
+      "enum": [
+        "UNTESTED",
+        "INTERNAL",
+        "EXTERNAL",
+        "REPLICATED"
+      ]
+    },
+    "limitations_json": {
+      "type": "string"
+    },
+    "feature_schema_json": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "source_id",
+    "title",
+    "validation_status",
+    "method_version"
+  ]
+}

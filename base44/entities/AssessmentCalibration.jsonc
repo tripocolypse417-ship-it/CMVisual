@@ -1,0 +1,35 @@
+{
+  "name": "AssessmentCalibration",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "activity_min": {
+      "type": "number"
+    },
+    "validation_min": {
+      "type": "number"
+    },
+    "confidence_min": {
+      "type": "number"
+    },
+    "disagreement_max": {
+      "type": "number"
+    },
+    "persistence_min": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string"
+    },
+    "rationale": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "version",
+    "status",
+    "rationale"
+  ]
+}
