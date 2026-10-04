@@ -1,0 +1,40 @@
+{
+  "name": "SensorHealthEvent",
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string"
+    },
+    "observed_at": {
+      "type": "string"
+    },
+    "source_id": {
+      "type": "string"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "CONNECTED",
+        "DISCONNECTED",
+        "STALE",
+        "DEGRADED",
+        "RECOVERED",
+        "CALIBRATION_EXPIRED",
+        "CONFLICT"
+      ]
+    },
+    "quality_score": {
+      "type": "number"
+    },
+    "details_json": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_type",
+    "method_version"
+  ]
+}

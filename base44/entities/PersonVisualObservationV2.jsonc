@@ -1,0 +1,42 @@
+{
+  "type": "object",
+  "properties": {
+    "track_id": {
+      "type": "string"
+    },
+    "timestamp_ms": {
+      "type": "number"
+    },
+    "source": {
+      "type": "string"
+    },
+    "visibility": {
+      "type": "string"
+    },
+    "bbox": {
+      "type": "object"
+    },
+    "keypoints": {
+      "type": "array"
+    },
+    "distance_m": {
+      "type": "number"
+    },
+    "bearing_deg": {
+      "type": "number"
+    },
+    "motion": {
+      "type": "object"
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "observations": {
+      "type": "array"
+    }
+  },
+  "required": [],
+  "name": "PersonVisualObservationV2"
+}

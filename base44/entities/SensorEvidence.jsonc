@@ -1,0 +1,35 @@
+{
+  "type": "object",
+  "properties": {
+    "timestamp_ms": {
+      "type": "number"
+    },
+    "source": {
+      "type": "string"
+    },
+    "measurement_type": {
+      "type": "string"
+    },
+    "value": {
+      "type": "object"
+    },
+    "quality": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "derived": {
+      "type": "boolean"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "timestamp_ms",
+    "source",
+    "measurement_type",
+    "value"
+  ],
+  "name": "SensorEvidence"
+}

@@ -1,0 +1,39 @@
+{
+  "name": "ValidationRun",
+  "type": "object",
+  "properties": {
+    "sensor_id": {
+      "type": "string"
+    },
+    "test_type": {
+      "type": "string"
+    },
+    "result": {
+      "type": "string"
+    },
+    "expected_value": {
+      "type": "number"
+    },
+    "measured_value": {
+      "type": "number"
+    },
+    "error_value": {
+      "type": "number"
+    },
+    "uncertainty_value": {
+      "type": "number"
+    },
+    "method_version": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "sensor_id",
+    "test_type",
+    "result",
+    "method_version"
+  ]
+}

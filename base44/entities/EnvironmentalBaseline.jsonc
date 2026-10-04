@@ -1,0 +1,44 @@
+{
+  "type": "object",
+  "properties": {
+    "context_key": {
+      "type": "string"
+    },
+    "window_start": {
+      "type": "string"
+    },
+    "window_end": {
+      "type": "string"
+    },
+    "sample_count": {
+      "type": "number"
+    },
+    "occupancy_mean": {
+      "type": "number"
+    },
+    "occupancy_std": {
+      "type": "number"
+    },
+    "motion_mean": {
+      "type": "number"
+    },
+    "motion_std": {
+      "type": "number"
+    },
+    "range_mean": {
+      "type": "number"
+    },
+    "range_std": {
+      "type": "number"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "context_key",
+    "sample_count",
+    "method_version"
+  ],
+  "name": "EnvironmentalBaseline"
+}

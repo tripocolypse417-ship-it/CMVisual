@@ -1,0 +1,30 @@
+{
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string"
+    },
+    "sensor": {
+      "type": "string"
+    },
+    "timestamp_ms": {
+      "type": "number"
+    },
+    "value": {
+      "type": "object"
+    },
+    "quality": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "source": {
+      "type": "string"
+    },
+    "derived": {
+      "type": "boolean"
+    }
+  },
+  "required": [],
+  "name": "SensorObservation"
+}

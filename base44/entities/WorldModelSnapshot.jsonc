@@ -1,0 +1,44 @@
+{
+  "name": "WorldModelSnapshot",
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string"
+    },
+    "captured_at": {
+      "type": "string"
+    },
+    "coordinate_system": {
+      "type": "string"
+    },
+    "measured_json": {
+      "type": "string"
+    },
+    "historical_json": {
+      "type": "string"
+    },
+    "predicted_json": {
+      "type": "string"
+    },
+    "hazards_json": {
+      "type": "string"
+    },
+    "quality_json": {
+      "type": "string"
+    },
+    "provenance_json": {
+      "type": "string"
+    },
+    "policy_version": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "session_id",
+    "captured_at",
+    "method_version"
+  ]
+}

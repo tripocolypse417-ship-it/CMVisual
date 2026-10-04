@@ -1,0 +1,50 @@
+{
+  "name": "ReplayEvaluationCase",
+  "type": "object",
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "dataset_id": {
+      "type": "string"
+    },
+    "started_at": {
+      "type": "string"
+    },
+    "ended_at": {
+      "type": "string"
+    },
+    "ground_truth_json": {
+      "type": "string"
+    },
+    "observations_json": {
+      "type": "string"
+    },
+    "expected_outcomes_json": {
+      "type": "string"
+    },
+    "evaluation_status": {
+      "type": "string",
+      "enum": [
+        "NOT_RUN",
+        "PASS",
+        "FAIL",
+        "REVIEW"
+      ]
+    },
+    "metrics_json": {
+      "type": "string"
+    },
+    "limitations_json": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "case_id",
+    "evaluation_status",
+    "method_version"
+  ]
+}

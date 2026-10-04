@@ -1,0 +1,37 @@
+{
+  "name": "SensorAgreement",
+  "type": "object",
+  "properties": {
+    "observation_id": {
+      "type": "string"
+    },
+    "sensor_a": {
+      "type": "string"
+    },
+    "sensor_b": {
+      "type": "string"
+    },
+    "agreement_score": {
+      "type": "number"
+    },
+    "difference_value": {
+      "type": "number"
+    },
+    "difference_unit": {
+      "type": "string"
+    },
+    "observed_at": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "observation_id",
+    "sensor_a",
+    "sensor_b",
+    "agreement_score",
+    "method_version"
+  ]
+}

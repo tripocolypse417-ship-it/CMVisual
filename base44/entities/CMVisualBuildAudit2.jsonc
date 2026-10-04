@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "properties": {
+    "label": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "label",
+    "status"
+  ],
+  "name": "CMVisualBuildAudit2"
+}

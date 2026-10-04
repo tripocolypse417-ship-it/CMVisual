@@ -1,0 +1,50 @@
+{
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string"
+    },
+    "observed_at": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string"
+    },
+    "metric": {
+      "type": "string"
+    },
+    "value": {
+      "type": "number"
+    },
+    "unit": {
+      "type": "string"
+    },
+    "quality": {
+      "type": "number"
+    },
+    "uncertainty": {
+      "type": "number"
+    },
+    "validation_status": {
+      "type": "string",
+      "enum": [
+        "MEASURED",
+        "DERIVED",
+        "UNAVAILABLE",
+        "UNVALIDATED"
+      ]
+    },
+    "provenance_json": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "metric",
+    "validation_status",
+    "method_version"
+  ],
+  "name": "PhysiologyObservation"
+}

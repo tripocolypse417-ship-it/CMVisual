@@ -1,0 +1,50 @@
+{
+  "name": "SensorCalibration",
+  "type": "object",
+  "properties": {
+    "sensor_id": {
+      "type": "string"
+    },
+    "sensor_type": {
+      "type": "string"
+    },
+    "calibration_version": {
+      "type": "string"
+    },
+    "calibrated_at": {
+      "type": "string"
+    },
+    "reference_type": {
+      "type": "string"
+    },
+    "reference_value": {
+      "type": "number"
+    },
+    "measured_value": {
+      "type": "number"
+    },
+    "error_value": {
+      "type": "number"
+    },
+    "uncertainty_value": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "UNVERIFIED",
+        "PROVISIONAL",
+        "VERIFIED",
+        "DEGRADED"
+      ]
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "sensor_id",
+    "sensor_type",
+    "status"
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "name": "TEVVValidationRun",
+  "type": "object",
+  "properties": {
+    "run_id": {
+      "type": "string"
+    },
+    "started_at": {
+      "type": "string"
+    },
+    "ended_at": {
+      "type": "string"
+    },
+    "dataset_id": {
+      "type": "string"
+    },
+    "model_version": {
+      "type": "string"
+    },
+    "sensor_profile_json": {
+      "type": "string"
+    },
+    "metrics_json": {
+      "type": "string"
+    },
+    "uncertainty_metrics_json": {
+      "type": "string"
+    },
+    "failure_cases_json": {
+      "type": "string"
+    },
+    "regression_status": {
+      "type": "string",
+      "enum": [
+        "NOT_RUN",
+        "PASS",
+        "FAIL",
+        "REVIEW"
+      ]
+    },
+    "independent_review_status": {
+      "type": "string",
+      "enum": [
+        "NOT_REVIEWED",
+        "REVIEWED"
+      ]
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "model_version",
+    "regression_status",
+    "method_version"
+  ]
+}

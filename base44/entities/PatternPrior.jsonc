@@ -1,0 +1,46 @@
+{
+  "type": "object",
+  "properties": {
+    "pattern_id": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "construct_class": {
+      "type": "string"
+    },
+    "feature_definition_json": {
+      "type": "string"
+    },
+    "expected_feature_json": {
+      "type": "string"
+    },
+    "evidence_grade": {
+      "type": "string"
+    },
+    "population_scope": {
+      "type": "string"
+    },
+    "known_confounders_json": {
+      "type": "string"
+    },
+    "source_references_json": {
+      "type": "string"
+    },
+    "allowed_use_json": {
+      "type": "string"
+    },
+    "disallowed_use_json": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "pattern_id",
+    "version",
+    "construct_class",
+    "feature_definition_json",
+    "evidence_grade"
+  ],
+  "name": "PatternPrior"
+}

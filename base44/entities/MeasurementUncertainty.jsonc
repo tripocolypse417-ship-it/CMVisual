@@ -1,0 +1,34 @@
+{
+  "name": "MeasurementUncertainty",
+  "type": "object",
+  "properties": {
+    "sensor_id": {
+      "type": "string"
+    },
+    "metric": {
+      "type": "string"
+    },
+    "value": {
+      "type": "number"
+    },
+    "unit": {
+      "type": "string"
+    },
+    "confidence_level": {
+      "type": "number"
+    },
+    "method_version": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "sensor_id",
+    "metric",
+    "value",
+    "unit",
+    "method_version"
+  ]
+}

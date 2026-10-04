@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "properties": {
+    "label": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "details": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "label",
+    "status"
+  ],
+  "name": "CMVisualBuildRecord"
+}

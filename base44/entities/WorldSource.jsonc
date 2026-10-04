@@ -1,0 +1,35 @@
+{
+  "type": "object",
+  "properties": {
+    "source_id": {
+      "type": "string"
+    },
+    "source_type": {
+      "type": "string"
+    },
+    "capability_json": {
+      "type": "string"
+    },
+    "trust_score": {
+      "type": "number"
+    },
+    "provenance_json": {
+      "type": "string"
+    },
+    "last_seen_at": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "source_id",
+    "source_type",
+    "method_version"
+  ],
+  "name": "WorldSource"
+}

@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": [
+        "live",
+        "scan",
+        "analyze",
+        "review"
+      ],
+      "default": "live"
+    },
+    "updated_at": {
+      "type": "string"
+    }
+  },
+  "required": [],
+  "name": "CMVisualWorkspaceState"
+}

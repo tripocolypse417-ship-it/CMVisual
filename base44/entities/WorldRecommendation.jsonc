@@ -1,0 +1,39 @@
+{
+  "type": "object",
+  "properties": {
+    "recommendation_id": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "priority": {
+      "type": "number"
+    },
+    "action_type": {
+      "type": "string"
+    },
+    "rationale_json": {
+      "type": "string"
+    },
+    "evidence_ids_json": {
+      "type": "string"
+    },
+    "constraints_json": {
+      "type": "string"
+    },
+    "review_required": {
+      "type": "boolean"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "recommendation_id",
+    "created_at",
+    "action_type",
+    "method_version"
+  ],
+  "name": "WorldRecommendation"
+}

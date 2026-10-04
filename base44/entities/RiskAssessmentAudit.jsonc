@@ -1,0 +1,42 @@
+{
+  "name": "RiskAssessmentAudit",
+  "type": "object",
+  "properties": {
+    "assessment_id": {
+      "type": "string"
+    },
+    "observed_at": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string"
+    },
+    "activity_score": {
+      "type": "number"
+    },
+    "validation_score": {
+      "type": "number"
+    },
+    "confidence": {
+      "type": "number"
+    },
+    "decision_basis_json": {
+      "type": "string"
+    },
+    "limitations_json": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    },
+    "review_status": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "assessment_id",
+    "state",
+    "method_version",
+    "review_status"
+  ]
+}

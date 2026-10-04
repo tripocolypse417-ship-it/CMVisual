@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "properties": {
+    "track_id": {
+      "type": "string"
+    },
+    "started_at": {
+      "type": "string"
+    },
+    "last_seen_at": {
+      "type": "string"
+    },
+    "observation_count": {
+      "type": "number"
+    },
+    "source": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    }
+  },
+  "required": [],
+  "name": "TrackSession"
+}

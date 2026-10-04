@@ -1,0 +1,53 @@
+{
+  "name": "SensorCapabilityRegistry",
+  "type": "object",
+  "properties": {
+    "source_id": {
+      "type": "string"
+    },
+    "source_type": {
+      "type": "string"
+    },
+    "capabilities_json": {
+      "type": "string"
+    },
+    "validation_status": {
+      "type": "string",
+      "enum": [
+        "UNTESTED",
+        "INTERNAL",
+        "EXTERNAL",
+        "REPLICATED"
+      ]
+    },
+    "calibration_status": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "VALID",
+        "EXPIRED",
+        "FAILED"
+      ]
+    },
+    "measurement_units": {
+      "type": "string"
+    },
+    "sampling_rate_hz": {
+      "type": "number"
+    },
+    "uncertainty_json": {
+      "type": "string"
+    },
+    "provenance_json": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "source_id",
+    "validation_status",
+    "method_version"
+  ]
+}

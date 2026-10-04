@@ -1,0 +1,51 @@
+{
+  "name": "OutcomeModelVersion",
+  "type": "object",
+  "properties": {
+    "model_id": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "task": {
+      "type": "string"
+    },
+    "training_sources_json": {
+      "type": "string"
+    },
+    "scientific_sources_json": {
+      "type": "string"
+    },
+    "validation_status": {
+      "type": "string",
+      "enum": [
+        "UNTESTED",
+        "INTERNAL",
+        "EXTERNAL",
+        "REPLICATED"
+      ]
+    },
+    "calibration_status": {
+      "type": "string",
+      "enum": [
+        "UNCALIBRATED",
+        "CALIBRATED",
+        "DRIFTED"
+      ]
+    },
+    "limitations_json": {
+      "type": "string"
+    },
+    "active": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "model_id",
+    "version",
+    "validation_status",
+    "calibration_status",
+    "active"
+  ]
+}

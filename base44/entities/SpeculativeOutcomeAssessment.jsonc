@@ -1,0 +1,55 @@
+{
+  "name": "SpeculativeOutcomeAssessment",
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string"
+    },
+    "observed_at": {
+      "type": "string"
+    },
+    "track_id": {
+      "type": "string"
+    },
+    "assessment_class": {
+      "type": "string",
+      "enum": [
+        "SPECULATIVE_OUTCOME",
+        "SPECULATIVE_HAZARD",
+        "INSUFFICIENT_EVIDENCE"
+      ]
+    },
+    "outcome_likelihood": {
+      "type": "number"
+    },
+    "evidence_quality": {
+      "type": "number"
+    },
+    "primary_outcome": {
+      "type": "string"
+    },
+    "outcomes_json": {
+      "type": "string"
+    },
+    "supporting_evidence_json": {
+      "type": "string"
+    },
+    "limiting_factors_json": {
+      "type": "string"
+    },
+    "sources_json": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    },
+    "human_review_required": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "assessment_class",
+    "method_version",
+    "human_review_required"
+  ]
+}

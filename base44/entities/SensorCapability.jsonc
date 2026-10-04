@@ -1,0 +1,28 @@
+{
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string"
+    },
+    "available": {
+      "type": "boolean"
+    },
+    "permission": {
+      "type": "string"
+    },
+    "last_seen": {
+      "type": "string"
+    },
+    "quality": {
+      "type": "number"
+    },
+    "details": {
+      "type": "string"
+    }
+  },
+  "required": [],
+  "name": "SensorCapability"
+}

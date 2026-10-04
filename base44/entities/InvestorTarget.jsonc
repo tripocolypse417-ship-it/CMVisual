@@ -1,0 +1,97 @@
+{
+  "name": "InvestorTarget",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "firm": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "linkedin": {
+      "type": "string"
+    },
+    "focus_areas": {
+      "type": "string"
+    },
+    "check_size": {
+      "type": "string"
+    },
+    "portfolio": {
+      "type": "string"
+    },
+    "fit_rationale": {
+      "type": "string"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ],
+      "default": "high"
+    },
+    "stage": {
+      "type": "string",
+      "enum": [
+        "researched",
+        "drafted",
+        "emailed",
+        "replied",
+        "meeting",
+        "passed",
+        "invested"
+      ],
+      "default": "researched"
+    },
+    "drafted_subject": {
+      "type": "string"
+    },
+    "drafted_body": {
+      "type": "string"
+    },
+    "last_contacted_at": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string",
+      "default": "ai_research"
+    }
+  },
+  "required": [
+    "name",
+    "firm"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

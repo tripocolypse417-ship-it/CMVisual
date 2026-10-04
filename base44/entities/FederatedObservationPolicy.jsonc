@@ -1,0 +1,42 @@
+{
+  "name": "FederatedObservationPolicy",
+  "type": "object",
+  "properties": {
+    "policy_version": {
+      "type": "string"
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "allowed_sources_json": {
+      "type": "string"
+    },
+    "raw_video_allowed": {
+      "type": "boolean"
+    },
+    "biometrics_allowed": {
+      "type": "boolean"
+    },
+    "identity_data_allowed": {
+      "type": "boolean"
+    },
+    "psychological_labels_allowed": {
+      "type": "boolean"
+    },
+    "retention_days": {
+      "type": "number"
+    },
+    "authentication_required": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "policy_version",
+    "enabled",
+    "raw_video_allowed",
+    "biometrics_allowed",
+    "identity_data_allowed",
+    "psychological_labels_allowed",
+    "authentication_required"
+  ]
+}

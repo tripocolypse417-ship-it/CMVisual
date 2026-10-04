@@ -1,0 +1,60 @@
+{
+  "name": "PromoCampaign",
+  "type": "object",
+  "properties": {
+    "page_id": {
+      "type": "string"
+    },
+    "page_name": {
+      "type": "string"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "last_index": {
+      "type": "number",
+      "default": -1
+    },
+    "last_posted_at": {
+      "type": "string"
+    },
+    "last_post_id": {
+      "type": "string"
+    },
+    "interval_hours": {
+      "type": "number",
+      "default": 6
+    },
+    "post_count": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "page_id",
+    "page_name"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

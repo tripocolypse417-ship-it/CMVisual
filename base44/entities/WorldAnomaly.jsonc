@@ -1,0 +1,39 @@
+{
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "observed_at": {
+      "type": "string"
+    },
+    "track_id": {
+      "type": "string"
+    },
+    "anomaly_type": {
+      "type": "string"
+    },
+    "severity": {
+      "type": "number"
+    },
+    "feature_json": {
+      "type": "string"
+    },
+    "baseline_json": {
+      "type": "string"
+    },
+    "evidence_strength": {
+      "type": "number"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_id",
+    "observed_at",
+    "anomaly_type",
+    "method_version"
+  ],
+  "name": "WorldAnomaly"
+}

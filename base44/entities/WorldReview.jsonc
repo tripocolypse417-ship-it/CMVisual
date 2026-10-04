@@ -1,0 +1,33 @@
+{
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "reviewed_at": {
+      "type": "string"
+    },
+    "reviewer_type": {
+      "type": "string"
+    },
+    "decision": {
+      "type": "string"
+    },
+    "reason_json": {
+      "type": "string"
+    },
+    "linked_observation_ids_json": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_id",
+    "reviewed_at",
+    "decision",
+    "method_version"
+  ],
+  "name": "WorldReview"
+}

@@ -1,0 +1,44 @@
+{
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string"
+    },
+    "observed_at": {
+      "type": "string"
+    },
+    "track_id": {
+      "type": "string"
+    },
+    "outcome_class": {
+      "type": "string",
+      "enum": [
+        "REMAIN_STOP",
+        "CONTINUE_PATH",
+        "CLOSE_PROXIMITY",
+        "CONTINUE_OBSERVATION"
+      ]
+    },
+    "score": {
+      "type": "number"
+    },
+    "horizon_seconds": {
+      "type": "number"
+    },
+    "uncertainty_m": {
+      "type": "number"
+    },
+    "basis_json": {
+      "type": "string"
+    },
+    "method_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "track_id",
+    "outcome_class",
+    "method_version"
+  ],
+  "name": "PhysicalOutcomeForecast"
+}
