@@ -46,7 +46,7 @@ function analyzeTarget(target, allTargets, assessment, physicalOutcomeForecast =
 
   const classification = target?.type === 'human' ? 'HUMAN DETECTION' : String(target?.type || 'UNKNOWN').toUpperCase();
   const trackId = target?.trackId ?? target?.id ?? null;
-  const forecast = (physicalOutcomeForecast || []).find(x => String(x?.trackId) === String(trackId));
+  const forecast = (Array.isArray(physicalOutcomeForecast) ? physicalOutcomeForecast : []).find(x => String(x?.trackId) === String(trackId));
   const anomalies = (trackAnomalies || []).filter(x => String(x?.trackId) === String(trackId));
   const hypotheses = [];
   const dataGaps = [];
@@ -59,7 +59,7 @@ function analyzeTarget(target, allTargets, assessment, physicalOutcomeForecast =
   if (support < 1) dataGaps.push('no independent sensor corroboration');
   if (!forecast) dataGaps.push('no physical outcome forecast available');
   const calibrated = Number.isFinite(Number(predictionCalibration?.calibrationScore)) ? Number(predictionCalibration.calibrationScore) : null;
-  const eligibleFutureInference = (inferenceRegistry?.eligible || []).map(x => x.id);
+  const eligibleFutureInference = (Array.isArray(inferenceRegistry?.eligible) ? inferenceRegistry.eligible : []).map(x => x.id);
   return {
     targetId: trackId,
     classification,
