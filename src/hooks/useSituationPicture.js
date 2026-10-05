@@ -13,7 +13,20 @@ const ROLES = {
   investor: { label: 'Investor / Reviewer', priorities: ['measured utility', 'validation status', 'repeatability', 'deployment readiness', 'commercial path'], compact: 'UTILITY · VALIDATION · SCALE' },
 };
 
-const read = () => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"role":"firefighter","decisions":[]}'); } catch { return { role: 'firefighter', decisions: [] }; } };
+const read = () => {
+  const fallback = { role: 'firefighter', decisions: [] };
+  try {
+    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '');
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return fallback;
+    return {
+      ...parsed,
+      role: ROLES[parsed.role] ? parsed.role : 'firefighter',
+      decisions: Array.isArray(parsed.decisions) ? parsed.decisions : [],
+    };
+  } catch {
+    return fallback;
+  }
+};
 const write = (v) => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(v)); } catch {} };
 const n = (v) => Number.isFinite(Number(v)) ? Number(v) : null;
 
