@@ -100,16 +100,18 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
     item.put("ageMs", ageMs);
     item.put("sensorType", type);
     item.put("accuracy", sensorAccuracies.getOrDefault(type, SensorManager.SENSOR_STATUS_UNRELIABLE));
-    try {
-      target.put(name, item);
-    } catch (org.json.JSONException ignored) {
-      // Skip an individual measurement if JSON encoding rejects it.
-    }
+    target.put(name, item);
   }
 
   private org.json.JSONArray toArray(float[] values) {
     org.json.JSONArray a = new org.json.JSONArray();
-    for (float v : values) a.put(v);
+    for (float v : values) {
+      try {
+        a.put(v);
+      } catch (org.json.JSONException ignored) {
+        // Skip a value only if JSON encoding rejects it.
+      }
+    }
     return a;
   }
 
