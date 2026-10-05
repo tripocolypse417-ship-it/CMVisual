@@ -121,9 +121,9 @@ export default function UnifiedSpatialWorkspace({
     const predictions = Array.isArray(trajectoryPredictions) ? trajectoryPredictions : [];
     return predictions.map((p) => ({
       ...p,
-      one: p.horizons?.find((h) => h.horizonMs === 1000) || null,
-      three: p.horizons?.find((h) => h.horizonMs === 3000) || null,
-      five: p.horizons?.find((h) => h.horizonMs === 5000) || null,
+      one: (Array.isArray(p.horizons) ? p.horizons : []).find((h) => h.horizonMs === 1000) || null,
+      three: (Array.isArray(p.horizons) ? p.horizons : []).find((h) => h.horizonMs === 3000) || null,
+      five: (Array.isArray(p.horizons) ? p.horizons : []).find((h) => h.horizonMs === 5000) || null,
     }));
   }, [trajectoryPredictions]);
 
@@ -314,7 +314,7 @@ export default function UnifiedSpatialWorkspace({
           </div>
           <div className="mt-1 flex gap-2 overflow-hidden font-mono text-[6px] text-white/45">
             {forecastSummary.slice(0, 4).map((p) => {
-              const outcome = physicalOutcomeForecast.find(o => String(o.trackId) === String(p.trackId));
+              const outcome = (Array.isArray(physicalOutcomeForecast) ? physicalOutcomeForecast : []).find(o => String(o.trackId) === String(p.trackId));
               return (
                 <span key={p.trackId} className="whitespace-nowrap">
                   {p.trackId} · {p.speedMps.toFixed(1)}m/s · {outcome?.outcome || 'PATH'} · ±{p.one?.uncertaintyM?.toFixed(1) ?? '—'}m
