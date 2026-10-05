@@ -1,4 +1,3 @@
-# android/app/src/main/java/com/waveradar/app/WaveRadarSensorsPlugin.java (lines 1-136 of 136)
 package com.waveradar.app;
 
 import android.content.Context;
