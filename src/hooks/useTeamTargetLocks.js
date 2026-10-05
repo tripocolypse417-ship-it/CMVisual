@@ -6,7 +6,12 @@ const STALE_AFTER_MS = 8000;
 const LOST_AFTER_MS = 20000;
 
 function load() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
+  try {
+    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
 function stableId(prefix = 'lock') {
