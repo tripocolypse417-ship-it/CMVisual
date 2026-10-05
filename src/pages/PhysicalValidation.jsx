@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import useDeviceSensors from '@/hooks/useDeviceSensors';
 import { getStableDeviceId, getDeviceIdentityStatus } from '@/lib/deviceIdentity';
 import { base44 } from '@/api/base44Client';
+import { getNativeSensorSnapshot, getNativeSensorCapabilities } from '@/lib/nativeSensors';
 
 const DURATION_MS = 60000;
 const SAMPLE_MS = 250;
@@ -21,6 +22,8 @@ export default function PhysicalValidation() {
   const [cameraState, setCameraState] = useState('NOT CHECKED');
   const [captureState, setCaptureState] = useState('READY');
   const [saveState, setSaveState] = useState('NOT SAVED');
+  const [nativeSnapshot, setNativeSnapshot] = useState(null);
+  const [nativeCapabilities, setNativeCapabilities] = useState(null);
   const start = useRef(0);
   const timer = useRef(null);
   const sampler = useRef(null);
@@ -55,8 +58,10 @@ export default function PhysicalValidation() {
     }
   };
 
-  const takeSample = () => {
+  const takeSample = async () => {
     const now = Date.now();
+    const native = await getNativeSensorSnapshot();
+    if (native) setNativeSnapshot(native);
     const sample = {
       t: now - start.current,
       at: new Date(now).toISOString(),
@@ -65,6 +70,8 @@ export default function PhysicalValidation() {
       moving: sensors.isMoving,
       motion: sensors.motion,
       evidenceClass: 'MEASURED',
+      nativeSensors: native?.measurements ?? null,
+      nativeSensorAt: native?.lastSensorAt ?? null,
     };
     data.current = [...data.current, sample];
     setSamples(data.current);
@@ -88,9 +95,9 @@ export default function PhysicalValidation() {
     setElapsed(0);
     setCaptureState('RUNNING');
     setRun(true);
-    takeSample();
+    void takeSample();
 
-    sampler.current = setInterval(takeSample, SAMPLE_MS);
+    sampler.current = setInterval(() => { void takeSample(); }, SAMPLE_MS);
     timer.current = setInterval(() => {
       const e = Date.now() - start.current;
       setElapsed(Math.min(DURATION_MS, e));
@@ -194,6 +201,7 @@ export default function PhysicalValidation() {
 
   useEffect(() => {
     checkCamera();
+    void getNativeSensorCapabilities().then(setNativeCapabilities);
     return () => {
       clearInterval(timer.current);
       clearInterval(sampler.current);
@@ -225,7 +233,9 @@ export default function PhysicalValidation() {
 
           <div className="rounded-xl border border-white/10 bg-slate-900 p-4">
             <b className="text-xs">CAPABILITIES</b>
-            <div className="font-mono text-xs mt-2">MOTION: {sensors.hasSensors ? 'AVAILABLE' : 'NOT DETECTED'}</div>
+            <div className="font-mono text-xs mt-2">MOTION: {sensors.hasSensors || nativeCapabilities?.androidSensorManager ? 'AVAILABLE' : 'NOT DETECTED'}</div>
+            <div className="font-mono text-xs mt-1">NATIVE: {nativeCapabilities?.nativeBridgeVersion || 'WEB FALLBACK'}</div>
+            {nativeCapabilities && <div className="font-mono text-[10px] text-slate-500 mt-1">SENSORS: {nativeCapabilities.sensorCount ?? 0} · WIFI RTT: {nativeCapabilities.androidWifiRtt ? 'YES' : 'NO'} · UWB: {nativeCapabilities.uwb ? 'YES' : 'NO'}</div>}
             <div className="font-mono text-xs mt-1">CAMERA: {cameraState}</div>
             {sensors.denied && <div className="font-mono text-xs text-red-300 mt-1">SENSOR PERMISSION DENIED</div>}
             <div className="flex flex-wrap gap-2 mt-2">
@@ -258,6 +268,7 @@ export default function PhysicalValidation() {
 
           <div className="font-mono text-xs mt-3">
             {samples.length} measured samples · {marks.length} ground-truth markers · HEADING {sensors.heading ?? '—'}° · {sensors.isMoving ? 'MOVING' : 'STILL'}
+            {nativeSnapshot?.lastSensorAt && <span> · NATIVE SENSOR LIVE</span>}
           </div>
           <div className="font-mono text-[10px] text-slate-500 mt-2">
             CAPTURE: {captureState} · STORAGE: {saveState}
