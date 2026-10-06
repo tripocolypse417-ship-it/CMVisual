@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { getNativeRangingCapabilities } from '../lib/nativeRanging';
 
 /**
  * Open sensor-ingress bridge. The browser cannot manufacture radar/ranging data;
@@ -115,6 +116,9 @@ export default function useSensorBridge(enabled = true) {
     };
 
     const onFrame = (event) => accept(event.detail);
+    getNativeRangingCapabilities().then((capabilities) => {
+      window.dispatchEvent(new CustomEvent('waveradar:ranging-capabilities', { detail: capabilities }));
+    }).catch(() => {});
     window.addEventListener('waveradar:range-frame', onFrame);
     // Native Android bridge can announce its capabilities without the web app
     // pretending that unsupported radios exist.
