@@ -221,7 +221,8 @@ function buildMeasurementGrid(modeColor, modeHex) {
 }
 
 export default function WallVisionScene({ detections, scanMode, isScanning, trailsEnabled = true, heading = 0, selectedDetection: externalSelectedDetection = null, onSelectDetection }) {
-  const spatialWorld = useSpatialWorld(detections, heading, true);
+  const safeDetections = Array.isArray(detections) ? detections : [];
+  const spatialWorld = useSpatialWorld(safeDetections, heading, true);
   const isMobileDevice = typeof navigator !== 'undefined' && /Mobi|Android/i.test(navigator.userAgent);
   const mountRef  = useRef(null);
   const sceneRef  = useRef(null);
@@ -1042,7 +1043,7 @@ export default function WallVisionScene({ detections, scanMode, isScanning, trai
     if (!runtime?.scene || !runtime?.detObjs) return;
 
     const { scene, detObjs } = runtime;
-    const liveIds = new Set(detections.map(d => String(d.id)));
+    const liveIds = new Set(safeDetections.map(d => String(d.id)));
 
     detections.forEach(d => {
       const id = String(d.id);
