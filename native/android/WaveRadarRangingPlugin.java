@@ -50,6 +50,15 @@ public class WaveRadarRangingPlugin extends Plugin {
   }
 
   @PluginMethod
+  public void requestPermissions(PluginCall call) {
+    if (android.os.Build.VERSION.SDK_INT >= 33) {
+      requestPermissionForAlias("ranging", call, "android.permission.NEARBY_WIFI_DEVICES");
+    } else {
+      requestPermissionForAlias("ranging", call, "android.permission.ACCESS_FINE_LOCATION");
+    }
+  }
+
+  @PluginMethod
   public void startRanging(PluginCall call) {
     if (android.os.Build.VERSION.SDK_INT < 28 || rttManager == null || wifiManager == null) {
       call.reject("Wi-Fi RTT is not supported on this device");
