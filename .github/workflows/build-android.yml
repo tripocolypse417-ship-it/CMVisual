@@ -41,6 +41,7 @@ jobs:
           mkdir -p android/app/src/main/java/com/waveradar/app
           cp native/android/MainActivity.java android/app/src/main/java/com/waveradar/app/MainActivity.java
           cp native/android/WaveRadarSensorsPlugin.java android/app/src/main/java/com/waveradar/app/WaveRadarSensorsPlugin.java
+          cp native/android/WaveRadarRangingPlugin.java android/app/src/main/java/com/waveradar/app/WaveRadarRangingPlugin.java
           python3 - <<'PY'
           from pathlib import Path
           p = Path("android/app/src/main/AndroidManifest.xml")
@@ -49,6 +50,7 @@ jobs:
               '    <uses-permission android:name="android.permission.CAMERA" />',
               '    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />',
               '    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />',
+              '    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" />',
           ]
           marker = '</manifest>'
           for perm in perms:
