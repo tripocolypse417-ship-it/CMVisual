@@ -18,9 +18,10 @@ const relBearing = (angle, heading) => {
 };
 
 export default function ThroughWallMinimap({ detections, heading, color, sonar = null }) {
+  const safeDetections = Array.isArray(detections) ? detections : [];
   const h = heading ?? 0;
   const now = Date.now();
-  const targets = detections.filter((d) => {
+  const targets = safeDetections.filter((d) => {
     if (d.type !== 'human' && d.type !== 'animal') return false;
     const ts = Number(d.timestamp ?? d.time ?? d.updatedAt ?? 0);
     return !ts || now - ts <= TARGET_TTL_MS;
