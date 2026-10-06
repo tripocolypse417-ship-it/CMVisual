@@ -67,7 +67,7 @@ public class WaveRadarRangingPlugin extends Plugin {
       call.reject("Wi-Fi RTT is not supported on this device");
       return;
     }
-    if (!hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)) {
+    if (!hasAndroidPermission(Manifest.permission.ACCESS_FINE_LOCATION)) {
       call.reject("Precise location permission is required for Wi-Fi RTT");
       return;
     }
@@ -143,7 +143,7 @@ public class WaveRadarRangingPlugin extends Plugin {
     });
   }
 
-  private boolean hasPermission(String permission) {
+  private boolean hasAndroidPermission(String permission) {
     return getContext().checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED;
   }
 }
