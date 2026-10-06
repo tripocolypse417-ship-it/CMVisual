@@ -104,9 +104,8 @@ export default function useObjectDetector(videoRef, { enabled, onDetections }) {
               }
               const type = mapClass(p.class);
 
-              // distance estimate from box height fraction
-              const heightFrac = h / vh;
-              const distance = Math.max(0.8, Math.min(9.5, 0.8 + (1 - heightFrac) * 9));
+              // Monocular RGB boxes do not provide metric range.
+              const distance = null;
               // angle: center=0°, left=90°, right=270°
               const xNorm = cx / vw;
               const angle = Math.round(((0.5 - xNorm) * 90 + 360) % 360);
@@ -133,10 +132,15 @@ export default function useObjectDetector(videoRef, { enabled, onDetections }) {
                 id,
                 type,
                 angle,
-                distance: parseFloat(distance.toFixed(1)),
+                distance,
                 intensity,
                 moving,
                 speed,
+                timestamp: Date.now(),
+                evidenceClass: 'MEASURED',
+                source: 'camera',
+                coordinateFrame: 'IMAGE_NORMALIZED',
+                confidence: Math.max(0, Math.min(1, Number(p.score) || 0)),
                 _box: { x, y, w, h, vw, vh }, // for AR overlay positioning
               };
             });
