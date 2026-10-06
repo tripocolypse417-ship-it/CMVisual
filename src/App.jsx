@@ -21,13 +21,13 @@ import Investors from './pages/Investors';
 class CMVisualErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, componentStack: '' };
   }
   static getDerivedStateFromError(error) { return { hasError: true, error }; }
-  componentDidCatch(error, info) { console.error('[CMVisual] runtime failure', error, info); }
+  componentDidCatch(error, info) { console.error('[CMVisual] runtime failure', error, info); this.setState({ componentStack: info?.componentStack || '' }); }
   render() {
     if (!this.state.hasError) return this.props.children;
-    return <div className="min-h-screen bg-slate-950 text-slate-100 p-4 font-mono"><div className="max-w-3xl mx-auto mt-8 rounded-2xl border border-amber-400/30 bg-slate-900 p-5"><div className="text-amber-300 text-sm tracking-[0.2em]">CMVISUAL · RUNTIME RECOVERY</div><h1 className="mt-3 text-xl font-semibold">The interface hit a rendering error.</h1><p className="mt-2 text-sm text-slate-400">The project is intact. This recovery shell prevents a WebGL or component failure from becoming a blank screen.</p><div className="mt-4 rounded-xl border border-white/10 bg-black/30 p-3 text-xs text-slate-500 break-words">{this.state.error?.message || 'Unknown runtime error'}</div><div className="mt-4 flex gap-2"><button onClick={() => window.location.reload()} className="rounded-lg border border-emerald-400/40 bg-emerald-400/10 px-4 py-2 text-xs text-emerald-300">RELOAD APP</button><button onClick={() => this.setState({ hasError: false, error: null })} className="rounded-lg border border-white/15 px-4 py-2 text-xs text-slate-300">RETRY UI</button></div></div></div>;
+    return <div className="min-h-screen bg-slate-950 text-slate-100 p-4 font-mono"><div className="max-w-3xl mx-auto mt-8 rounded-2xl border border-amber-400/30 bg-slate-900 p-5"><div className="text-amber-300 text-sm tracking-[0.2em]">CMVISUAL · RUNTIME RECOVERY</div><h1 className="mt-3 text-xl font-semibold">The interface hit a rendering error.</h1><p className="mt-2 text-sm text-slate-400">The project is intact. This recovery shell prevents a WebGL or component failure from becoming a blank screen.</p><div className="mt-4 rounded-xl border border-white/10 bg-black/30 p-3 text-xs text-slate-500 break-words"><div>{this.state.error?.message || 'Unknown runtime error'}</div>{this.state.componentStack && <details className="mt-2"><summary className="cursor-pointer text-slate-400">Component diagnostics</summary><pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap">{this.state.componentStack}</pre></details>}</div><div className="mt-4 flex flex-wrap gap-2"><button onClick={() => window.location.reload()} className="rounded-lg border border-emerald-400/40 bg-emerald-400/10 px-4 py-2 text-xs text-emerald-300">RELOAD APP</button><button onClick={() => this.setState({ hasError: false, error: null, componentStack: '' })} className="rounded-lg border border-white/15 px-4 py-2 text-xs text-slate-300">RETRY UI</button><button onClick={() => { try { sessionStorage.setItem('cmvisual_safe_mode','1'); } catch {} window.location.reload(); }} className="rounded-lg border border-amber-400/40 bg-amber-400/10 px-4 py-2 text-xs text-amber-300">BOOT SAFE MODE</button></div></div></div>;
   }
 }
 
