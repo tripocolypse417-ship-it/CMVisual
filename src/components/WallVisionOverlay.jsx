@@ -242,12 +242,13 @@ function Figure({ d, heading, W, H, seeThrough, sonar, onSelect, isSelected }) {
 }
 
 export default function WallVisionOverlay({ detections, heading, W, H, wallOpacity, color, isScanning, sonar, onSelectDetection, selectedDetection }) {
+  const safeDetections = Array.isArray(detections) ? detections : [];
   const seeThrough = (100 - (wallOpacity ?? 65)) / 100;
   if (seeThrough <= 0.02 || W === 0) return null;
 
   const h = heading ?? 0;
-  const movingCount = detections.filter(d => d.moving).length;
-  const inView = detections.filter(d => Math.abs(relBearing(d.angle, h)) <= FOV_HALF + 3);
+  const movingCount = safeDetections.filter(d => d.moving).length;
+  const inView = safeDetections.filter(d => Math.abs(relBearing(d.angle, h)) <= FOV_HALF + 3);
 
   return (
     <div className="absolute inset-0 pointer-events-none" style={{ opacity: Math.min(1, seeThrough + (movingCount ? 0.15 : 0)) }}>
@@ -262,7 +263,7 @@ export default function WallVisionOverlay({ detections, heading, W, H, wallOpaci
 
       {/* Real external-sensor observations */}
       <AnimatePresence>
-        {detections.map(d => (
+        {safeDetections.map(d => (
           <Figure
             key={d.id}
             d={d}
@@ -306,7 +307,7 @@ export default function WallVisionOverlay({ detections, heading, W, H, wallOpaci
           NON-VISUAL · SENSOR VIEW
         </div>
         <div className="font-mono text-[8px] tracking-wider text-center mt-0.5" style={{ color: `${color}cc`, textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}>
-          {movingCount} MOVING · {inView.length} IN VIEW · {detections.length} SENSOR OBSERVATIONS
+          {movingCount} MOVING · {inView.length} IN VIEW · {safeDetections.length} SENSOR OBSERVATIONS
         </div>
       </div>
     </div>
