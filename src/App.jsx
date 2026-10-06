@@ -74,7 +74,7 @@ function App() {
         <div style={{maxWidth:900,margin:'0 auto',border:'1px solid #334155',borderRadius:16,padding:24,background:'#0f172a'}}>
           <h1 style={{margin:0,color:'#6ee7b7'}}>CMVisual</h1>
           <p style={{color:'#94a3b8'}}>Boot-safe recovery mode</p>
-          <div style={{padding:20,border:'1px solid #334155',borderRadius:12}}>Application shell is rendering. Advanced modules are temporarily isolated.</div>
+          <div style={{padding:20,border:'1px solid #334155',borderRadius:12}}>Application shell is rendering. Advanced modules are temporarily isolated.</div><button onClick={() => { try { sessionStorage.removeItem('cmvisual_safe_mode'); } catch {} window.location.reload(); }} style={{marginTop:16,padding:'10px 14px',borderRadius:10,border:'1px solid #6ee7b755',background:'#6ee7b710',color:'#6ee7b7'}}>EXIT SAFE MODE</button>
         </div>
       </div>
     )
