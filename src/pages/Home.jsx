@@ -408,7 +408,7 @@ export default function Home() {
     const timer = setInterval(() => federatedWorld.publish(worldTimeline.events.filter((event) => !event.federated), teamTargetLocks.publishable), 5000);
     return () => clearInterval(timer);
   }, [federatedWorld.enabled, federatedWorld.publish, worldTimeline.events, teamTargetLocks.publishable, isScanning]);
-  const acquiredTeamTracks = useMemo(() => teamTargetLocks.acquired.map(d => d.acquiredDetection).filter(Boolean), [teamTargetLocks.acquired]);
+  const acquiredTeamTracks = useMemo(() => (Array.isArray(teamTargetLocks?.acquired) ? teamTargetLocks.acquired : []).map(d => d.acquiredDetection).filter(Boolean), [teamTargetLocks?.acquired]);
   const speculativeContext = useMemo(() => ({
     isScanning,
     cameraActive,
