@@ -155,6 +155,7 @@ function RangeRings({ color }) {
 // sensor, fading at its trailing edge. Isolated tick state keeps the rest of
 // the map from re-rendering at 25fps.
 function RadarSweep({ color, detections, isScanning, heading }) {
+  const safeDetections = Array.isArray(detections) ? detections : [];
   const [tick, setTick] = useState(0);
   useEffect(() => {
     if (!isScanning) return;
@@ -209,7 +210,7 @@ function RadarSweep({ color, detections, isScanning, heading }) {
       {fovPts && (
         <Polygon positions={fovPts} pathOptions={{ color: '#ffffff', weight: 0.5, opacity: 0.35, fillColor: '#ffffff', fillOpacity: 0.04 }} />
       )}
-      {isScanning && detections.map(d => {
+      {isScanning && safeDetections.map(d => {
         const { wx, wz } = polar2world(d.angle, d.distance);
         const ph = ((tick * 0.008 + (d.id || 0) * 0.22) % 1);
         return (
@@ -226,6 +227,7 @@ function RadarSweep({ color, detections, isScanning, heading }) {
 }
 
 export default function EnvironmentMap({ detections, scanMode, onSelectDetection, selectedDetection, isScanning, heading }) {
+  const safeDetections = Array.isArray(detections) ? detections : [];
   const mc = { sonar: '#00ff88', thermal: '#ff6633', motion: '#00ccff' }[scanMode] ?? '#00ff88';
 
   const gridLines = useMemo(() => {
@@ -298,7 +300,7 @@ export default function EnvironmentMap({ detections, scanMode, onSelectDetection
         <Marker position={[-4.2, -3.3]} icon={labelIcon('2 m', mc, 8)} interactive={false} />
 
         {/* Detections */}
-        {detections.map(d => (
+        {safeDetections.map(d => (
           <DetectionMarker
             key={d.id}
             d={d}
