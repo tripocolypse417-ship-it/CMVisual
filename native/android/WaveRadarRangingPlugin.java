@@ -16,13 +16,16 @@ import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.getcapacitor.annotation.Permission;
 import com.getcapacitor.PluginMethod;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 
-@CapacitorPlugin(name = "WaveRadarRanging")
+@CapacitorPlugin(name = "WaveRadarRanging", permissions = {
+  @Permission(alias = "ranging", strings = { Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.NEARBY_WIFI_DEVICES })
+})
 public class WaveRadarRangingPlugin extends Plugin {
   private WifiManager wifiManager;
   private WifiRttManager rttManager;
