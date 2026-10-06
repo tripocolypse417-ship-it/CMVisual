@@ -73,6 +73,7 @@ export default function PoseSkeleton({ detection, screenW, screenH, onClick, isS
   const jointRefs = useRef([]);      // 17 joint <g> groups
   const headRef = useRef(null);      // head <g>
   const torsoRef = useRef(null);     // torso polygon
+  const structuralRefs = useRef({ spine: null, ribL: null, ribR: null, pelvis: null });
 
   useEffect(() => {
     let raf;
@@ -135,6 +136,22 @@ export default function PoseSkeleton({ detection, screenW, screenH, onClick, isS
         else headRef.current.style.opacity = 0;
       }
 
+      // Structural anatomy: derived strictly from the measured MoveNet joints.
+      const spine = structuralRefs.current.spine;
+      const ribL = structuralRefs.current.ribL;
+      const ribR = structuralRefs.current.ribR;
+      const pelvis = structuralRefs.current.pelvis;
+      const ls = pt(5), rs = pt(6), lh = pt(11), rh = pt(12);
+      const neck = (ls && rs) ? { x: (ls.x + rs.x) / 2, y: (ls.y + rs.y) / 2 } : null;
+      const hip = (lh && rh) ? { x: (lh.x + rh.x) / 2, y: (lh.y + rh.y) / 2 } : null;
+      if (spine) { spine.setAttribute('x1', neck?.x ?? 0); spine.setAttribute('y1', neck?.y ?? 0); spine.setAttribute('x2', hip?.x ?? 0); spine.setAttribute('y2', hip?.y ?? 0); spine.style.opacity = neck && hip ? 0.55 : 0; }
+      if (ribL && ribR && ls && rs && neck && hip) {
+        const y1 = neck.y + (hip.y-neck.y)*0.28, y2 = neck.y + (hip.y-neck.y)*0.48;
+        ribL.setAttribute('x1', ls.x); ribL.setAttribute('y1', y1); ribL.setAttribute('x2', hip.x); ribL.setAttribute('y2', y2); ribL.style.opacity = 0.42;
+        ribR.setAttribute('x1', rs.x); ribR.setAttribute('y1', y1); ribR.setAttribute('x2', hip.x); ribR.setAttribute('y2', y2); ribR.style.opacity = 0.42;
+      } else { if (ribL) ribL.style.opacity = 0; if (ribR) ribR.style.opacity = 0; }
+      if (pelvis && lh && rh) { pelvis.setAttribute('x1', lh.x); pelvis.setAttribute('y1', lh.y); pelvis.setAttribute('x2', rh.x); pelvis.setAttribute('y2', rh.y); pelvis.style.opacity = 0.55; } else if (pelvis) pelvis.style.opacity = 0;
+
       // Torso volume.
       if (torsoRef.current) {
         const ls = pt(5), rs = pt(6), lh = pt(11), rh = pt(12);
@@ -186,6 +203,19 @@ export default function PoseSkeleton({ detection, screenW, screenH, onClick, isS
         <g ref={headRef}>
           <circle r={headR} fill="none" stroke="#000" strokeOpacity="0.85" strokeWidth="7" />
           <circle r={headR} fill={`${color}22`} stroke={color} strokeWidth="3.5" />
+        </g>
+
+        {/* Structural anatomy pass: ribs, spine and pelvis make the live pose read as a body rather than a stick figure. */}
+        <g stroke={color} strokeLinecap="round" fill="none" opacity="0.55" pointerEvents="none">
+          <line x1="50" y1="0" x2="50" y2="0" ref={null} />
+          <path d="M0,0" ref={null} />
+        </g>
+        {/* The RAF loop positions these elements from the same measured joints as the skeleton. */}
+        <g stroke={color} strokeWidth={Math.max(1.2, strokeW * 0.32)} fill="none" opacity="0.42">
+          <line ref={el => (structuralRefs.current.spine = el)} x1="0" y1="0" x2="0" y2="0" data-structural="spine" />
+          <line ref={el => (structuralRefs.current.ribL = el)} x1="0" y1="0" x2="0" y2="0" data-structural="ribL" />
+          <line ref={el => (structuralRefs.current.ribR = el)} x1="0" y1="0" x2="0" y2="0" data-structural="ribR" />
+          <line ref={el => (structuralRefs.current.pelvis = el)} x1="0" y1="0" x2="0" y2="0" data-structural="pelvis" />
         </g>
 
         {/* joint dots — positioned + faded per frame via RAF */}
