@@ -10,6 +10,11 @@ export async function getNativeRangingCapabilities() {
   }
 }
 
+export async function requestNativeRangingPermissions() {
+  try { return await WaveRadarRanging.requestPermissions(); }
+  catch (error) { return { granted: false, error: String(error?.message || error) }; }
+}
+
 export async function startNativeRanging() {
   return WaveRadarRanging.startRanging();
 }
