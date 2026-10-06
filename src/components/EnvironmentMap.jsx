@@ -310,7 +310,7 @@ export default function EnvironmentMap({ detections, scanMode, onSelectDetection
         ))}
 
         {/* Radar sweep */}
-        <RadarSweep color={mc} detections={detections} isScanning={isScanning} heading={heading} />
+        <RadarSweep color={mc} detections={safeDetections} isScanning={isScanning} heading={heading} />
       </MapContainer>
 
       {/* Title overlay */}
@@ -326,7 +326,7 @@ export default function EnvironmentMap({ detections, scanMode, onSelectDetection
 
       {/* Target count */}
       <div className="absolute top-3 left-3 font-mono text-[9px]" style={{ color: `${mc}90` }}>
-        {detections.length} TARGETS · {detections.filter(d => d.moving).length} MOVING
+        {safeDetections.length} TARGETS · {safeDetections.filter(d => d.moving).length} MOVING
       </div>
 
       {/* Legend */}
