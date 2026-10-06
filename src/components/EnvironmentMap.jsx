@@ -268,7 +268,7 @@ export default function EnvironmentMap({ detections, scanMode, onSelectDetection
         ))}
 
         {/* Measured geometry only. No generic walls, rooms, doors, or furniture. */}
-        {detections.map((d) => {
+        {safeDetections.map((d) => {
           const { wx, wz } = polar2world(d.angle, d.distance);
           return <Circle key={`coverage-${d.id}`} center={toLL(wx, wz)} radius={Math.max(0.12, Number(d.uncertaintyM) || 0.25)} pathOptions={{ color: TYPE_COLORS[d.type] || mc, weight: 0.7, opacity: 0.28, fillColor: TYPE_COLORS[d.type] || mc, fillOpacity: 0.05 }} />;
         })}
