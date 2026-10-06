@@ -10,7 +10,7 @@ import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
 import PhysicalValidation from './pages/PhysicalValidation';
 
-const CMVISUAL_BOOT_SAFE_MODE = false;
+const CMVISUAL_BOOT_SAFE_MODE = (() => { try { return sessionStorage.getItem('cmvisual_safe_mode') === '1'; } catch { return false; } })();
 import Admin from './pages/Admin';
 import About from './pages/About';
 import Contact from './pages/Contact';
