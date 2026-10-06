@@ -52,6 +52,7 @@ function DetectionBlip({ detection, onSelect, isSelected }) {
 }
 
 export default function RadarDisplay({ detections, scanMode, onSelectDetection, selectedDetection, isScanning }) {
+  const safeDetections = Array.isArray(detections) ? detections : [];
   const [sweepAngle, setSweepAngle] = useState(0);
   const animRef = useRef(null);
   const lastTime = useRef(Date.now());
@@ -156,7 +157,7 @@ export default function RadarDisplay({ detections, scanMode, onSelectDetection, 
         <circle cx="50" cy="50" r="2.5" fill="none" stroke={colors.glow} strokeWidth="0.2" opacity="0.4" />
 
         {/* Detection blips */}
-        {detections.map((d) => (
+        {safeDetections.map((d) => (
           <DetectionBlip
             key={d.id}
             detection={d}
