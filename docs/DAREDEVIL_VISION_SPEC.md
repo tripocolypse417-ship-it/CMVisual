@@ -55,4 +55,4 @@ More sensors or more phones do not automatically increase truth. Confidence shou
 10. Continue optimizing Android performance to avoid the previous freeze/download/build problems.
 
 ## Current build status
-As of October 6, 2026, the public tripocolypse417-ship-it/CMVisual repository's Android workflow run #48 completed successfully and produced a WaveRadar-debug-apk artifact. The latest successful commit also fixed a remaining unsafe detection-map path in EnvironmentMap.
+As of October 6, 2026, the public tripocolypse417-ship-it/CMVisual repository's Android workflow runs #48 and #49 completed successfully. Build 49 is the current phone-downloadable WaveRadar debug APK release; commit 02398cb fixed the remaining unsafe detection-map path in EnvironmentMap, and commit b9f01c3 documented this finalized vision specification.
