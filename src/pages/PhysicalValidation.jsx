@@ -243,10 +243,6 @@ export default function PhysicalValidation() {
     };
   }, []);
 
-  useEffect(() => {
-    checkCamera();
-    void getNativeSensorCapabilities().then(setNativeCapabilities);
-
   const exportData = () => {
     const payload = {
       schema: 'cmvisual-physical-validation-v2',
@@ -273,9 +269,15 @@ export default function PhysicalValidation() {
   };
 
   useEffect(() => {
-    checkCamera();
+    void checkCamera();
     void getNativeSensorCapabilities().then(setNativeCapabilities);
     return () => {
+      clearInterval(timer.current);
+      clearInterval(sampler.current);
+    };
+  }, []);
+
+  return () => {
       clearInterval(timer.current);
       clearInterval(sampler.current);
     };
