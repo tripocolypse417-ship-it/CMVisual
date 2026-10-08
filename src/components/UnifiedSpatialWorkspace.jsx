@@ -403,7 +403,7 @@ export default function UnifiedSpatialWorkspace({
         </button>
       )}
 
-      {/* Bottom-center target summary      {/* Minimal integrity marker — detail stays out of the operator sightline. */}
+      {/* Minimal integrity marker — detail stays out of the operator sightline. */}
       <div className="absolute right-3 top-3 z-35 rounded-md border border-white/10 bg-black/60 px-2 py-1 font-mono text-[6px] tracking-wider text-white/45 pointer-events-none">
         {integrityStatus.label}
       </div>
