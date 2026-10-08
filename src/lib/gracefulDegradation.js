@@ -10,7 +10,8 @@ const rank = Object.fromEntries(FIELD_MODES.map((v,i)=>[v,i]));
 
 export function selectFieldMode(capabilities = {}) {
   const has = key => capabilities[key] === true;
-  if (has('camera') && (has('imu') || has('depth') || has('wifiRtt') || has('uwb') || has('thermal') || has('mmwave'))) return 'FULL_MULTIMODAL';
+  const advancedSpatial = has('depth') || has('wifiRtt') || has('uwb') || has('thermal') || has('mmwave');
+  if (has('camera') && advancedSpatial) return 'FULL_MULTIMODAL';
   if (has('camera') && has('imu')) return 'CAMERA_IMU';
   if (has('camera')) return 'CAMERA_ONLY';
   if (has('sensorData') || has('gnss') || has('wifiRtt') || has('uwb')) return 'SENSOR_MAP';
