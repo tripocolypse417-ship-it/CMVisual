@@ -287,7 +287,7 @@ export default function UnifiedSpatialWorkspace({
         </div>
       </div>
 
-      {/* Prediction layer:      {/* Prediction layer: derived from repeated live tracks and visually separated from measurements. */}
+      {/* Prediction layer: derived from repeated live tracks and visually separated from measurements. */}
       {forecastSummary.length > 0 && (
         <div className="absolute left-1/2 -translate-x-1/2 top-[122px] z-30 max-w-[calc(100%-24px)] rounded-lg border border-dashed border-white/15 bg-black/65 px-2.5 py-1.5 backdrop-blur-md pointer-events-none shadow-lg">
           <div className="flex items-center gap-2 font-mono text-[7px] tracking-[0.14em] text-white/55">
@@ -311,7 +311,7 @@ export default function UnifiedSpatialWorkspace({
         </div>
       )}
 
-      {/* Compact live target strip      {/* Compact live target strip — every currently valid observation is one tap away. */}
+      {/* Compact live target strip — every currently valid observation is one tap away. */}
       {targetStripOpen && targetSummary.length > 0 && (
         <div className="absolute left-1/2 -translate-x-1/2 bottom-3 z-35 max-w-[calc(100%-24px)] w-[min(760px,calc(100%-24px))] pointer-events-auto">
           <div className="rounded-xl border border-white/10 bg-black/82 p-1.5 backdrop-blur-md shadow-xl">
