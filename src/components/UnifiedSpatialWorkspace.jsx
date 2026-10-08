@@ -5,6 +5,7 @@ import WallVisionScene from './WallVisionScene';
 import CameraARView from './CameraARView';
 import { Camera, Cuboid, Map, ScanLine, Layers3, Eye, EyeOff, Activity, Crosshair, Settings2 } from 'lucide-react';
 import useTargetLockStyle from '../hooks/useTargetLockStyle';
+import DaredevilVisionHUD from './DaredevilVisionHUD';
 
 /**
  * CMVisual's single-screen spatial workspace.
@@ -163,6 +164,21 @@ export default function UnifiedSpatialWorkspace({
 
   return (
     <section className="relative w-full h-[clamp(560px,72vh,820px)] min-h-[560px] overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl touch-manipulation" data-unified-spatial-workspace>
+      <DaredevilVisionHUD
+        selectedDetection={selectedDetection}
+        lockedTrackId={lockedTrackId}
+        liveDetections={liveDetections}
+        detections={detections}
+        cameraActive={cameraActive}
+        isScanning={isScanning}
+        heading={heading}
+        sensorConnected={sensorConnected}
+        lastFrame={lastFrame}
+        bridgeStats={bridgeStats}
+        sensorReliability={sensorReliability}
+        wallOpacity={wallOpacity}
+        workspaceMode={workspaceMode}
+      />
       {/* PRIMARY LAYER — live camera */}
       {layers.camera && <div className="absolute inset-0 z-0">
         <CameraARView
