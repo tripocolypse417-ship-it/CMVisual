@@ -1,14 +1,13 @@
 import { useMemo } from 'react';
 import useWorldDataQuality from './useWorldDataQuality';
+import { normalizeEvidenceClass, DATA_CONTRACT_VERSION } from '@/lib/dataContract';
 
 const finite = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
 };
 
-const evidenceClass = (d) => String(
-  d?.evidenceClass || d?.evidence_class || (d?.source ? 'MEASURED' : 'UNAVAILABLE')
-).toUpperCase();
+const evidenceClass = (d) => normalizeEvidenceClass(d?.evidenceClass || d?.evidence_class || (d?.source ? 'MEASURED' : 'UNKNOWN'));
 
 const projectObservation = (d, index, layer = 'MEASURED') => {
   const distanceM = finite(d?.distanceM ?? d?.distance);
@@ -81,6 +80,7 @@ export default function useWorldStateProjection({ live = [], federated = [], rep
       dataQuality: quality.stats,
       quarantined: quality.quarantined.map(q => ({ id: q.id, reasons: q.reasons, ageMs: q.ageMs })),
       policyVersion: quality.policyVersion,
+      dataContractVersion: DATA_CONTRACT_VERSION,
       coordinateSystem: federatedMeasured.length ? 'SHARED_WORLD_FRAME_WITH_LOCAL_SESSION' : 'SESSION_LOCAL_POLAR_TO_XZ',
       semantics: { measured: 'current validated observation input in the local session frame', federatedMeasured: 'validated remote observation explicitly expressed in the configured shared world frame and transformed by explicit calibration', historical: 'previously recorded observation', predicted: 'derived forecast; never measured truth', hazards: 'objective hazard records only' },
     };
