@@ -59,9 +59,10 @@ export default function UnifiedSpatialWorkspace({
   cellular,
 }) {
   const [layers, setLayers] = useState({ camera: true, spatial: true, map: true, floorplan: true, tracks: true, coverage: false });
-  const [inspectorOpen, setInspectorOpen] = useState(true);
-  const [targetStripOpen, setTargetStripOpen] = useState(true);
-  const [layersOpen, setLayersOpen] = useState(true);
+  // PDF visual baseline: the scene is unobstructed at launch; detail rails open on demand.
+  const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [targetStripOpen, setTargetStripOpen] = useState(false);
+  const [layersOpen, setLayersOpen] = useState(false);
   const [incidentCommand, setIncidentCommand] = useState(false);
   const [trainingMode, setTrainingMode] = useState(false);
   const [lockStyleOpen, setLockStyleOpen] = useState(false);
