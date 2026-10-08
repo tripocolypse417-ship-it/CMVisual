@@ -271,11 +271,6 @@ export default function PhysicalValidation() {
   useEffect(() => {
     void checkCamera();
     void getNativeSensorCapabilities().then(setNativeCapabilities);
-    return () => {
-      clearInterval(timer.current);
-      clearInterval(sampler.current);
-    };
-  }, []);
 
   return () => {
       clearInterval(timer.current);
