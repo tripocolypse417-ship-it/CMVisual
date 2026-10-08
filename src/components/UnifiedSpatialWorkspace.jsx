@@ -210,21 +210,16 @@ export default function UnifiedSpatialWorkspace({
       </div>}
 
       {/* MAP + FLOORPLAN dock — same coordinate workspace, not separate pages */}
-      {/* Operating mode controller */}
-      <div className="absolute left-1/2 -translate-x-1/2 top-3 z-40 rounded-xl border border-white/10 bg-black/80 p-1 backdrop-blur-md shadow-xl pointer-events-auto">
-        <div className="grid grid-cols-4 gap-1">
+      {/* PDF-style compact command controls */}
+      <div className="absolute left-1/2 -translate-x-1/2 top-3 z-40 rounded-lg border border-white/10 bg-black/70 px-1.5 py-1 backdrop-blur-md shadow-lg pointer-events-auto">
+        <div className="flex items-center gap-1">
           {[['live','LIVE'],['scan','SCAN'],['analyze','ANALYZE'],['review','REVIEW']].map(([key,label]) => (
-            <button key={key} type="button" onClick={() => onWorkspaceModeChange?.(key)} className={`min-h-[40px] min-w-[54px] rounded-md px-2.5 py-1.5 font-mono text-[7px] tracking-wider transition ${workspaceMode === key ? 'bg-white/15 text-white' : 'text-white/40 hover:text-white/70'}`}>
+            <button key={key} type="button" onClick={() => onWorkspaceModeChange?.(key)} className={`min-h-[32px] min-w-[46px] rounded-md px-2 py-1 font-mono text-[7px] tracking-wider transition ${workspaceMode === key ? 'bg-white/15 text-white' : 'text-white/40 hover:text-white/70'}`}>
               {label}
             </button>
           ))}
-        </div>
-        <div className="px-1 pt-1 text-center font-mono text-[6px] tracking-[0.14em] text-white/35">
-          {modeMeta.label} · {modeMeta.detail}
-        </div>
-        <div className="mt-1 grid grid-cols-2 gap-1">
-          <button type="button" onClick={() => setIncidentCommand(v => !v)} className={`min-h-[30px] rounded-md border px-2 font-mono text-[6px] tracking-wider ${incidentCommand ? 'border-amber-300/40 bg-amber-300/10 text-amber-100' : 'border-white/5 text-white/35'}`}>INCIDENT COMMAND</button>
-          <button type="button" onClick={() => setTrainingMode(v => !v)} className={`min-h-[30px] rounded-md border px-2 font-mono text-[6px] tracking-wider ${trainingMode ? 'border-cyan-300/40 bg-cyan-300/10 text-cyan-100' : 'border-white/5 text-white/35'}`}>TRAINING MODE</button>
+          <button type="button" onClick={() => setIncidentCommand(v => !v)} className={`min-h-[32px] min-w-[32px] rounded-md border px-1 font-mono text-[7px] ${incidentCommand ? 'border-amber-300/40 bg-amber-300/10 text-amber-100' : 'border-white/5 text-white/35'}`}>IC</button>
+          <button type="button" onClick={() => setTrainingMode(v => !v)} className={`min-h-[32px] min-w-[32px] rounded-md border px-1 font-mono text-[7px] ${trainingMode ? 'border-cyan-300/40 bg-cyan-300/10 text-cyan-100' : 'border-white/5 text-white/35'}`}>TR</button>
         </div>
       </div>
 
@@ -292,19 +287,7 @@ export default function UnifiedSpatialWorkspace({
         </div>
       </div>
 
-      {/* Dense live telemetry rail: exposes real inputs without creating synthetic targets. */}
-      <div className="absolute left-1/2 -translate-x-1/2 top-[84px] z-30 max-w-[calc(100%-24px)] rounded-lg border border-white/10 bg-black/70 px-2.5 py-1.5 backdrop-blur-md pointer-events-none">
-        <div className="flex items-center justify-center gap-x-3 gap-y-1 flex-wrap font-mono text-[7px] tracking-wider text-white/60">
-          <span style={{ color }}>{worldProjection?.counts?.measured ?? telemetry.camera} MEASURED</span>
-          <span>{telemetry.external} SENSOR</span>
-          <span>QUALITY {telemetry.reliability ?? telemetry.quality ?? '—'}%</span>
-          {telemetry.conflicts > 0 && <span>CONFLICT {telemetry.conflicts}</span>}
-          {worldProjection?.dataQuality?.quarantined > 0 && <span>QUAR {worldProjection.dataQuality.quarantined}</span>}
-          <span>{telemetry.ageMs != null && telemetry.ageMs > 1500 ? 'STALE' : 'LIVE'}</span>
-        </div>
-      </div>
-
-      {/* Prediction layer: derived from repeated live tracks and visually separated from measurements. */}
+      {/* Prediction layer:      {/* Prediction layer: derived from repeated live tracks and visually separated from measurements. */}
       {forecastSummary.length > 0 && (
         <div className="absolute left-1/2 -translate-x-1/2 top-[122px] z-30 max-w-[calc(100%-24px)] rounded-lg border border-dashed border-white/15 bg-black/65 px-2.5 py-1.5 backdrop-blur-md pointer-events-none shadow-lg">
           <div className="flex items-center gap-2 font-mono text-[7px] tracking-[0.14em] text-white/55">
@@ -328,22 +311,7 @@ export default function UnifiedSpatialWorkspace({
         </div>
       )}
 
-      {/* Cellular fusion rail: radio environment telemetry only, never a human target. */}
-      <div className="absolute left-3 bottom-[205px] max-md:bottom-[185px] z-30 w-[250px] max-md:w-[calc(50%-8px)] rounded-xl border border-white/10 bg-black/78 px-2.5 py-2 backdrop-blur-md pointer-events-none shadow-xl">
-        <div className="flex items-center justify-between font-mono text-[7px] tracking-[0.14em]">
-          <span className="text-white/70">CELLULAR FUSION</span>
-          <span className="text-white/45">{cellular?.status || 'UNAVAILABLE'}</span>
-        </div>
-        <div className="mt-1 grid grid-cols-2 gap-x-3 gap-y-1 font-mono text-[6px] text-white/45">
-          <span>RADIO <b className="text-white/70">{cellular?.radioTechnology || '—'}</b></span>
-          <span>CELLS <b className="text-white/70">{telemetry.cellularCells}</b></span>
-          <span>SIGNAL <b className="text-white/70">{cellular?.registeredCell?.dbm != null ? `${Math.round(cellular.registeredCell.dbm)} dBm` : '—'}</b></span>
-          <span>AGE <b className="text-white/70">{telemetry.cellularAgeMs == null ? '—' : `${Math.round(telemetry.cellularAgeMs / 1000)}s`}</b></span>
-        </div>
-        <div className="mt-1 border-t border-white/10 pt-1 font-mono text-[6px] leading-relaxed text-white/35">RADIO ENVIRONMENT ONLY · NOT A HUMAN/IDENTITY TRACK</div>
-      </div>
-
-      {/* Compact live target strip — every currently valid observation is one tap away. */}
+      {/* Compact live target strip      {/* Compact live target strip — every currently valid observation is one tap away. */}
       {targetStripOpen && targetSummary.length > 0 && (
         <div className="absolute left-1/2 -translate-x-1/2 bottom-3 z-35 max-w-[calc(100%-24px)] w-[min(760px,calc(100%-24px))] pointer-events-auto">
           <div className="rounded-xl border border-white/10 bg-black/82 p-1.5 backdrop-blur-md shadow-xl">
@@ -435,33 +403,9 @@ export default function UnifiedSpatialWorkspace({
         </button>
       )}
 
-      {/* Evidence legend + federation health: compact, always-visible interpretation boundary. */}
-      <div className="absolute right-3 bottom-[205px] max-md:bottom-[185px] z-30 w-[250px] max-md:w-[calc(50%-8px)] rounded-xl border border-white/10 bg-black/78 px-2.5 py-2 backdrop-blur-md pointer-events-none shadow-xl">
-        <div className="flex items-center justify-between font-mono text-[7px] tracking-[0.14em]">
-          <span className="text-white/70">EVIDENCE</span>
-          <span className="text-white/35">NO SYNTHETIC TARGETS</span>
-        </div>
-        <div className="mt-1.5 grid grid-cols-2 gap-1 font-mono text-[6px] text-white/50">
-          {['MEASURED','CORROBORATED','DERIVED','HISTORICAL','PREDICTED','SPECULATIVE','UNRESOLVED','INSUFFICIENT DATA'].map((label) => (
-            <span key={label} className="truncate"><b className={label === 'MEASURED' || label === 'CORROBORATED' ? 'text-white/80' : label === 'PREDICTED' || label === 'SPECULATIVE' ? 'text-white/60' : 'text-white/45'}>{label}</b></span>
-          ))}
-        </div>
-        <div className="mt-1.5 border-t border-white/10 pt-1 font-mono text-[6px] leading-relaxed text-white/35">
-          PREDICTIONS CARRY UNCERTAINTY · SPECULATION IS NOT FACT · UNALIGNED FEDERATED DATA IS NEVER PROJECTED
-        </div>
-        {Array.isArray(worldProjection?.federatedMeasured) && worldProjection.federatedMeasured.length > 0 && (
-          <div className="mt-1 font-mono text-[6px] text-white/45">FEDERATED ALIGNED · {worldProjection.federatedMeasured.length} OBSERVATION{worldProjection.federatedMeasured.length === 1 ? '' : 'S'}</div>
-        )}
-      </div>
-
-      {/* Bottom-center target summary */}
-      <div className="absolute left-1/2 -translate-x-1/2 bottom-[205px] max-md:bottom-[185px] z-30 max-w-[calc(100%-24px)] rounded-xl border border-white/10 bg-black/75 px-4 py-2 backdrop-blur-md pointer-events-none text-center whitespace-nowrap">
-        <div className="font-mono text-[8px] tracking-[0.15em]" style={{ color }}>
-          {liveDetections.length ? `${liveDetections.length} LIVE OBSERVATIONS` : 'WAITING FOR REAL INPUT'}
-        </div>
-        <div className="font-mono text-[7px] text-white/45 mt-0.5">
-          {sensorConnected ? 'EXTERNAL SENSOR BRIDGE CONNECTED' : 'PHONE / LOCAL SENSORS'} · {worldProjection?.coordinateSystem || 'SESSION LOCAL'}
-        </div>
+      {/* Bottom-center target summary      {/* Minimal integrity marker — detail stays out of the operator sightline. */}
+      <div className="absolute right-3 top-3 z-35 rounded-md border border-white/10 bg-black/60 px-2 py-1 font-mono text-[6px] tracking-wider text-white/45 pointer-events-none">
+        {integrityStatus.label}
       </div>
     </section>
   );
