@@ -565,8 +565,6 @@ export default function Home() {
       <div className="fixed inset-0 pointer-events-none"
         style={{ background: 'radial-gradient(ellipse 80% 80% at 50% 50%, transparent 40%, rgba(0,0,0,0.7) 100%)' }} />
 
-      <LiveDataStatus sensorCount={liveSensorCount} detectionCount={liveDetections.length} />
-
       <div className="relative z-30 px-3 pt-2">
         <CMVisualCommandDeck
           color={color}
@@ -588,7 +586,7 @@ export default function Home() {
       )}
 
       {/* HMD-style framing overlay — reticle, side rails, tickers */}
-      <HmdOverlay
+      {(cameraActive || liveDetections.length > 0) && <HmdOverlay
         scanMode={scanMode}
         color={color}
         targetCount={detections.length}
@@ -596,7 +594,7 @@ export default function Home() {
         battery={battery}
         network={network}
         sensors={sensors}
-      />
+      />}
 
       {/* Edge-glow pulse on movement / threat */}
       {edgeAlertColor && (
