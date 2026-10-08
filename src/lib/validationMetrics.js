@@ -36,13 +36,25 @@ export function distanceErrorMeters(measured = [], groundTruth = []) {
 }
 
 export function headingErrorDegrees(measured = [], groundTruth = []) {
-  return errorMetrics(measured, groundTruth, (v) => {
-    const a = finite(v?.headingDeg ?? v?.heading);
-    const b = finite(v?.truthHeadingDeg ?? v?.headingDeg ?? v?.heading);
-    if (a == null || b == null) return null;
-    let d = ((a - b + 540) % 360) - 180;
-    return d;
+  const pairs = paired(
+    measured,
+    groundTruth,
+    (v) => finite(v?.headingDeg ?? v?.heading)
+  );
+  if (!pairs.length) return { n: 0, mae: null, rmse: null, maxAbsError: null, bias: null };
+
+  const errors = pairs.map(([measuredDeg, truthDeg]) => {
+    // Smallest signed angular difference in [-180, 180).
+    return ((measuredDeg - truthDeg + 540) % 360) - 180;
   });
+  const abs = errors.map(Math.abs);
+  return {
+    n: errors.length,
+    mae: abs.reduce((s, v) => s + v, 0) / abs.length,
+    rmse: Math.sqrt(errors.reduce((s, v) => s + v * v, 0) / errors.length),
+    maxAbsError: Math.max(...abs),
+    bias: errors.reduce((s, v) => s + v, 0) / errors.length,
+  };
 }
 
 export function latencyMetrics(events = []) {
