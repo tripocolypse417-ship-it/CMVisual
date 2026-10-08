@@ -5,9 +5,9 @@
  * operational state. This is intentionally dependency-free so the field UI,
  * validation screen, replay, and future native shell can share the same rules.
  */
-import { evaluateCapability } from './capabilityRegistry';
-import { FIELD_MODES, fieldModeLabel, selectFieldMode } from './gracefulDegradation';
-import { DATA_CONTRACT_VERSION, EVIDENCE_CLASS } from './dataContract';
+import { evaluateCapability } from './capabilityRegistry.js';
+import { FIELD_MODES, fieldModeLabel, selectFieldMode } from './gracefulDegradation.js';
+import { DATA_CONTRACT_VERSION, EVIDENCE_CLASS } from './dataContract.js';
 
 export const RUNTIME_VERSION = 'waveradar-runtime-v1';
 
