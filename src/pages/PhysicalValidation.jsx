@@ -121,6 +121,24 @@ export default function PhysicalValidation() {
   const saveValidation = async () => {
     if (!elapsed || !deviceId) return;
     setSaveState('SAVING');
+
+    const QUEUE_KEY = 'waveradar:physical-validation:queue:v1';
+    const readQueue = () => {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    };
+    const writeQueue = (queue) => {
+      try {
+        localStorage.setItem(QUEUE_KEY, JSON.stringify(queue.slice(-20)));
+      } catch (error) {
+        console.warn('[WaveRadar] offline queue unavailable', error);
+      }
+    };
+
     try {
       const headingSamples = data.current.filter(v => Number.isFinite(Number(v.heading))).length;
       const motionSamples = data.current.filter(v => v.motion?.timestamp).length;
@@ -131,7 +149,7 @@ export default function PhysicalValidation() {
           (motionSamples > 0 ? 0.25 : 0))
       );
 
-      await base44.entities.ScanSession.create({
+      const sessionPayload = {
         session_id: makeId('validation'),
         started_at: new Date(start.current).toISOString(),
         ended_at: new Date(start.current + elapsed).toISOString(),
@@ -140,9 +158,9 @@ export default function PhysicalValidation() {
         targets: marks.length,
         quality,
         notes: 'WaveRadar physical validation; measured phone sensors and operator ground truth kept separate.',
-      });
+      };
 
-      await base44.entities.SensorValidation.create({
+      const validationPayload = {
         sensor_id: deviceId,
         sensor_type: 'PHONE_IMU_ORIENTATION',
         observed_at: new Date().toISOString(),
@@ -165,14 +183,69 @@ export default function PhysicalValidation() {
           'Calibration and physical accuracy remain unverified until ground-truth comparison is performed.',
         ]),
         method_version: 'waveradar-physical-validation-v2',
-      });
+      };
 
-      setSaveState('SAVED');
+      const pending = readQueue();
+      const queued = { sessionPayload, validationPayload, queuedAt: new Date().toISOString() };
+
+      try {
+        await base44.entities.ScanSession.create(sessionPayload);
+        await base44.entities.SensorValidation.create(validationPayload);
+        writeQueue(pending);
+        setSaveState('SAVED');
+      } catch (error) {
+        pending.push(queued);
+        writeQueue(pending);
+        console.warn('[WaveRadar] validation retained offline', error);
+        setSaveState('QUEUED OFFLINE');
+      }
     } catch (error) {
-      console.error('[WaveRadar] validation save failed', error);
+      console.error('[WaveRadar] validation save preparation failed', error);
       setSaveState('SAVE FAILED');
     }
   };
+
+  useEffect(() => {
+    const QUEUE_KEY = 'waveradar:physical-validation:queue:v1';
+
+    const flushQueue = async () => {
+      let queue = [];
+      try {
+        const parsed = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
+        queue = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return;
+      }
+      if (!queue.length || !navigator.onLine) return;
+
+      const remaining = [];
+      for (const item of queue) {
+        try {
+          await base44.entities.ScanSession.create(item.sessionPayload);
+          await base44.entities.SensorValidation.create(item.validationPayload);
+        } catch (error) {
+          console.warn('[WaveRadar] queued validation still pending', error);
+          remaining.push(item);
+        }
+      }
+      try {
+        localStorage.setItem(QUEUE_KEY, JSON.stringify(remaining.slice(-20)));
+      } catch {}
+      if (!remaining.length) setSaveState('SYNCED');
+    };
+
+    void flushQueue();
+    window.addEventListener('online', flushQueue);
+    const retry = window.setInterval(flushQueue, 30000);
+    return () => {
+      window.removeEventListener('online', flushQueue);
+      window.clearInterval(retry);
+    };
+  }, []);
+
+  useEffect(() => {
+    checkCamera();
+    void getNativeSensorCapabilities().then(setNativeCapabilities);
 
   const exportData = () => {
     const payload = {
