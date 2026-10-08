@@ -6,14 +6,9 @@
  * into measurements. It is designed to sit after sensor validation/fusion.
  */
 
-export const EVIDENCE = Object.freeze({
-  MEASURED: 'MEASURED',
-  DERIVED: 'DERIVED',
-  ENVIRONMENTAL: 'ENVIRONMENTAL',
-  PREDICTED: 'PREDICTED',
-  GROUND_TRUTH_OPERATOR_MARKER: 'GROUND_TRUTH_OPERATOR_MARKER',
-  UNKNOWN: 'UNKNOWN',
-});
+import { EVIDENCE_CLASS, normalizePrediction } from './dataContract';
+
+export const EVIDENCE = EVIDENCE_CLASS;
 
 const clamp = (v, min = 0, max = 1) => Math.max(min, Math.min(max, Number(v) || 0));
 const finite = (v) => Number.isFinite(Number(v));
@@ -138,7 +133,7 @@ export function buildTargetPrediction(target = {}) {
     confidence: evidence.confidence,
   });
 
-  return {
+  return normalizePrediction({
     targetId: target.targetId ?? null,
     generatedAt: new Date().toISOString(),
     trajectory,
@@ -147,5 +142,6 @@ export function buildTargetPrediction(target = {}) {
     behavior,
     intent: 'UNKNOWN',
     modelVersion: 'waveradar-prediction-v1',
-  };
+    evidenceClass: EVIDENCE_CLASS.PREDICTED,
+  });
 }
