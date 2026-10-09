@@ -517,7 +517,7 @@ export default function Home() {
 
   // Edge-glow alert: lights up on significant movement, turns red for threats.
   const movementAlert = detections.some(d => d.moving) || cameraDetections.some(d => d.moving);
-  const threatAlert = threatAlertsEnabled && (detections.some(d => d.threat) || cameraDetections.some(d => d.threat));
+  const threatAlert = threatAlertsEnabled && evidence?.state === 'HIGH_CONCERN' && evidence?.validated === true;
   const edgeAlertColor = threatAlert ? '#ff2222' : movementAlert ? color : null;
   const workspaceModeMeta = {
     live: 'LIVE · CURRENT INPUT',
@@ -598,10 +598,9 @@ export default function Home() {
 
       {/* Edge-glow pulse on movement / threat */}
       {edgeAlertColor && (
-        <motion.div className="fixed inset-0 pointer-events-none z-20"
-          style={{ boxShadow: `inset 0 0 140px 24px ${edgeAlertColor}` }}
-          animate={{ opacity: [0.2, 0.55, 0.2] }}
-          transition={{ duration: threatAlert ? 0.9 : 1.6, repeat: Infinity, ease: 'easeInOut' }} />
+        <div className="fixed inset-0 pointer-events-none z-20"
+          aria-label={threatAlert ? "Validated high-concern indicator" : "Observed activity indicator"}
+          style={{ boxShadow: `inset 0 0 70px 8px ${edgeAlertColor}`, opacity: threatAlert ? 0.45 : 0.18 }} />
       )}
 
       {/* Corner accent lines */}
@@ -613,6 +612,9 @@ export default function Home() {
       {/* Status bar */}
       <div className="relative z-10">
         <StatusBar isScanning={isScanning} scanMode={scanMode} sensors={sensors} network={network} battery={battery} />
+      </div>
+      <div className="relative z-10 mx-3 mt-1 rounded-md border border-amber-400/20 bg-amber-400/[0.04] px-3 py-1.5 font-mono text-[8px] tracking-wider text-amber-200/80">
+        PROTOTYPE · PHYSICAL VALIDATION PENDING · NOT FOR LIFE-SAFETY USE
       </div>
 
       {/* Single coherent dashboard — every view live at once, nothing to switch on */}
