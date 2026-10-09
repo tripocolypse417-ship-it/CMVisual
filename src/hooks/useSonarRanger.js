@@ -1,26 +1,21 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 
-// Real ultrasonic motion sonar using the Web Audio API (open standard, no
-// proprietary libs). The speaker emits a near-ultrasonic carrier and the mic
-// listens for the Doppler-shifted echo that moving bodies produce. Moving
-// objects near the phone shift the reflected wave and change its echo
-// amplitude — we detect that as real motion and estimate proximity from
-// echo strength.
-//
-// HONEST LIMIT: ultrasound reflects off solid surfaces, so this senses
-// movement in the SAME room as the phone. No phone sensor can see through
-// solid walls — that would require fabricated data. This is the real,
-// physics-honest "sonar for movement."
+// Experimental acoustic-band monitor using Web Audio. It emits a nominal
+// 20 kHz tone and measures relative microphone FFT-band energy/change only.
+// This is NOT a calibrated sonar or Doppler system: phone speaker/mic response,
+// room acoustics, noise, reflections, and audio processing vary by device.
+// These features do not establish range, target motion, identity, or presence
+// behind a wall. Never use them as a safety alert without independent validation.
 
 const CARRIER = 20000; // Hz — near-ultrasonic, mostly inaudible
 const FFT = 2048;
 
 export default function useSonarRanger({ enabled }) {
   const [status, setStatus] = useState('idle'); // idle | active | denied | unsupported
-  const [motion, setMotion] = useState(false);
-  const [intensity, setIntensity] = useState(0); // 0-1 Doppler sideband energy
-  const [proximity, setProximity] = useState(0); // 0-1 echo strength (closer = higher)
-  const [echo, setEcho] = useState(0);           // 0-1 raw ultrasonic band energy
+  const [motion, setMotion] = useState(false); // legacy name: signal-change flag, not target motion
+  const [intensity, setIntensity] = useState(0); // relative side-band energy, not calibrated motion
+  const [proximity, setProximity] = useState(0); // legacy name: relative band level, not distance
+  const [echo, setEcho] = useState(0);           // relative energy in the selected microphone band
   const ctxRef = useRef(null);
   const streamRef = useRef(null);
   const oscRef = useRef(null);
@@ -55,7 +50,7 @@ export default function useSonarRanger({ enabled }) {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       ctxRef.current = ctx;
 
-      // Emit the near-ultrasonic carrier through the speaker.
+      // Emit the nominal tone; hardware may not reproduce this frequency accurately.
       const osc = ctx.createOscillator();
       osc.type = 'sine';
       osc.frequency.value = CARRIER;
@@ -65,7 +60,7 @@ export default function useSonarRanger({ enabled }) {
       osc.start();
       oscRef.current = osc;
 
-      // Analyse the mic for the carrier + Doppler sidebands.
+      // Analyse the microphone band; do not interpret side-band energy as Doppler without calibration.
       const src = ctx.createMediaStreamSource(stream);
       const analyser = ctx.createAnalyser();
       analyser.fftSize = FFT;
@@ -81,11 +76,11 @@ export default function useSonarRanger({ enabled }) {
       const tick = () => {
         rafRef.current = requestAnimationFrame(tick);
         analyser.getByteFrequencyData(buf);
-        // Carrier band energy (the reflected echo).
+        // Carrier-band energy measured by the microphone (not a verified echo).
         let carrier = 0, cn = 0;
         for (let i = cBin - 3; i <= cBin + 3; i++) { carrier += buf[i] || 0; cn++; }
         carrier /= cn;
-        // Sideband energy = Doppler-shifted reflections from moving objects.
+        // Side-band energy is a signal feature; it is not proof of object movement.
         let side = 0, sn = 0;
         for (let i = lo; i <= hi; i++) {
           if (i >= cBin - 4 && i <= cBin + 4) continue;
@@ -94,7 +89,7 @@ export default function useSonarRanger({ enabled }) {
         side /= sn;
         const echoNow = carrier / 255;
         sampleCountRef.current += 1;
-        // Rolling baseline of the echo so a change = movement in the field.
+        // Rolling baseline; a change means the recorded signal changed, not necessarily that an object moved.
         baseRef.current = baseRef.current === 0 ? echoNow : baseRef.current * 0.97 + echoNow * 0.03;
         const delta = Math.abs(echoNow - baseRef.current);
         const motionRaw = Math.min(1, (side / 255) * 1.4 + delta * 6);

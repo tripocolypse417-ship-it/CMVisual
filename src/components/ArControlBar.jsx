@@ -1,8 +1,8 @@
 import { Eye, ShieldAlert, Route, ZoomIn, Ghost, Siren } from 'lucide-react';
 
 // Single clean control strip pinned to the bottom of the AR view so you can
-// adjust wall opacity, threat alerts, and movement trails without taking your
-// eyes off the camera feed.
+// adjust overlay opacity, alerts, and movement trails without taking your
+// eyes off the camera feed. These controls do not imply through-wall sensing.
 function Toggle({ active, onClick, color, icon: Icon, label }) {
   return (
     <button onClick={onClick}
@@ -27,10 +27,10 @@ export default function ArControlBar({ color, wallOpacity, onWallOpacity, trails
   return (
     <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center gap-2 sm:gap-3 px-3 py-2"
       style={{ background: 'rgba(0,0,0,0.78)', backdropFilter: 'blur(12px)', borderTop: `1px solid ${color}30` }}>
-      {/* Wall opacity slider */}
+      {/* Visual overlay opacity slider */}
       <div className="flex items-center gap-2 flex-1 min-w-0">
         <Eye className="w-3.5 h-3.5 flex-shrink-0" style={{ color }} />
-        <span className="font-mono text-[9px] tracking-wider hidden sm:inline" style={{ color }}>WALL</span>
+        <span className="font-mono text-[9px] tracking-wider hidden sm:inline" style={{ color }}>OVERLAY</span>
         <input type="range" min={0} max={100} value={wallOpacity}
           onChange={(e) => onWallOpacity(Number(e.target.value))}
           className="flex-1 min-w-[60px] cursor-pointer"
@@ -50,7 +50,7 @@ export default function ArControlBar({ color, wallOpacity, onWallOpacity, trails
         <button onClick={() => onZoom(Math.min(zoomMax, +(zoom + 0.2).toFixed(2)))} disabled={autoZoom}
           className="w-5 h-5 rounded font-mono text-[10px] transition-colors hover:bg-white/10 disabled:opacity-40"
           style={{ border: `1px solid ${color}40`, color }}>+</button>
-        <button onClick={onAutoZoom} title="Auto-magnify when a target enters range"
+        <button onClick={onAutoZoom} title="Auto-magnify when a tracked item crosses the configured threshold; requires valid range data"
           className="px-1.5 h-5 rounded font-mono text-[8px] tracking-wider transition-colors"
           style={{ border: `1px solid ${autoZoom ? color : color + '40'}`, color, background: autoZoom ? color + '18' : 'transparent' }}>AUTO</button>
       </div>

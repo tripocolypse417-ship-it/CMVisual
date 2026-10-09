@@ -26,21 +26,21 @@ export default function PhoneFusionPanel({ color = '#00ff88', sensors, cameraAct
           <Move3d className="w-3.5 h-3.5" style={{ color }} />
           <h3 className="font-display text-xs tracking-wider">PHONE SENSOR FUSION</h3>
         </div>
-        <span className="font-mono text-[8px] font-bold" style={{ color }}>{quality}% READY</span>
+        <span className="font-mono text-[8px] font-bold" style={{ color }}>{sources}/4 INPUTS</span>
       </div>
 
       <div className="grid grid-cols-2 gap-1.5">
         <Item icon={Compass} label="HEADING" value={orientation ? `${sensors.heading}°` : 'UNAVAILABLE'} color={color} active={orientation} />
         <Item icon={Activity} label="MOTION" value={motion ? (sensors.isMoving ? 'MOVING' : 'STABLE') : 'UNAVAILABLE'} color={color} active={motion} />
         <Item icon={Camera} label="VISION" value={camera ? `${detections.length} TRACKED` : 'OFF'} color={color} active={camera} />
-        <Item icon={Mic} label="ACOUSTIC" value={audio ? (sonar?.motion ? 'MOTION' : 'ACTIVE') : 'OFF'} color={color} active={audio} />
+        <Item icon={Mic} label="ACOUSTIC" value={audio ? (sonar?.motion ? 'SIGNAL CHANGE' : 'ACTIVE') : 'OFF'} color={color} active={audio} />
       </div>
 
       <div className="rounded-lg border border-white/10 bg-black/20 p-2">
         <div className="flex items-center gap-2 mb-1.5">
           <Gauge className="w-3 h-3" style={{ color }} />
-          <span className="font-mono text-[8px] font-bold">SPATIAL FUSION</span>
-          <span className="ml-auto font-mono text-[8px]" style={{ color }}>{confidence}% CONF</span>
+          <span className="font-mono text-[8px] font-bold">SPATIAL MODEL · UNVALIDATED</span>
+          <span className="ml-auto font-mono text-[8px]" style={{ color }}>{confidence}% MODEL SCORE</span>
         </div>
         <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
           <div className="h-full rounded-full transition-all" style={{ width: `${quality}%`, background: color }} />

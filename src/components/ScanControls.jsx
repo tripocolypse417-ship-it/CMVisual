@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Thermometer, Activity, Power, Volume2, Info } from 'lucide-react';
 
 const modes = [
-  { id: 'sonar', label: 'SONAR', icon: Volume2, color: '#00ff88', desc: 'External sensor' },
+  { id: 'sonar', label: 'ACOUSTIC', icon: Volume2, color: '#00ff88', desc: 'Experimental audio' },
   { id: 'thermal', label: 'THERMAL', icon: Thermometer, color: '#ff6633', desc: 'Available sensor' },
   { id: 'motion', label: 'MOTION', icon: Activity, color: '#00ccff', desc: 'Motion data' },
 ];
@@ -108,7 +108,7 @@ export default function ScanControls({ scanMode, onModeChange, isScanning, onTog
       <div className="flex items-start gap-2 rounded-lg p-2.5 border border-border/50 bg-muted/20">
         <Info className="w-3 h-3 mt-0.5 flex-shrink-0 text-muted-foreground" />
         <div className="font-mono text-[9px] text-muted-foreground leading-relaxed">
-          {scanMode === 'sonar' && 'Requires a compatible external ranging/RF sensor. The phone does not claim through-wall ranging by itself.'}
+          {scanMode === 'sonar' && 'Experimental speaker/microphone signal monitoring only. It is not a calibrated rangefinder, target-motion detector, or through-wall sensor. External ranging/RF hardware must be evaluated separately.'}
           {scanMode === 'thermal' && 'Shows thermal data only when an actual compatible thermal sensor provides it.'}
           {scanMode === 'motion' && 'Shows measured motion data from supported sensors; no synthetic motion is generated.'}
         </div>
