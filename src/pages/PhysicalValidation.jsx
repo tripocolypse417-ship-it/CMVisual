@@ -157,7 +157,7 @@ export default function PhysicalValidation() {
         frames: data.current.length,
         targets: marks.length,
         quality,
-        notes: 'WaveRadar physical validation; measured phone sensors and operator ground truth kept separate.',
+        notes: 'WaveRadar physical validation; capture completeness and operator annotations only. Spatial accuracy remains unverified.',
       };
 
       const validationPayload = {
@@ -172,6 +172,7 @@ export default function PhysicalValidation() {
         sample_count: data.current.length,
         metrics_json: JSON.stringify({
           durationMs: elapsed,
+          qualityMeaning: 'CAPTURE_COMPLETENESS_ONLY_NOT_ACCURACY',
           headingSamples,
           motionSamples,
           cameraState,
@@ -291,8 +292,9 @@ export default function PhysicalValidation() {
 
         <section className="grid sm:grid-cols-2 gap-3">
           <div className="rounded-xl border border-white/10 bg-slate-900 p-4">
-            <b className="text-xs">DEVICE ID</b>
+            <b className="text-xs">LOCAL INSTALLATION KEY</b>
             <div className="font-mono text-xs text-emerald-300 mt-2 break-all">{deviceId || 'NOT INITIALIZED'}</div>
+            <div className="text-[10px] text-slate-500 mt-1">Browser/app installation key only; not a hardware ID or device enrollment.</div>
             <div className="text-[10px] text-slate-500 mt-2">
               STORAGE: local {identity.localStorage ? 'OK' : 'NO'} · session {identity.sessionStorage ? 'OK' : 'NO'} · cookie {identity.cookie ? 'OK' : 'NO'}
             </div>
@@ -330,15 +332,18 @@ export default function PhysicalValidation() {
             {!run
               ? <button onClick={begin} className="border border-emerald-400/40 px-3 py-2 text-xs">START TEST</button>
               : <button onClick={() => stop(false)} className="border border-red-400/40 px-3 py-2 text-xs">STOP</button>}
-            <button disabled={!run} onClick={() => mark('VISIBLE REFERENCE')} className="border border-amber-400/40 px-3 py-2 text-xs disabled:opacity-30">GROUND TRUTH</button>
-            <button disabled={!run} onClick={() => mark('OBSTACLE REFERENCE')} className="border border-amber-400/40 px-3 py-2 text-xs disabled:opacity-30">OBSTACLE</button>
+            <button disabled={!run} onClick={() => mark('VISIBLE REFERENCE')} className="border border-amber-400/40 px-3 py-2 text-xs disabled:opacity-30">MARK REFERENCE</button>
+            <button disabled={!run} onClick={() => mark('OBSTACLE REFERENCE')} className="border border-amber-400/40 px-3 py-2 text-xs disabled:opacity-30">MARK OBSTACLE EVENT</button>
             <button disabled={!elapsed || saveState === 'SAVING'} onClick={saveValidation} className="border border-emerald-400/40 px-3 py-2 text-xs disabled:opacity-30">SAVE VALIDATION</button>
             <button disabled={!elapsed} onClick={exportData} className="border border-white/15 px-3 py-2 text-xs disabled:opacity-30">EXPORT JSON</button>
           </div>
 
           <div className="font-mono text-xs mt-3">
-            {samples.length} measured samples · {marks.length} ground-truth markers · HEADING {sensors.heading ?? '—'}° · {sensors.isMoving ? 'MOVING' : 'STILL'}
+            {samples.length} sensor samples · {marks.length} operator markers · HEADING {sensors.heading ?? '—'}° · {sensors.isMoving ? 'MOVING' : 'STILL'}
             {nativeSnapshot?.lastSensorAt && <span> · NATIVE SENSOR LIVE</span>}
+          </div>
+          <div className="font-mono text-[10px] text-slate-500 mt-2">
+            Operator markers are timestamped annotations, not measured coordinates. Record reference distances/orientations separately.
           </div>
           <div className="font-mono text-[10px] text-slate-500 mt-2">
             CAPTURE: {captureState} · STORAGE: {saveState}

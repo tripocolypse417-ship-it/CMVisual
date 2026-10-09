@@ -6,6 +6,7 @@ WaveRadar is an early-stage, evidence-first spatial-awareness prototype. This re
 - Latest Android workflow known at this revision: build 93 succeeded on 2026-10-08.
 - The APK is a **debug build**, not a production-signed Play Store release.
 - The hosted WaveRadar Core workspace is a separate deployment at https://waveradar-20.hatchable.site.
+- Backend portability is unfinished: this repository still uses Base44 SDK integrations for authentication, entities, and backend functions. The hosted WaveRadar Core APIs are not yet a full replacement for those dependencies.
 - Physical validation is still pending: the hosted readiness API currently reports zero observations and zero validated devices.
 - Do not describe the current phone-only workflow as validated through-wall sensing, radar, or a life-safety system. Any such capability requires compatible external sensing hardware and independent ground-truth tests.
 

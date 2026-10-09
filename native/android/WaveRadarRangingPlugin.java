@@ -47,7 +47,7 @@ public class WaveRadarRangingPlugin extends Plugin {
     out.put("wifiRtt", feature);
     out.put("available", available);
     out.put("androidApi", android.os.Build.VERSION.SDK_INT);
-    out.put("evidenceClass", "MEASURED");
+    out.put("dataClass", "CAPABILITY_STATUS");
     out.put("provenance", "Android WifiRttManager");
     call.resolve(out);
   }
