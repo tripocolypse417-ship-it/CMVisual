@@ -96,7 +96,7 @@ export function parseTimestamp(value) {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
   if (!trimmed) return null;
-  if (/^[+-]?\\d+(?:\\.\\d+)?$/.test(trimmed)) {
+  if (trimmed.length <= 15 && Number.isFinite(Number(trimmed))) {
     const numeric = Number(trimmed);
     if (!Number.isFinite(numeric)) return null;
     return numeric >= 1e9 && numeric < 1e11 ? numeric * 1000 : numeric;
@@ -155,7 +155,6 @@ export function normalizeObservation(input = {}, context = {}) {
     `obs-${text(context.sessionId, 'session')}-${timestamp ?? 'unknown'}-${text(source.trackId, 'untracked')}`;
   const confidence = finite(source.confidence);
   const uncertaintyM = finite(source.uncertaintyM ?? source.uncertainty);
-  const ageMs = finite(source.ageMs ?? context.now) == null ? null : Math.max(0, (finite(context.now) ?? Date.now()) - timestamp);
 
   return {
     ...source,
