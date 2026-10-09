@@ -23,7 +23,7 @@ const PITCH = [
   {
     icon: Eye,
     title: 'PRODUCT',
-    body: 'The platform combines live object and human tracking, spatial visualization, scan history, sensor diagnostics, target metadata, team sharing, reporting, replay, prediction calibration, and evidence workflows in one mobile-first experience. Native Android ranging can be added where compatible hardware exposes it.',
+    body: 'The prototype is being developed toward a mobile-first workflow for camera-derived tracks, spatial visualization, sensor diagnostics, evidence provenance, team display, reporting, replay, and controlled validation. The presence and reliability of each capability depend on the device, permissions, connected hardware, and test results; unsupported features remain unavailable or unvalidated.',
   },
   {
     icon: TrendingUp,
@@ -44,22 +44,22 @@ const SONAR_STEPS = [
   {
     icon: Waves,
     title: 'EMIT',
-    body: 'Supported devices can emit and analyze acoustic signals. The interface reports the resulting measurements as sensor evidence rather than treating acoustic activity as automatic room-ranging.'
+    body: 'Acoustic experiments may be evaluated on compatible devices. A tone or echo is not automatically a distance measurement; range claims require calibration, reference measurements, and repeatable validation.'
   },
   {
     icon: Activity,
     title: 'ANALYZE',
-    body: 'Signal features are analyzed in real time for changes and motion-related evidence, with measurement quality and provenance retained.'
+    body: 'Signal features may be explored for changes. Only readings with documented provenance and quality checks should be treated as evidence; unvalidated signal changes are not confirmed target detections.'
   },
   {
     icon: Radar,
     title: 'PLOT',
-    body: 'Validated measurements and tracked observations are plotted into a persistent spatial view; inferred or occluded positions remain explicitly labeled.'
+    body: 'Recorded measurements and explicitly labeled derived tracks can be plotted in a spatial view. Inferred, occluded, or unsupported positions remain UNKNOWN or INFERRED until independently validated.'
   },
   {
     icon: ScanLine,
     title: 'ALERT',
-    body: 'Configurable proximity and movement events can trigger on-device feedback and connected alerts when supported by the live data stream.'
+    body: 'Experimental proximity or movement events may trigger feedback when a supported data stream is connected. Alert delivery and timing must be tested; no emergency-grade performance is claimed.'
   },
 ];
 
@@ -68,7 +68,7 @@ const CAPABILITIES = [
   { icon: Layers, label: 'SENSOR FUSION', body: 'Camera, depth, ranging, motion, and signal layers in one view.' },
   { icon: Lock, label: 'DATA PROVENANCE', body: 'Source, timing, quality, and confidence stay attached to observations.' },
   { icon: Globe, label: 'EXTENSIBLE', body: 'Native sensor bridges can feed the same live visualization.' },
-  { icon: Zap, label: 'LIVE', body: 'Streaming measurements, tracking, diagnostics, and alerts.' },
+  { icon: Zap, label: 'LIVE', body: 'Intended for measurements, tracking, diagnostics, and alerts when supported feeds are connected.' },
   { icon: ShieldCheck, label: 'MEASUREMENT-FIRST', body: 'Never present an unsupported inference as a measured fact.' }
 ];
 

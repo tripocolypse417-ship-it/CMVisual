@@ -1,39 +1,56 @@
-**Welcome to your Base44 project** 
+# WaveRadar / CMVisual
 
-**About**
+WaveRadar is an early-stage, evidence-first spatial-awareness prototype. This repository contains the React/Vite application and Capacitor Android build workflow used to create the phone-installable debug APK.
 
-View and Edit  your app on [Base44.com](http://Base44.com) 
+## Current status
+- Latest Android workflow known at this revision: build 93 succeeded on 2026-10-08.
+- The APK is a **debug build**, not a production-signed Play Store release.
+- The hosted WaveRadar Core workspace is a separate deployment at https://waveradar-20.hatchable.site.
+- Physical validation is still pending: the hosted readiness API currently reports zero observations and zero validated devices.
+- Do not describe the current phone-only workflow as validated through-wall sensing, radar, or a life-safety system. Any such capability requires compatible external sensing hardware and independent ground-truth tests.
 
-This project contains everything you need to run your app locally.
+## Run locally
+Requirements: Node.js 22, Java 21 for Android builds, and Android SDK/Gradle tooling for local APK packaging.
 
-**Edit the code in your local development environment**
-
-Any change pushed to the repo will also be reflected in the Base44 Builder.
-
-**Prerequisites:** 
-
-1. Clone the repository using the project's Git URL 
-2. Navigate to the project directory
-3. Install dependencies: `npm install`
-4. Create an `.env.local` file and set the right environment variables
-
-```
-VITE_BASE44_APP_ID=your_app_id
-VITE_BASE44_APP_BASE_URL=your_backend_url
-
-e.g.
-VITE_BASE44_APP_ID=cbef744a8545c389ef439ea6
-VITE_BASE44_APP_BASE_URL=https://my-to-do-list-81bfaad7.base44.app
+```bash
+npm install
+npm run audit:data
+npm run build
+npm run dev
 ```
 
-Run the app: `npm run dev`
+## Build Android
+The GitHub Actions workflow `.github/workflows/build-android.yml` builds the web bundle, generates the Capacitor Android project, installs the repository's native sensor bridge, synchronizes plugins/assets, and runs Gradle to produce a debug APK.
 
-**Publish your changes**
+To build locally after configuring Android tooling:
 
-Open [Base44.com](http://Base44.com) and click on Publish.
+```bash
+npm run audit:data
+npm run build
+npx cap add android
+npx cap sync android
+cd android
+./gradlew assembleDebug --no-daemon
+```
 
-**Docs & Support**
+The workflow also copies the native sensor bridge from `native/android/` and adds the required Android permissions. If regenerating the Android project, follow the workflow so these native files and permissions are included.
 
-Documentation: [https://docs.base44.com/Integrations/Using-GitHub](https://docs.base44.com/Integrations/Using-GitHub)
+## Download the latest published debug APK
+[Latest WaveRadar Android release](https://github.com/tripocolypse417-ship-it/CMVisual/releases/latest)
 
-Support: [https://app.base44.com/support](https://app.base44.com/support)
+Android may require permission to install an APK from the browser. Install only if you understand this is a debug build; do not use it as safety-critical equipment.
+
+## Evidence and safety rules
+- Preserve the difference between MEASURED, DERIVED, INFERRED, PREDICTED, UNKNOWN, and UNAVAILABLE.
+- Never use synthetic showcase data as validation evidence.
+- Camera-only detections are not through-wall detections.
+- Raw accelerometer/gyroscope data does not by itself establish spatial position.
+- Do not claim accuracy, lives saved, certifications, customers, government partnerships, grants, or operational deployments without evidence.
+- Keep validation results tied to the specific device, configuration, environment, and test envelope.
+- Treat external sensing, spatial reconstruction, prediction, and team-alert reliability as unvalidated until tested.
+
+## Technology and licensing
+Open-source dependencies must be reviewed by exact version and license. ORB-SLAM3 is GPLv3; do not include it in a proprietary distributed build without an explicit GPL-compliance or commercial-licensing decision. OpenCV 4.5.0+ is Apache 2.0 according to the official OpenCV license page.
+
+## Ownership and contributions
+The project owner retains control of project direction and repository changes. Before accepting external contributions or adding dependencies, record the license, provenance, and any implications for commercial distribution.
