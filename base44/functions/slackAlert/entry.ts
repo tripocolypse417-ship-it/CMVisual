@@ -9,7 +9,7 @@ function formatEvent(event) {
   const mov = event.moving ? ' · MOVING' : '';
   const spd = event.speed != null ? ` · ${Number(event.speed).toFixed(2)} m/s` : '';
   const mode = event.scan_mode ? ` · ${event.scan_mode.toUpperCase()}` : '';
-  return `🛰️ *WaveRadar Critical Event*\n*${type}* — ${ttype}${mode}\nDistance: ${dist} · Bearing: ${brg} · Signal: ${inten}${mov}${spd}\n${event.summary || ''}`;
+  return `🛰️ *WaveRadar Sensor Event*\n*${type}* — ${ttype}${mode}\nDistance: ${dist} · Bearing: ${brg} · Signal: ${inten}${mov}${spd}\n${event.summary || ''}`;
 }
 
 export default async function(req) {
