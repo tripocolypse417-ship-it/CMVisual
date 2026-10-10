@@ -10,7 +10,7 @@
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p ./jsconfig.json",
     "preview": "vite preview",
-    "audit:data": "node scripts/audit-data-contract.mjs"
+    "audit:data": "node scripts/audit-data-contract.mjs && node scripts/test-data-contract.mjs"
   },
   "dependencies": {
     "@base44/sdk": "^0.8.52",

@@ -77,7 +77,32 @@ const MODALITY_REGISTRY = Object.freeze({
   MODEL: { family: SENSOR_FAMILY.MODEL, direct: false, spatial: true, supports: ['derivation','inference','prediction'] },
 });
 
-const finite = (v) => Number.isFinite(Number(v)) ? Number(v) : null;
+const finite = (v) => v == null || v === '' ? null : Number.isFinite(Number(v)) ? Number(v) : null;
+/**
+ * Parse numeric epoch milliseconds, epoch seconds, and ISO-8601 date strings.
+ * Invalid non-empty timestamps stay invalid; they are never refreshed to Date.now().
+ */
+export function parseTimestamp(value) {
+  if (value == null || value === '') return null;
+  if (value instanceof Date) {
+    const dateMs = value.getTime();
+    return Number.isFinite(dateMs) ? dateMs : null;
+  }
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return null;
+    return value >= 1e9 && value < 1e11 ? value * 1000 : value;
+  }
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (trimmed.length <= 15 && Number.isFinite(Number(trimmed))) {
+    const numeric = Number(trimmed);
+    return numeric >= 1e9 && numeric < 1e11 ? numeric * 1000 : numeric;
+  }
+  const parsed = Date.parse(trimmed);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 const text = (v, fallback = null) => v == null || v === '' ? fallback : String(v);
 
 export function getModalityDefinition(modality) {
@@ -113,7 +138,11 @@ export function normalizeEvidenceClass(value, fallback = EVIDENCE_CLASS.UNKNOWN)
 
 export function normalizeObservation(input = {}, context = {}) {
   const source = input || {};
-  const timestamp = finite(source.observedAt ?? source.measuredAt ?? source.timestamp ?? context.timestamp) ?? Date.now();
+  const timestampValue = source.observedAt ?? source.measuredAt ?? source.timestamp ?? context.timestamp;
+  const parsedTimestamp = parseTimestamp(timestampValue);
+  // Missing timestamps retain legacy arrival-time behavior; malformed supplied timestamps remain unknown.
+  const timestamp = parsedTimestamp ?? (timestampValue == null ? Date.now() : null);
+  const nowMs = parseTimestamp(context.now) ?? Date.now();
   const modality = text(source.modality ?? source.sensorType ?? source.sensorFamily ?? context.modality, 'UNKNOWN');
   const modalityDef = getModalityDefinition(modality);
   const evidenceClass = normalizeEvidenceClass(source.evidenceClass ?? source.evidence_class, modalityDef.direct ? EVIDENCE_CLASS.MEASURED : EVIDENCE_CLASS.UNKNOWN);
@@ -121,7 +150,7 @@ export function normalizeObservation(input = {}, context = {}) {
     `obs-${text(context.sessionId, 'session')}-${timestamp}-${text(source.trackId, 'untracked')}`;
   const confidence = finite(source.confidence);
   const uncertaintyM = finite(source.uncertaintyM ?? source.uncertainty);
-  const ageMs = finite(source.ageMs ?? context.now) == null ? null : Math.max(0, (finite(context.now) ?? Date.now()) - timestamp);
+  const ageMs = timestamp == null ? null : Math.max(0, nowMs - timestamp);
 
   return {
     ...source,
@@ -133,7 +162,7 @@ export function normalizeObservation(input = {}, context = {}) {
     source: text(source.source ?? source.sensorType ?? modality, 'UNKNOWN'),
     modality,
     sensorFamily: text(source.sensorFamily, modalityDef.family),
-    observedAt: new Date(timestamp).toISOString(),
+    observedAt: timestamp == null ? null : new Date(timestamp).toISOString(),
     timestamp,
     evidenceClass,
     state: normalizeState(source, { ageMs, now: context.now }),
@@ -150,12 +179,16 @@ export function normalizeObservation(input = {}, context = {}) {
 }
 
 export function normalizeState(source = {}, { ageMs = null, now = Date.now(), staleMs = 5000 } = {}) {
+  const timestampValue = source.observedAt ?? source.measuredAt ?? source.timestamp;
+  const observedAt = parseTimestamp(timestampValue);
+  const nowMs = parseTimestamp(now) ?? Date.now();
+  // An explicitly supplied but invalid timestamp must never retain a CURRENT state.
+  if (timestampValue != null && observedAt == null) return DATA_STATE.UNKNOWN;
   const explicit = String(source.state || '').toUpperCase();
   if (Object.values(DATA_STATE).includes(explicit)) return explicit;
-  const observedAt = finite(source.observedAt ?? source.measuredAt ?? source.timestamp);
   if (source.quarantined) return DATA_STATE.QUARANTINED;
   if (source.conflict || source.disagreement || source.sensorConflict) return DATA_STATE.CONFLICT;
-  if (observedAt != null && now - observedAt > staleMs) return DATA_STATE.STALE;
+  if (observedAt != null && nowMs - observedAt > staleMs) return DATA_STATE.STALE;
   if (observedAt != null) return DATA_STATE.CURRENT;
   return DATA_STATE.UNKNOWN;
 }
