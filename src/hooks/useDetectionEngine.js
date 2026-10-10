@@ -32,11 +32,11 @@ export default function useDetectionEngine(setDetections, { isScanning, sensorBr
     setDetections(sourceDetections.map((d, i) => ({
       id: d.id ?? `hw-${i}`,
       type: d.type || 'unknown',
-      angle: Number.isFinite(Number(d.angle)) ? Number(d.angle) : 0,
+      angle: d.angle != null && Number.isFinite(Number(d.angle)) ? Number(d.angle) : null,
       distance: Number.isFinite(Number(d.distance)) ? Number(d.distance) : null,
       intensity: Math.max(0, Math.min(100, Number(d.intensity) || 0)),
       moving: Boolean(d.moving),
-      speed: Number.isFinite(Number(d.speed)) ? Number(d.speed) : 0,
+      speed: d.speed != null && Number.isFinite(Number(d.speed)) ? Number(d.speed) : null,
       height: Number.isFinite(Number(d.height)) ? Number(d.height) : null,
       confidence: Number.isFinite(Number(d.confidence)) ? Math.max(0, Math.min(1, Number(d.confidence))) : null,
       snrDb: Number.isFinite(Number(d.snrDb)) ? Number(d.snrDb) : null,
