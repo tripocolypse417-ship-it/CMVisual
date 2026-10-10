@@ -79,21 +79,6 @@ function Radar({ detections = [], heading = 0 }) {
   );
 }
 
-function Skeleton({ color = '#ff3158', confidence = 0.6 }) {
-  const opacity = Math.max(0.5, Math.min(1, Number(confidence) || 0.6));
-  return (
-    <div className="wv-skeleton" style={{'--skel': color, opacity}}>
-      <div className="wv-sk-head" />
-      <div className="wv-sk-spine" />
-      <div className="wv-sk-arm left" /><div className="wv-sk-arm right" />
-      <div className="wv-sk-leg left" /><div className="wv-sk-leg right" />
-      <i className="j shoulder-l"/><i className="j shoulder-r"/><i className="j elbow-l"/><i className="j elbow-r"/>
-      <i className="j hip-l"/><i className="j hip-r"/><i className="j knee-l"/><i className="j knee-r"/>
-      <div className="wv-skel-label">INFERRED HUMAN POSE</div>
-    </div>
-  );
-}
-
 export default function DaredevilVisionHUD({
   selectedDetection,
   lockedTrackId,
@@ -151,21 +136,21 @@ export default function DaredevilVisionHUD({
 
       <div className="wv-status-top">
         <span>{new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}</span>
-        <Signal size={18}/><span>{network?.effectiveType || '5G'}</span>
+        <Signal size={18}/><span>{network?.effectiveType || 'NETWORK UNKNOWN'}</span>
         <Battery size={18}/><span>{battery?.level != null ? Math.round(Number(battery.level) * 100) + '%' : '—'}</span>
         <i />
       </div>
 
       <aside className="wv-left">
         <Panel title="SENSORS (THIS DEVICE)">
-          <SensorRow icon={Camera} label="Camera (Visual)" value={cameraActive ? 'LIVE' : 'READY'} detail={cameraActive ? '60 FPS' : ''} />
-          <SensorRow icon={Wifi} label="Wi-Fi / CSI" value={sensorConnected ? 'CONNECTED' : 'AVAILABLE'} detail="EXPERIMENTAL" tone="blue" />
-          <SensorRow icon={Activity} label="IMU (Motion)" value="ACTIVE" detail="200 Hz" />
-          <SensorRow icon={MapPin} label="GPS (Location)" value="AVAILABLE" detail="DEVICE" />
-          <SensorRow icon={Mic} label="Microphone (Audio)" value="READY" detail="OPTIONAL" />
-          <SensorRow icon={Gauge} label="Barometer" value="AVAILABLE" detail="PRESSURE" />
-          <SensorRow icon={Sun} label="Light / Proximity" value="AVAILABLE" detail="DEVICE" />
-          <SensorRow icon={Compass} label="Magnetometer" value={heading ? `${Math.round(heading)}°` : 'AVAILABLE'} detail="HEADING" />
+          <SensorRow icon={Camera} label="Camera (Visual)" value={cameraActive ? 'LIVE' : 'NOT ACTIVE'} detail={cameraActive ? 'FRAME RATE UNVERIFIED' : 'NO LIVE FRAMES'} />
+          <SensorRow icon={Wifi} label="Wi-Fi / CSI" value={sensorConnected ? 'BRIDGE CONNECTED' : 'NOT VERIFIED'} detail="CSI MEASUREMENTS UNCONFIRMED" tone="blue" />
+          <SensorRow icon={Activity} label="IMU (Motion)" value={bridgeStats?.imuActive === true ? 'ACTIVE' : 'UNKNOWN'} detail={bridgeStats?.imuSampleRateHz ? `${bridgeStats.imuSampleRateHz} Hz REPORTED` : 'NO VERIFIED RATE'} />
+          <SensorRow icon={MapPin} label="GPS (Location)" value="UNKNOWN" detail="LOCATION FIX NOT VERIFIED" />
+          <SensorRow icon={Mic} label="Microphone (Audio)" value="UNKNOWN" detail="PERMISSION / CAPTURE NOT VERIFIED" />
+          <SensorRow icon={Gauge} label="Barometer" value="UNKNOWN" detail="SENSOR NOT VERIFIED" />
+          <SensorRow icon={Sun} label="Light / Proximity" value="UNKNOWN" detail="SENSOR NOT VERIFIED" />
+          <SensorRow icon={Compass} label="Heading" value={Number.isFinite(Number(heading)) ? `${Math.round(Number(heading))}°` : 'UNKNOWN'} detail="SOURCE / ACCURACY NOT VERIFIED" />
         </Panel>
 
         <Panel title={`NEARBY OBSERVATIONS (${Math.min(9, targetCount)})`} tone="blue">
@@ -190,15 +175,15 @@ export default function DaredevilVisionHUD({
         </Panel>
 
         <Panel title="EVIDENCE SOURCES">
-          <div className="wv-evidence"><Camera/><span>Camera / visual lock</span><b>{cameraActive ? 'GOOD' : 'READY'}</b></div>
+          <div className="wv-evidence"><Camera/><span>Camera / visual input</span><b>{cameraActive ? 'ACTIVE · ACCURACY UNKNOWN' : 'NOT ACTIVE'}</b></div>
           <div className="wv-evidence"><Wifi/><span>Wi-Fi / RF</span><b>{sensorConnected ? 'EXPERIMENTAL' : 'UNAVAILABLE'}</b></div>
-          <div className="wv-evidence"><Layers3/><span>Wall mapping</span><b>INFERRED</b></div>
+          <div className="wv-evidence"><Layers3/><span>Wall mapping</span><b>NOT VALIDATED</b></div>
           <div className="wv-evidence"><Activity/><span>Sensor agreement</span><b>{reliability == null ? 'UNKNOWN' : reliability + '%'}</b></div>
         </Panel>
 
         <Panel title="DATA QUALITY" tone="amber">
           <div className="wv-quality"><span>Sensor agreement</span><b>{reliability == null ? 'UNKNOWN' : reliability + '%'}</b></div>
-          <div className="wv-quality"><span>Input age</span><b>{frameAge == null ? 'LIVE / —' : frameAge + ' s'}</b></div>
+          <div className="wv-quality"><span>Input age</span><b>{frameAge == null ? 'UNKNOWN' : frameAge + ' s'}</b></div>
           <div className="wv-quality"><span>Validation status</span><b>{measured ? 'MEASURED INPUT' : 'EXPERIMENTAL'}</b></div>
           <div className="wv-quality"><span>Mode</span><b>{mode}</b></div>
         </Panel>
@@ -213,13 +198,13 @@ export default function DaredevilVisionHUD({
 
       <div className="wv-center-reticle">
         <div className="wv-corners"><i/><i/><i/><i/></div>
-        {target && isHuman && <Skeleton confidence={target.confidence ?? 0.6}/>}
+        {/* Pose rendering is intentionally omitted until measured pose landmarks are supplied. */}
         <div className="wv-target-box">
           <Crosshair size={34}/>
           <span>{target ? `TARGET ${String(targetId).slice(0, 12)}` : 'SEARCHING'}</span>
           <small>{target ? `${evidence} · ${distance == null ? 'RANGE —' : distance.toFixed(1) + ' m EST.'}` : 'NO VALID LOCK'}</small>
         </div>
-        <div className="wv-route-arrow"><Navigation size={22}/><span>{target ? 'PATH / APPROACH' : 'ORIENT'}</span></div>
+        <div className="wv-route-arrow"><Navigation size={22}/><span>{target ? 'ROUTE UNVERIFIED' : 'ORIENTATION ONLY'}</span></div>
       </div>
 
       <div className="wv-bottom-left">
@@ -236,7 +221,7 @@ export default function DaredevilVisionHUD({
       </div>
 
       <div className="wv-modebar">
-        <Eye size={24}/><div><b>DAREDEVIL VISION MODE</b><small>WALL / RF / WI-FI / SENSOR FUSION · INFERENCE CLEARLY MARKED</small></div>
+        <Eye size={24}/><div><b>DAREDEVIL VISION MODE</b><small>LIVE INPUT STATUS · SENSOR AVAILABILITY · UNCERTAINTY VISIBLE</small></div>
       </div>
 
       <div className="wv-viewmodes">
