@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import {
   Camera, Wifi, Radio, Activity, MapPin, Navigation, Crosshair,
   UserRound, Mic, Gauge, Sun, Compass, Smartphone, Eye, Battery,
-  Signal, Wind, Footprints, Clock3, Layers3
+  Signal, Footprints, Clock3, Layers3
 } from 'lucide-react';
 
 const pct = (value) => {
