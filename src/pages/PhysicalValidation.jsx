@@ -146,8 +146,10 @@ export default function PhysicalValidation() {
     const writeQueue = (queue) => {
       try {
         localStorage.setItem(QUEUE_KEY, JSON.stringify(queue.slice(-20)));
+        return true;
       } catch (error) {
         console.warn('[WaveRadar] offline queue unavailable', error);
+        return false;
       }
     };
 
@@ -214,13 +216,16 @@ export default function PhysicalValidation() {
         queued.sessionSaved = true;
         await base44.entities.SensorValidation.create(validationPayload);
         queued.validationSaved = true;
-        writeQueue(pending);
+        if (!writeQueue(pending)) {
+          setSaveState('SAVED · QUEUE CLEANUP FAILED');
+          return;
+        }
         setSaveState('SAVED');
       } catch (error) {
         pending.push(queued);
-        writeQueue(pending);
-        console.warn('[WaveRadar] validation retained offline', error);
-        setSaveState('QUEUED OFFLINE');
+        const queuedLocally = writeQueue(pending);
+        console.warn('[WaveRadar] validation save incomplete', error);
+        setSaveState(queuedLocally ? 'QUEUED OFFLINE' : 'SAVE FAILED · OFFLINE STORAGE UNAVAILABLE');
       }
     } catch (error) {
       console.error('[WaveRadar] validation save preparation failed', error);
@@ -230,8 +235,12 @@ export default function PhysicalValidation() {
 
   useEffect(() => {
     const QUEUE_KEY = 'waveradar:physical-validation:queue:v1';
+    let flushInFlight = false;
 
     const flushQueue = async () => {
+      if (flushInFlight) return;
+      flushInFlight = true;
+      try {
       let queue = [];
       try {
         const parsed = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
@@ -270,6 +279,9 @@ export default function PhysicalValidation() {
         localStorage.setItem(QUEUE_KEY, JSON.stringify(remaining.slice(-20)));
       } catch {}
       if (!remaining.length) setSaveState('SYNCED');
+      } finally {
+        flushInFlight = false;
+      }
     };
 
     void flushQueue();
