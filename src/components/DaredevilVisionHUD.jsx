@@ -150,7 +150,7 @@ export default function DaredevilVisionHUD({
           <SensorRow icon={Mic} label="Microphone (Audio)" value="UNKNOWN" detail="PERMISSION / CAPTURE NOT VERIFIED" />
           <SensorRow icon={Gauge} label="Barometer" value="UNKNOWN" detail="SENSOR NOT VERIFIED" />
           <SensorRow icon={Sun} label="Light / Proximity" value="UNKNOWN" detail="SENSOR NOT VERIFIED" />
-          <SensorRow icon={Compass} label="Heading" value={Number.isFinite(Number(heading)) ? `${Math.round(Number(heading))}°` : 'UNKNOWN'} detail="SOURCE / ACCURACY NOT VERIFIED" />
+          <SensorRow icon={Compass} label="Heading" value={heading != null && Number.isFinite(Number(heading)) ? `${Math.round(Number(heading))}°` : 'UNKNOWN'} detail="SOURCE / ACCURACY NOT VERIFIED" />
         </Panel>
 
         <Panel title={`NEARBY OBSERVATIONS (${Math.min(9, targetCount)})`} tone="blue">
