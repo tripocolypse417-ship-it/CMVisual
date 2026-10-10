@@ -639,7 +639,7 @@ export default function Home() {
             scanMode={scanMode}
             isScanning={isScanning}
             cameraActive={cameraActive}
-            onCameraDetections={setCameraDetections}
+            onCameraDetections={(next) => setCameraDetections(Array.isArray(next) ? next : [])}
             onCameraActive={setCameraActive}
             wallOpacity={wallOpacity}
             onWallOpacity={setWallOpacity}
