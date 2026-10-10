@@ -58,23 +58,35 @@ export default function PhysicalValidation() {
     }
   };
 
+  const sampleInFlight = useRef(false);
+
   const takeSample = async () => {
-    const now = Date.now();
-    const native = await getNativeSensorSnapshot();
-    if (native) setNativeSnapshot(native);
-    const sample = {
-      t: now - start.current,
-      at: new Date(now).toISOString(),
-      deviceId,
-      heading: sensors.heading,
-      moving: sensors.isMoving,
-      motion: sensors.motion,
-      evidenceClass: 'MEASURED',
-      nativeSensors: native?.measurements ?? null,
-      nativeSensorAt: native?.lastSensorAt ?? null,
-    };
-    data.current = [...data.current, sample];
-    setSamples(data.current);
+    // Native bridge calls can take longer than the 250 ms sample interval.
+    // Never allow overlapping reads to reorder or inflate the capture.
+    if (sampleInFlight.current) return;
+    sampleInFlight.current = true;
+    try {
+      const native = await getNativeSensorSnapshot();
+      const now = Date.now();
+      if (native) setNativeSnapshot(native);
+      const sample = {
+        t: Math.max(0, now - start.current),
+        at: new Date(now).toISOString(),
+        deviceId,
+        heading: sensors.heading,
+        moving: sensors.isMoving,
+        motion: sensors.motion,
+        evidenceClass: 'MEASURED',
+        nativeSensors: native?.measurements ?? null,
+        nativeSensorAt: native?.lastSensorAt ?? null,
+      };
+      data.current = [...data.current, sample];
+      setSamples([...data.current]);
+    } catch (error) {
+      console.warn('[WaveRadar] sensor sample skipped', error);
+    } finally {
+      sampleInFlight.current = false;
+    }
   };
 
   const stop = (completed = false) => {
@@ -187,11 +199,21 @@ export default function PhysicalValidation() {
       };
 
       const pending = readQueue();
-      const queued = { sessionPayload, validationPayload, queuedAt: new Date().toISOString() };
+      // Track each successful half independently so a retry after a partial
+      // failure does not blindly recreate the first record.
+      const queued = {
+        sessionPayload,
+        validationPayload,
+        sessionSaved: false,
+        validationSaved: false,
+        queuedAt: new Date().toISOString(),
+      };
 
       try {
         await base44.entities.ScanSession.create(sessionPayload);
+        queued.sessionSaved = true;
         await base44.entities.SensorValidation.create(validationPayload);
+        queued.validationSaved = true;
         writeQueue(pending);
         setSaveState('SAVED');
       } catch (error) {
@@ -221,12 +243,27 @@ export default function PhysicalValidation() {
 
       const remaining = [];
       for (const item of queue) {
+        // Older queue entries have no flags and are treated as not yet saved.
+        const progress = {
+          ...item,
+          sessionSaved: item.sessionSaved === true,
+          validationSaved: item.validationSaved === true,
+        };
         try {
-          await base44.entities.ScanSession.create(item.sessionPayload);
-          await base44.entities.SensorValidation.create(item.validationPayload);
+          if (!progress.sessionSaved) {
+            await base44.entities.ScanSession.create(progress.sessionPayload);
+            progress.sessionSaved = true;
+            // Persist progress immediately, before attempting the second write.
+            const rest = queue.slice(queue.indexOf(item) + 1);
+            try { localStorage.setItem(QUEUE_KEY, JSON.stringify([...remaining, progress, ...rest].slice(-20))); } catch {}
+          }
+          if (!progress.validationSaved) {
+            await base44.entities.SensorValidation.create(progress.validationPayload);
+            progress.validationSaved = true;
+          }
         } catch (error) {
           console.warn('[WaveRadar] queued validation still pending', error);
-          remaining.push(item);
+          remaining.push(progress);
         }
       }
       try {
