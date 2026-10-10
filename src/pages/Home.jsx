@@ -43,7 +43,6 @@ import SensorConnectionPanel from '../components/SensorConnectionPanel';
 import PhoneFusionPanel from '../components/PhoneFusionPanel';
 import useSpatialWorld from '../hooks/useSpatialWorld';
 import { vibrate } from '../lib/haptics';
-import LiveDataStatus from '../components/LiveDataStatus';
 import CMVisualCommandDeck from '../components/CMVisualCommandDeck';
 import UnifiedSpatialWorkspace from '../components/UnifiedSpatialWorkspace';
 import useRemoteController from '../hooks/useRemoteController';
