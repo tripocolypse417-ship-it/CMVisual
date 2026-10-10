@@ -43,19 +43,30 @@ function SensorRow({ icon: Icon, label, value, detail, state = 'ON', tone = 'gre
 }
 
 function Radar({ detections = [], heading = 0 }) {
-  const points = (Array.isArray(detections) ? detections : []).slice(0, 18).map((d, i) => {
-    const angle = Number.isFinite(Number(d.angle)) ? Number(d.angle) : (i * 47 + 20) % 360;
-    const distance = Number.isFinite(Number(d.distance)) ? Math.max(0.12, Math.min(1, Number(d.distance) / 12)) : 0.25 + (i % 3) * 0.15;
-    const r = 45 * distance;
-    const a = ((angle - Number(heading || 0) - 90) * Math.PI) / 180;
-    return {
-      id: d.id || i,
-      x: 50 + Math.cos(a) * r,
-      y: 50 + Math.sin(a) * r,
-      human: d.type === 'human',
-      selected: String(d.trackId ?? d.id) === String(arguments[0]?.selectedId)
-    };
-  });
+  // Do not invent radar coordinates for detections that lack measured or
+  // explicitly derived bearing and range. Unknown geometry stays off-map.
+  const points = (Array.isArray(detections) ? detections : [])
+    .filter((d) => {
+      const angle = d.angle ?? d.angleDeg;
+      const distance = d.distance ?? d.distanceM;
+      return angle != null && distance != null &&
+        Number.isFinite(Number(angle)) && Number.isFinite(Number(distance)) &&
+        Number(distance) >= 0;
+    })
+    .slice(0, 18)
+    .map((d, i) => {
+      const angle = Number(d.angle ?? d.angleDeg);
+      const distance = Math.max(0, Math.min(1, Number(d.distance ?? d.distanceM) / 12));
+      const r = 45 * distance;
+      const a = ((angle - Number(heading || 0) - 90) * Math.PI) / 180;
+      return {
+        id: d.id || d.trackId || i,
+        x: 50 + Math.cos(a) * r,
+        y: 50 + Math.sin(a) * r,
+        human: d.type === 'human',
+        selected: Boolean(d.selected),
+      };
+    });
   return (
     <div className="wv-radar">
       <div className="wv-radar-ring r1" /><div className="wv-radar-ring r2" /><div className="wv-radar-ring r3" />
