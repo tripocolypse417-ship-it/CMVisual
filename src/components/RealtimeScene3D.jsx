@@ -31,7 +31,12 @@ function makeSprite(text, color = '#00ff88', alpha = 1) {
   return spr;
 }
 
-export default function RealtimeScene3D({ detections, scanMode, isScanning }) {
+export default function RealtimeScene3D({ detections: detectionsInput, scanMode, isScanning }) {
+  // Treat all external/serialized inputs as untrusted. A malformed payload must
+  // never crash the scene when array methods such as .find() are called.
+  const detections = Array.isArray(detectionsInput)
+    ? detectionsInput.filter(d => d && typeof d === 'object')
+    : [];
   const mountRef    = useRef(null);
   const sceneRef    = useRef(null);
   const detMeshRef  = useRef({});
