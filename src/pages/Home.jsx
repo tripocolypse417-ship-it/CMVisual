@@ -288,8 +288,18 @@ export default function Home() {
   // Load teams I belong to, for real-time snapshot sharing.
   useEffect(() => {
     base44.entities.Team.list('-created_date', 50)
-      .then(setTeams)
-      .catch(() => {});
+      .then((result) => {
+        // SDK/backend responses can vary by adapter; keep render state array-safe.
+        const list = Array.isArray(result)
+          ? result
+          : Array.isArray(result?.data)
+            ? result.data
+            : Array.isArray(result?.items)
+              ? result.items
+              : [];
+        setTeams(list.filter(team => team && typeof team === 'object'));
+      })
+      .catch(() => setTeams([]));
   }, []);
 
   // Dynamic auto-zoom: update only while the camera is active and the workspace
