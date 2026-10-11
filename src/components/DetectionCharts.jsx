@@ -149,6 +149,8 @@ export default function DetectionCharts({ detections, scanMode, isScanning, colo
   const [events, setEvents] = useState([]);
   const [snapshots, setSnapshots] = useState([]);
   const [loading, setLoading] = useState(true);
+  const safeEvents = toRecordArray(events);
+  const safeSnapshots = toRecordArray(snapshots);
 
   useEffect(() => {
     (async () => {
@@ -203,8 +205,6 @@ export default function DetectionCharts({ detections, scanMode, isScanning, colo
     return built;
   }, [safeSnapshots]);
 
-  const safeEvents = toRecordArray(events);
-  const safeSnapshots = toRecordArray(snapshots);
   const hasEvents = safeEvents.length > 0;
 
   return (
