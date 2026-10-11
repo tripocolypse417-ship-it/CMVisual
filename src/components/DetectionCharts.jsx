@@ -10,6 +10,16 @@ import { Users, Waves, Layers, Radio, TrendingUp, Loader2 } from 'lucide-react';
 const TYPE_COLORS = { human: '#00ff88', animal: '#00ccff', object: '#ffaa00', unknown: '#ff4466' };
 const TYPE_LABELS = { human: 'Human', animal: 'Animal', object: 'Object', unknown: 'Unknown' };
 
+// Backend adapters may return a bare array or wrap records in data/items.
+// Never let an unexpected response shape reach React/Recharts array operations.
+const toRecordArray = (value) => {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray(value?.data)) return value.data;
+  if (Array.isArray(value?.items)) return value.items;
+  if (Array.isArray(value?.results)) return value.results;
+  return [];
+};
+
 function ChartCard({ title, icon: Icon, color, children }) {
   return (
     <div className="rounded-xl border p-3" style={{ borderColor: `${color}20`, background: 'rgba(3,14,9,0.5)' }}>
@@ -52,7 +62,7 @@ function StickFigure({ cx, cy, scale, color, intensity, pulseKey }) {
 }
 
 function WallVisionPanel({ detections, color, isScanning }) {
-  const humans = detections.filter(d => d.type === 'human');
+  const humans = toRecordArray(detections).filter(d => d && typeof d === 'object' && d.type === 'human');
   const W = 620, H = 270;
   const deviceX = W / 2, deviceY = H - 24;
   const wallY = H - 120;
@@ -147,8 +157,8 @@ export default function DetectionCharts({ detections, scanMode, isScanning, colo
           base44.entities.DetectionEvent.list('-created_date', 200),
           base44.entities.Snapshot.list('-created_date', 50),
         ]);
-        setEvents(evs || []);
-        setSnapshots(snaps || []);
+        setEvents(toRecordArray(evs).filter((item) => item && typeof item === 'object'));
+        setSnapshots(toRecordArray(snaps).filter((item) => item && typeof item === 'object'));
       } catch { /* empty state */ }
       setLoading(false);
     })();
@@ -156,28 +166,28 @@ export default function DetectionCharts({ detections, scanMode, isScanning, colo
 
   const hourly = useMemo(() => {
     const buckets = Array.from({ length: 24 }, (_, h) => ({ hour: `${String(h).padStart(2, '0')}`, human: 0, animal: 0, object: 0, unknown: 0 }));
-    events.forEach(e => {
+    safeEvents.forEach(e => {
       const h = new Date(e.created_date).getHours();
       const t = e.target_type && TYPE_LABELS[e.target_type] ? e.target_type : 'unknown';
       if (buckets[h]) buckets[h][t] += 1;
     });
     return buckets;
-  }, [events]);
+  }, [safeEvents]);
 
   const movementData = useMemo(() => {
     return ['human', 'animal', 'object', 'unknown'].map(t => {
-      const of = events.filter(e => e.target_type === t);
+      const of = safeEvents.filter(e => e.target_type === t);
       return { type: TYPE_LABELS[t], moving: of.filter(e => e.moving).length, still: of.filter(e => !e.moving).length };
     });
-  }, [events]);
+  }, [safeEvents]);
 
   const intensityData = useMemo(() => {
-    return [...events].reverse().slice(0, 30).map((e, i) => ({ idx: i + 1, intensity: e.intensity ?? 0, distance: e.distance ?? 0 }));
-  }, [events]);
+    return [...safeEvents].reverse().slice(0, 30).map((e, i) => ({ idx: i + 1, intensity: e.intensity ?? 0, distance: e.distance ?? 0 }));
+  }, [safeEvents]);
 
   const wallData = useMemo(() => {
     const acc = {};
-    snapshots.forEach(s => {
+    safeSnapshots.forEach(s => {
       let dets = [];
       try { dets = JSON.parse(s.detections_json || '[]'); } catch {}
       dets.forEach(d => {
@@ -191,9 +201,11 @@ export default function DetectionCharts({ detections, scanMode, isScanning, colo
     });
     const built = Object.entries(acc).map(([material, v]) => ({ material, density: Math.round(v.sum / v.n) }));
     return built;
-  }, [snapshots]);
+  }, [safeSnapshots]);
 
-  const hasEvents = events.length > 0;
+  const safeEvents = toRecordArray(events);
+  const safeSnapshots = toRecordArray(snapshots);
+  const hasEvents = safeEvents.length > 0;
 
   return (
     <div className="space-y-3 h-full overflow-y-auto pr-1">
