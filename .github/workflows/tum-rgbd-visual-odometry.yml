@@ -1,0 +1,57 @@
+name: TUM RGB-D Visual Odometry Benchmark
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - "scripts/benchmark_tum_rgbd_vo.py"
+      - ".github/workflows/tum-rgbd-visual-odometry.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  tum-fr1-xyz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install benchmark dependencies
+        run: python -m pip install --upgrade pip numpy scipy opencv-python-headless
+
+      - name: Download official TUM fr1/xyz RGB-D sequence
+        run: |
+          curl --fail --location --retry 3 --retry-delay 2 \
+            "https://cvg.cit.tum.de/rgbd/dataset/freiburg1/rgbd_dataset_freiburg1_xyz.tgz" \
+            --output /tmp/rgbd_dataset_freiburg1_xyz.tgz
+          mkdir -p /tmp/tum-fr1-xyz
+          tar -xzf /tmp/rgbd_dataset_freiburg1_xyz.tgz -C /tmp/tum-fr1-xyz
+          DATASET="$(find /tmp/tum-fr1-xyz -maxdepth 2 -type f -name rgb.txt -print -quit | xargs dirname)"
+          test -n "$DATASET"
+          echo "TUM_DATASET=$DATASET" >> "$GITHUB_ENV"
+          echo "Dataset folder: $DATASET"
+
+      - name: Run real ORB plus RGB-D PnP visual-odometry estimate
+        run: |
+          python scripts/benchmark_tum_rgbd_vo.py \
+            --dataset "$TUM_DATASET" \
+            --output benchmark-output \
+            --frame-step 1
+
+      - name: Upload benchmark report and estimated trajectory
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tum-fr1-xyz-visual-odometry
+          path: benchmark-output/
+          if-no-files-found: warn
+          retention-days: 30
