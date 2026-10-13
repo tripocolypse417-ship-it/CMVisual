@@ -23,7 +23,9 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.11"
-          cache: pip
+
+      - name: Check benchmark script syntax
+        run: python -m py_compile scripts/benchmark_tum_rgbd_vo.py
 
       - name: Install benchmark dependencies
         run: python -m pip install --upgrade pip numpy scipy opencv-python-headless
