@@ -13,6 +13,8 @@ jobs:
   android-debug:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      WAVERADAR_HOSTED_URL: https://waveradar-20.hatchable.site/workspace/
     steps:
       - name: Checkout
         uses: actions/checkout@v5
