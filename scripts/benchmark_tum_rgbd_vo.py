@@ -188,8 +188,9 @@ def main():
                 if success and inlier_idx is not None and len(inlier_idx) >= 10:
                     R_current_previous, _ = cv2.Rodrigues(rvec)
                     t_current_previous = tvec.reshape(3)
-                    R_world_camera = R_world_camera @ R_current_previous.T
-                    t_world_camera = t_world_camera - R_world_camera @ t_current_previous
+                    R_world_previous = R_world_camera.copy()
+                    R_world_camera = R_world_previous @ R_current_previous.T
+                    t_world_camera = t_world_camera - R_world_previous @ R_current_previous.T @ t_current_previous
                     inliers = int(len(inlier_idx))
                     inlier_total += inliers
                     pnp_success += 1
