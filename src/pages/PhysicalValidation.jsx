@@ -19,6 +19,12 @@ export default function PhysicalValidation() {
   const [elapsed, setElapsed] = useState(0);
   const [samples, setSamples] = useState([]);
   const [marks, setMarks] = useState([]);
+  const [knownPointName, setKnownPointName] = useState('');
+  const [referenceDistance, setReferenceDistance] = useState('');
+  const [observedDistance, setObservedDistance] = useState('');
+  const [referenceBearing, setReferenceBearing] = useState('');
+  const [observedBearing, setObservedBearing] = useState('');
+  const [knownPointChecks, setKnownPointChecks] = useState([]);
   const [cameraState, setCameraState] = useState('NOT CHECKED');
   const [captureState, setCaptureState] = useState('READY');
   const [saveState, setSaveState] = useState('NOT SAVED');
@@ -130,6 +136,32 @@ export default function PhysicalValidation() {
     setMarks(v => [...v, marker]);
   };
 
+  const recordKnownPointCheck = () => {
+    const refDistance = Number(referenceDistance);
+    const obsDistance = Number(observedDistance);
+    const refBearing = Number(referenceBearing);
+    const obsBearing = Number(observedBearing);
+    if (!knownPointName.trim() || referenceDistance === '' || observedDistance === '' || referenceBearing === '' || observedBearing === '') return;
+    if (![refDistance, obsDistance, refBearing, obsBearing].every(Number.isFinite) || refDistance < 0 || obsDistance < 0) return;
+    const rawBearingError = Math.abs(((obsBearing - refBearing + 540) % 360) - 180);
+    const check = {
+      checkId: makeId('known-point'),
+      referenceName: knownPointName.trim(),
+      referenceDistanceMeters: refDistance,
+      observedDistanceMeters: obsDistance,
+      absoluteDistanceErrorMeters: Math.abs(obsDistance - refDistance),
+      referenceBearingDegrees: ((refBearing % 360) + 360) % 360,
+      observedBearingDegrees: ((obsBearing % 360) + 360) % 360,
+      absoluteBearingErrorDegrees: rawBearingError,
+      deviceId,
+      recordedAt: new Date().toISOString(),
+      evidenceClass: 'OPERATOR_ENTERED_KNOWN_POINT_COMPARISON',
+      calibrationStatus: 'UNVERIFIED_REVIEW_REQUIRED',
+      note: 'Errors compare operator-entered reference and observed values; they do not independently prove sensor accuracy.',
+    };
+    setKnownPointChecks(previous => [...previous, check]);
+  };
+
   const saveValidation = async () => {
     if (!elapsed || !deviceId) return;
     setSaveState('SAVING');
@@ -169,7 +201,7 @@ export default function PhysicalValidation() {
         ended_at: new Date(start.current + elapsed).toISOString(),
         status: elapsed >= DURATION_MS ? 'COMPLETE' : 'STOPPED',
         frames: data.current.length,
-        targets: marks.length,
+        targets: marks.length + knownPointChecks.length,
         quality,
         notes: 'WaveRadar physical validation; capture completeness and operator annotations only. Spatial accuracy remains unverified.',
       };
@@ -191,6 +223,7 @@ export default function PhysicalValidation() {
           motionSamples,
           cameraState,
           groundTruthMarkers: marks.length,
+          knownPointChecks,
         }),
         limitations_json: JSON.stringify([
           'Phone/browser sensors are device-dependent.',
@@ -309,6 +342,7 @@ export default function PhysicalValidation() {
       },
       samples: data.current,
       groundTruthMarkers: marks,
+      knownPointChecks,
     };
     const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
     const a = document.createElement('a');
@@ -366,6 +400,39 @@ export default function PhysicalValidation() {
               )}
             </div>
           </div>
+        </section>
+
+        <section className="rounded-xl border border-amber-400/25 bg-slate-900 p-4 space-y-3">
+          <div>
+            <b className="text-xs text-amber-200">KNOWN-POINT ACCURACY CHECK</b>
+            <p className="text-[11px] text-slate-400 mt-1">Use a physical landmark with a known distance and bearing. Enter the reference and observed values; WaveRadar calculates the difference and saves the evidence. This does not pass calibration automatically.</p>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-2">
+            <label className="text-[11px] text-slate-300">Reference / landmark name
+              <input value={knownPointName} onChange={e => setKnownPointName(e.target.value)} placeholder="e.g. marked doorway A" className="block w-full mt-1 rounded border border-white/15 bg-slate-950 px-3 py-2 text-sm text-white" />
+            </label>
+            <label className="text-[11px] text-slate-300">Known distance (meters)
+              <input type="number" min="0" step="0.01" value={referenceDistance} onChange={e => setReferenceDistance(e.target.value)} placeholder="Reference value" className="block w-full mt-1 rounded border border-white/15 bg-slate-950 px-3 py-2 text-sm text-white" />
+            </label>
+            <label className="text-[11px] text-slate-300">Observed distance (meters)
+              <input type="number" min="0" step="0.01" value={observedDistance} onChange={e => setObservedDistance(e.target.value)} placeholder="Measured / observed value" className="block w-full mt-1 rounded border border-white/15 bg-slate-950 px-3 py-2 text-sm text-white" />
+            </label>
+            <label className="text-[11px] text-slate-300">Known bearing (degrees)
+              <input type="number" min="0" max="360" step="0.1" value={referenceBearing} onChange={e => setReferenceBearing(e.target.value)} placeholder="0–360" className="block w-full mt-1 rounded border border-white/15 bg-slate-950 px-3 py-2 text-sm text-white" />
+            </label>
+            <label className="text-[11px] text-slate-300">Observed bearing (degrees)
+              <input type="number" min="0" max="360" step="0.1" value={observedBearing} onChange={e => setObservedBearing(e.target.value)} placeholder="0–360" className="block w-full mt-1 rounded border border-white/15 bg-slate-950 px-3 py-2 text-sm text-white" />
+            </label>
+          </div>
+          <button onClick={recordKnownPointCheck} disabled={!knownPointName.trim() || [referenceDistance, observedDistance, referenceBearing, observedBearing].some(value => value === '') || ![Number(referenceDistance), Number(observedDistance), Number(referenceBearing), Number(observedBearing)].every(Number.isFinite) || Number(referenceDistance) < 0 || Number(observedDistance) < 0} className="border border-amber-300/40 px-3 py-2 text-xs disabled:opacity-30">CALCULATE & RECORD CHECK</button>
+          {knownPointChecks.length > 0 && <div className="space-y-2">
+            <div className="text-xs text-emerald-200">{knownPointChecks.length} known-point comparison(s) recorded · calibration remains unverified</div>
+            {knownPointChecks.slice(-3).reverse().map(check => <div key={check.checkId} className="rounded border border-white/10 p-2 text-xs" >
+              <div className="font-semibold">{check.referenceName}</div>
+              <div className="font-mono text-slate-300 mt-1">Distance error: {check.absoluteDistanceErrorMeters.toFixed(2)} m · Bearing error: {check.absoluteBearingErrorDegrees.toFixed(1)}°</div>
+              <div className="text-[10px] text-amber-200 mt-1">RECORDED · REVIEW REQUIRED · NOT A PASS</div>
+            </div>)}
+          </div>}
         </section>
 
         <section className="rounded-xl border border-white/10 bg-slate-900 p-4">
