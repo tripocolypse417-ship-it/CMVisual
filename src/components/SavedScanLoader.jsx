@@ -12,8 +12,9 @@ export default function SavedScanLoader({ onLoad, color }) {
     if (open) { setOpen(false); return; }
     setLoading(true);
     try {
-      const list = await base44.entities.Snapshot.list('-created_date', 50);
-      setSnapshots(list);
+      const response = await base44.entities.Snapshot.list('-created_date', 50);
+      const list = Array.isArray(response) ? response : Array.isArray(response?.data) ? response.data : Array.isArray(response?.items) ? response.items : [];
+      setSnapshots(list.filter(item => item && typeof item === 'object'));
       setOpen(true);
     } finally { setLoading(false); }
   };

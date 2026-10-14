@@ -45,7 +45,8 @@ function convexHull(pts) {
   return lower.concat(upper);
 }
 
-export default function AutoFloorplanMap({ detections = [], heading, color = '#00ff88', sensorConnected = false, lastFrame = null, bridgeStats = null, selectedDetection = null, onSelectDetection }) {
+export default function AutoFloorplanMap({ detections: detectionsInput = [], heading, color = '#00ff88', sensorConnected = false, lastFrame = null, bridgeStats = null, selectedDetection = null, onSelectDetection }) {
+  const detections = Array.isArray(detectionsInput) ? detectionsInput : [];
   const containerRef = useRef(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [scanPoints, setScanPoints] = useState([]); // accumulated history (world meters)
@@ -70,8 +71,9 @@ export default function AutoFloorplanMap({ detections = [], heading, color = '#0
   // only historical context and never replace the live frame.
   useEffect(() => {
     let unsub = () => {};
-    base44.entities.DetectionEvent.list('-created_date', 600).then((evs) => {
-      const pts = (evs || []).map((e) => {
+    base44.entities.DetectionEvent.list('-created_date', 600).then((response) => {
+      const evs = Array.isArray(response) ? response : Array.isArray(response?.data) ? response.data : Array.isArray(response?.items) ? response.items : [];
+      const pts = evs.map((e) => {
         const w = toWorld(e.bearing ?? 0, e.distance ?? 0);
         return { x: w.x, y: w.y, type: e.target_type || 'unknown', moving: !!e.moving };
       });

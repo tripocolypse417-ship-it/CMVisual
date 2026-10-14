@@ -38,7 +38,7 @@ function MiniRadar({ detections, color }) {
 
 function SnapshotCard({ snap, color, onDelete, isComparing, onToggleCompare, onOpenNotes, noteCount, me }) {
   let detections = [];
-  try { detections = JSON.parse(snap.detections_json || '[]'); } catch {}
+  try { const parsed = JSON.parse(snap.detections_json || '[]'); detections = Array.isArray(parsed) ? parsed : []; } catch { detections = []; }
 
   const humanCount = detections.filter(d => d.type === 'human').length;
   const movingCount = detections.filter(d => d.moving).length;
@@ -162,7 +162,7 @@ function ComparePanel({ snapshots, color, onClose }) {
       <div className="grid gap-4 p-4" style={{ gridTemplateColumns: `repeat(${snapshots.length}, minmax(0, 1fr))` }}>
         {snapshots.map(snap => {
           let detections = [];
-          try { detections = JSON.parse(snap.detections_json || '[]'); } catch {}
+          try { const parsed = JSON.parse(snap.detections_json || '[]'); detections = Array.isArray(parsed) ? parsed : []; } catch { detections = []; }
           const modeColor = MODE_COLORS[snap.scan_mode] || color;
           return (
             <div key={snap.id} className="space-y-3">
@@ -206,11 +206,12 @@ export default function SnapshotGallery({ color }) {
   const load = async () => {
     setLoading(true);
     try {
-      const [data, u] = await Promise.all([
+      const [response, u] = await Promise.all([
         base44.entities.Snapshot.list('-created_date', 50),
         base44.auth.me().catch(() => null),
       ]);
-      setSnapshots(data);
+      const data = Array.isArray(response) ? response : Array.isArray(response?.data) ? response.data : Array.isArray(response?.items) ? response.items : [];
+      setSnapshots(data.filter(item => item && typeof item === 'object'));
       setMe(u);
     } catch {}
     setLoading(false);
@@ -227,9 +228,10 @@ export default function SnapshotGallery({ color }) {
   // Live note counts per snapshot — refreshes when a note is posted anywhere.
   const loadNoteCounts = async () => {
     try {
-      const all = await base44.entities.SnapshotNote.list('-created_date', 200);
+      const response = await base44.entities.SnapshotNote.list('-created_date', 200);
+      const all = Array.isArray(response) ? response : Array.isArray(response?.data) ? response.data : Array.isArray(response?.items) ? response.items : [];
       const counts = {};
-      all.forEach(n => { counts[n.snapshot_id] = (counts[n.snapshot_id] || 0) + 1; });
+      all.filter(n => n && typeof n === 'object').forEach(n => { counts[n.snapshot_id] = (counts[n.snapshot_id] || 0) + 1; });
       setNoteCounts(counts);
     } catch {}
   };
