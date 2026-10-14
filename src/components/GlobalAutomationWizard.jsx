@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Activity, CheckCircle2, ChevronDown, ChevronUp, CircleAlert, Database, RefreshCw, ShieldCheck, WandSparkles, X } from 'lucide-react';
+import { Activity, CheckCircle2, CircleAlert, RefreshCw, ShieldCheck, WandSparkles, X } from 'lucide-react';
 import { getDeviceIdentityStatus } from '@/lib/deviceIdentity';
 import { getNativeSensorCapabilities } from '@/lib/nativeSensors';
 
@@ -38,6 +38,7 @@ export default function GlobalAutomationWizard() {
   const [lastRun, setLastRun] = useState(null);
   const [checks, setChecks] = useState([]);
   const [summary, setSummary] = useState({ ready: 0, action: 0, blocked: 0 });
+  const initialAuditDone = useRef(false);
 
   const runAudit = useCallback(async () => {
     setBusy(true);
@@ -82,6 +83,8 @@ export default function GlobalAutomationWizard() {
     setChecks(next);
     setSummary(counts);
     setLastRun(new Date().toISOString());
+    if (!initialAuditDone.current && counts.action > 0) setOpen(true);
+    initialAuditDone.current = true;
     setBusy(false);
   }, []);
 
