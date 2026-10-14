@@ -2,9 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 import { Share2, Lock, ChevronDown, Check } from 'lucide-react';
 
 export default function ShareTeamPicker({ teams, value, onChange, color }) {
+  const safeTeams = Array.isArray(teams) ? teams : [];
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  const selected = teams.find((t) => t.id === value);
+  const selected = safeTeams.find((t) => t && t.id === value);
 
   useEffect(() => {
     const handler = (e) => {
@@ -43,7 +44,7 @@ export default function ShareTeamPicker({ teams, value, onChange, color }) {
             <Lock className="w-3 h-3" /> <span>PRIVATE (just me)</span>
             {!value && <Check className="w-3 h-3 ml-auto" />}
           </button>
-          {teams.map((t) => (
+          {safeTeams.map((t) => (
             <button
               key={t.id}
               onClick={() => { onChange(t.id); setOpen(false); }}
@@ -54,7 +55,7 @@ export default function ShareTeamPicker({ teams, value, onChange, color }) {
               {value === t.id && <Check className="w-3 h-3" />}
             </button>
           ))}
-          {teams.length === 0 && (
+          {safeTeams.length === 0 && (
             <div className="px-2 py-2 font-mono text-[8px] text-muted-foreground leading-relaxed">
               No teams yet — create one in the Team Console to share live.
             </div>
