@@ -82,11 +82,12 @@ function DetectionCard({ detection, isSelected, onSelect }) {
 }
 
 export default function DetectionPanel({ detections, selectedDetection, onSelectDetection }) {
+  const items = Array.isArray(detections) ? detections : [];
   const selected = selectedDetection;
   const config = selected ? (typeConfig[selected.type] || typeConfig.unknown) : null;
 
-  const humans = detections.filter(d => d.type === 'human').length;
-  const moving = detections.filter(d => d.moving).length;
+  const humans = items.filter(d => d?.type === 'human').length;
+  const moving = items.filter(d => d?.moving).length;
 
   return (
     <div className="space-y-3">
@@ -102,7 +103,7 @@ export default function DetectionPanel({ detections, selectedDetection, onSelect
             </motion.span>
           )}
           <span className="font-mono text-[10px] px-2 py-0.5 rounded-full border border-border text-muted-foreground">
-            {detections.length} total
+            {items.length} total
           </span>
         </div>
       </div>
@@ -112,7 +113,7 @@ export default function DetectionPanel({ detections, selectedDetection, onSelect
         {[
           { label: 'HUMANS', value: humans, color: '#00ff88' },
           { label: 'MOVING', value: moving, color: '#00ccff' },
-          { label: 'ALERTS', value: detections.filter(d => d.threat).length, color: '#ff4466' },
+          { label: 'ALERTS', value: items.filter(d => d?.threat).length, color: '#ff4466' },
         ].map(s => (
           <div key={s.label} className="text-center py-2 rounded-lg border border-border bg-muted/20">
             <div className="font-display text-sm font-bold" style={{ color: s.color }}>{s.value}</div>
@@ -124,10 +125,10 @@ export default function DetectionPanel({ detections, selectedDetection, onSelect
       {/* Detection list */}
       <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-0.5">
         <AnimatePresence>
-          {detections.length === 0 && (
+          {items.length === 0 && (
             <div className="text-center py-6 font-mono text-[11px] text-muted-foreground">No objects detected</div>
           )}
-          {detections.map(d => (
+          {items.map(d => (
             <DetectionCard key={d.id} detection={d}
               isSelected={selected?.id === d.id} onSelect={onSelectDetection} />
           ))}
