@@ -16,6 +16,7 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import HowItWorks from './pages/HowItWorks';
 import Investors from './pages/Investors';
+import GlobalAutomationWizard from './components/GlobalAutomationWizard';
 // Add page imports here
 
 class CMVisualErrorBoundary extends React.Component {
@@ -93,6 +94,7 @@ function App() {
             <Route path="/investors" element={<Investors />} />
             <Route path="*" element={<AuthenticatedApp />} />
           </Routes>
+          <GlobalAutomationWizard />
         </Router>
         <Toaster />
       </QueryClientProvider>
