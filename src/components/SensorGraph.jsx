@@ -7,8 +7,10 @@ import { motion } from 'framer-motion';
 import { Activity, Radio, Zap, BarChart2 } from 'lucide-react';
 
 const MAX_POINTS = 30;
+const EMPTY_DETECTIONS = Object.freeze([]);
 
 function generatePoint(prev, detections, t) {
+  detections = Array.isArray(detections) ? detections : EMPTY_DETECTIONS;
   const numeric = (v) => Number.isFinite(Number(v)) ? Number(v) : null;
   const signalValues = detections.map(d => numeric(d.signal)).filter(v => v != null);
   const noiseValues = detections.map(d => numeric(d.noise)).filter(v => v != null);
@@ -55,6 +57,7 @@ const charts = [
 ];
 
 export default function SensorGraph({ detections, isScanning }) {
+  const safeDetections = Array.isArray(detections) ? detections : EMPTY_DETECTIONS;
   const [data, setData] = useState([]);
   const [activeChart, setActiveChart] = useState('signal');
   const tickRef = useRef(0);
@@ -64,12 +67,12 @@ export default function SensorGraph({ detections, isScanning }) {
       if (!isScanning) return;
       tickRef.current++;
       setData(prev => {
-        const next = [...prev, generatePoint(prev[prev.length - 1], detections, tickRef.current)];
+        const next = [...prev, generatePoint(prev[prev.length - 1], safeDetections, tickRef.current)];
         return next.slice(-MAX_POINTS);
       });
     }, 500);
     return () => clearInterval(interval);
-  }, [isScanning, detections]);
+  }, [isScanning, safeDetections]);
 
   const glow = (color) => ({
     filter: `drop-shadow(0 0 4px ${color}80)`,
@@ -82,7 +85,7 @@ export default function SensorGraph({ detections, isScanning }) {
         {[
           { label: 'SIGNAL', value: data[data.length-1]?.signal == null ? 'N/A' : `${data[data.length-1].signal.toFixed(0)}%`, color: '#00ff88' },
           { label: 'NOISE', value: data[data.length-1]?.noise == null ? 'N/A' : `${data[data.length-1].noise.toFixed(0)}%`, color: '#ff4466' },
-          { label: 'TARGETS', value: detections.length, color: '#00ccff' },
+          { label: 'TARGETS', value: safeDetections.length, color: '#00ccff' },
           { label: 'WALL ρ', value: data[data.length-1]?.wallDensity == null ? 'N/A' : `${data[data.length-1].wallDensity.toFixed(0)}%`, color: '#ffaa00' },
         ].map(s => (
           <div key={s.label} className="rounded-lg border border-border bg-card/50 p-2 text-center">
