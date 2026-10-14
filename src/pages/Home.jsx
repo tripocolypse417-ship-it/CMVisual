@@ -486,10 +486,25 @@ export default function Home() {
   const clearDetections = () => setDetections([]);
   const loadSavedScan = (snap) => {
     try {
-      const parsed = JSON.parse(snap.detections_json || '[]')
-        .map((d, i) => ({ ...d, id: d.id ?? (Date.now() + i) }));
-      setDetections(parsed);
-    } catch { setDetections([]); }
+      const raw = snap?.detections_json ?? '[]';
+      const decoded = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      const parsed = Array.isArray(decoded) ? decoded
+        : Array.isArray(decoded?.detections) ? decoded.detections
+        : Array.isArray(decoded?.data) ? decoded.data
+        : Array.isArray(decoded?.items) ? decoded.items
+        : null;
+      // Ignore malformed saved data instead of letting an object reach .map()
+      // or clearing the operator's current view without warning.
+      if (!parsed) {
+        console.warn('[WaveRadar] Ignored saved scan with a non-array detections payload.');
+        return;
+      }
+      setDetections(parsed
+        .filter((d) => d && typeof d === 'object' && !Array.isArray(d))
+        .map((d, i) => ({ ...d, id: d.id ?? (Date.now() + i) })));
+    } catch (error) {
+      console.warn('[WaveRadar] Could not load saved scan; current detections were preserved.', error);
+    }
   };
 
   const takeSnapshot = async () => {
