@@ -24,7 +24,14 @@ export default function PhysicalValidation() {
   const [observedDistance, setObservedDistance] = useState('');
   const [referenceBearing, setReferenceBearing] = useState('');
   const [observedBearing, setObservedBearing] = useState('');
-  const [knownPointChecks, setKnownPointChecks] = useState([]);
+  const [knownPointChecks, setKnownPointChecks] = useState(() => {
+    try {
+      const saved = JSON.parse(globalThis.localStorage?.getItem('waveradar:known-point-checks:v1') || '[]');
+      return Array.isArray(saved) ? saved.filter(item => item && typeof item.checkId === 'string') : [];
+    } catch { return []; }
+  });
+  const latestSensors = useRef(sensors);
+  latestSensors.current = sensors;
   const [cameraState, setCameraState] = useState('NOT CHECKED');
   const [captureState, setCaptureState] = useState('READY');
   const [saveState, setSaveState] = useState('NOT SAVED');
@@ -79,9 +86,9 @@ export default function PhysicalValidation() {
         t: Math.max(0, now - start.current),
         at: new Date(now).toISOString(),
         deviceId,
-        heading: sensors.heading,
-        moving: sensors.isMoving,
-        motion: sensors.motion,
+        heading: latestSensors.current.heading,
+        moving: latestSensors.current.isMoving,
+        motion: latestSensors.current.motion,
         evidenceClass: 'MEASURED',
         nativeSensors: native?.measurements ?? null,
         nativeSensorAt: native?.lastSensorAt ?? null,
@@ -159,7 +166,11 @@ export default function PhysicalValidation() {
       calibrationStatus: 'UNVERIFIED_REVIEW_REQUIRED',
       note: 'Errors compare operator-entered reference and observed values; they do not independently prove sensor accuracy.',
     };
-    setKnownPointChecks(previous => [...previous, check]);
+    setKnownPointChecks(previous => {
+      const next = [...previous, check].slice(-100);
+      try { localStorage.setItem('waveradar:known-point-checks:v1', JSON.stringify(next)); } catch (error) { console.warn('[WaveRadar] known-point local save failed', error); }
+      return next;
+    });
   };
 
   const saveValidation = async () => {
@@ -451,7 +462,7 @@ export default function PhysicalValidation() {
             <button disabled={!run} onClick={() => mark('VISIBLE REFERENCE')} className="border border-amber-400/40 px-3 py-2 text-xs disabled:opacity-30">MARK REFERENCE</button>
             <button disabled={!run} onClick={() => mark('OBSTACLE REFERENCE')} className="border border-amber-400/40 px-3 py-2 text-xs disabled:opacity-30">MARK OBSTACLE EVENT</button>
             <button disabled={!elapsed || saveState === 'SAVING'} onClick={saveValidation} className="border border-emerald-400/40 px-3 py-2 text-xs disabled:opacity-30">SAVE VALIDATION</button>
-            <button disabled={!elapsed} onClick={exportData} className="border border-white/15 px-3 py-2 text-xs disabled:opacity-30">EXPORT JSON</button>
+            <button disabled={!elapsed && !knownPointChecks.length} onClick={exportData} className="border border-white/15 px-3 py-2 text-xs disabled:opacity-30">EXPORT JSON</button>
           </div>
 
           <div className="font-mono text-xs mt-3">
