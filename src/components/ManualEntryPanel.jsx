@@ -21,7 +21,9 @@ function Field({ label, value, children }) {
   );
 }
 
-export default function ManualEntryPanel({ detections, onAdd, onDelete, onClear, color, sensors }) {
+export default function ManualEntryPanel({ detections: detectionsInput = [], onAdd, onDelete, onClear, color, sensors }) {
+  // Keep unexpected persisted/API payloads from reaching list rendering.
+  const detections = Array.isArray(detectionsInput) ? detectionsInput.filter(d => d && typeof d === 'object' && !Array.isArray(d)) : [];
   const [type, setType] = useState('human');
   const [angle, setAngle] = useState(0);
   const [distance, setDistance] = useState(40);
