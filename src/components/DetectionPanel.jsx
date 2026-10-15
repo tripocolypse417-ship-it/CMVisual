@@ -160,7 +160,7 @@ export default function DetectionPanel({ detections, selectedDetection, onSelect
                   <div className="rounded-md bg-muted/40 px-2 py-2 font-mono text-[9px] text-muted-foreground">
                     Sensor-derived observation. Range, bearing and classification are shown only when supplied by the connected sensor; the phone alone does not infer through-wall location.
                   </div>
-                  {(selected.wallLayers || []).length > 0 && selected.wallLayers.map((layer, i) => (
+                  {(Array.isArray(selected.wallLayers) ? selected.wallLayers : []).map((layer, i) => (
                     <BarMeter key={i} label={`${layer.material || 'UNKNOWN'} (${layer.thickness || '?'})`} value={Number(layer.density) || 0} color={config.color} unit="%" />
                   ))}
                 </div>
