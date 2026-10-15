@@ -85,12 +85,34 @@ export default function Home() {
   const [workspaceMode, setWorkspaceMode] = useState('live');
   const [selectedDetection, setSelectedDetection] = useState(null);
   const [lockedTrackId, setLockedTrackId] = useState(null);
-  const [detections, setDetections] = useState([]);
+  const [detections, setDetectionsRaw] = useState([]);
+  // Normalize at the state boundary so malformed adapter responses cannot
+  // crash render-time selectors before an effect has a chance to run.
+  const setDetections = useCallback((next) => {
+    setDetectionsRaw((previous) => {
+      const value = typeof next === 'function' ? next(previous) : next;
+      if (Array.isArray(value)) return value;
+      if (Array.isArray(value?.data)) return value.data;
+      if (Array.isArray(value?.items)) return value.items;
+      console.warn('[WaveRadar] detections payload was not an array; safely ignored', typeof value);
+      return [];
+    });
+  }, []);
   const [signalStrength, setSignalStrength] = useState(null);
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [alertsEnabled, setAlertsEnabled] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
-  const [cameraDetections, setCameraDetections] = useState([]);
+  const [cameraDetections, setCameraDetectionsRaw] = useState([]);
+  const setCameraDetections = useCallback((next) => {
+    setCameraDetectionsRaw((previous) => {
+      const value = typeof next === 'function' ? next(previous) : next;
+      if (Array.isArray(value)) return value;
+      if (Array.isArray(value?.data)) return value.data;
+      if (Array.isArray(value?.items)) return value.items;
+      console.warn('[WaveRadar] camera detections payload was not an array; safely ignored', typeof value);
+      return [];
+    });
+  }, []);
   const [wallOpacity, setWallOpacity] = useState(35);
   const [trailsEnabled, setTrailsEnabled] = useState(true);
   const [threatAlertsEnabled, setThreatAlertsEnabled] = useState(true);
