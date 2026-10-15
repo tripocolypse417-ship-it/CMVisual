@@ -45,6 +45,9 @@ export default function RealtimeScene3D({ detections: detectionsInput, scanMode,
   const inputRef    = useRef({ dragging: false, last: null, pinchDist: null });
   const [selected, setSelected]   = useState(null);
   const [hovered, setHovered]     = useState(null);
+  // wallLayers may come from persisted or remote data; optional chaining alone
+  // does not protect against a non-array value.
+  const selectedWallLayers = Array.isArray(selected?.wallLayers) ? selected.wallLayers : [];
 
   /* ─── Build scene once ─── */
   useEffect(() => {
@@ -592,7 +595,7 @@ export default function RealtimeScene3D({ detections: detectionsInput, scanMode,
                     <Layers className="w-3 h-3 text-muted-foreground" />
                     <span className="font-mono text-[9px] text-muted-foreground tracking-wider">WALL LAYERS</span>
                   </div>
-                  {selected.wallLayers?.map((layer, i) => (
+                  {selectedWallLayers.map((layer, i) => (
                     <div key={i} className="flex items-center gap-2">
                       <span className="font-mono text-[9px] text-muted-foreground w-28 truncate">{layer.material}</span>
                       <div className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden">
