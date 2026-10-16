@@ -7,7 +7,7 @@ import { useMemo } from 'react';
  */
 export default function useOpportunisticFusion(observations = [], { sensors, geo, capabilityModel, sensorBridge } = {}) {
   return useMemo(() => {
-    const items = Array.isArray(observations) ? observations : [];
+    const items = Array.isArray(observations) ? observations.filter(d => d && typeof d === 'object' && !Array.isArray(d)) : [];
     const heading = Number(sensors?.heading);
     const motion = sensors?.motion || {};
     const motionEnergy = Number(motion.magnitude);
@@ -38,7 +38,7 @@ export default function useOpportunisticFusion(observations = [], { sensors, geo
           sensorBridgeLatencyMs: Number.isFinite(bridgeLatencyMs) ? bridgeLatencyMs : null,
           capabilityCoverage: Number(capabilityModel?.capabilityCoverage ?? 0),
           availableSignalCount: Number(capabilityModel?.availableSignalCount ?? 0),
-          derivationsAvailable: (capabilityModel?.derivationPaths || []).filter(p => p.status === 'AVAILABLE').map(p => p.id),
+          derivationsAvailable: (Array.isArray(capabilityModel?.derivationPaths) ? capabilityModel.derivationPaths : []).filter(p => p && typeof p === 'object' && p.status === 'AVAILABLE').map(p => p.id),
         },
       };
     });
