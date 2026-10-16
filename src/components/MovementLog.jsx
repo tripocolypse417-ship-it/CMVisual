@@ -82,8 +82,15 @@ export default function MovementLog({ color }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await base44.entities.DetectionEvent.list('-created_date', 200);
-      setEvents(data);
+      const result = await base44.entities.DetectionEvent.list('-created_date', 200);
+      // Base44 adapters may return a direct array or a paginated envelope.
+      // Never let an unexpected object reach render-time .filter()/.map().
+      const data = Array.isArray(result) ? result
+        : Array.isArray(result?.data) ? result.data
+        : Array.isArray(result?.items) ? result.items
+        : Array.isArray(result?.results) ? result.results
+        : [];
+      setEvents(data.filter(item => item && typeof item === 'object' && !Array.isArray(item)));
     } catch {}
     setLoading(false);
   }, []);
