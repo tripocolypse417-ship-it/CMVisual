@@ -27,7 +27,7 @@ export default function useTrackManager(observations) {
   useEffect(() => {
     const now = Date.now();
     const seen = new Set();
-    const items = Array.isArray(observations) ? observations : [];
+    const items = Array.isArray(observations) ? observations.filter(d => d && typeof d === 'object' && !Array.isArray(d)) : [];
 
     items.forEach((d) => {
       const key = String(d.trackId ?? d.id ?? '');
@@ -70,7 +70,7 @@ export default function useTrackManager(observations) {
   }, [observations]);
 
   const now = Date.now();
-  return (Array.isArray(observations) ? observations : []).map((d) => {
+  return (Array.isArray(observations) ? observations.filter(d => d && typeof d === 'object' && !Array.isArray(d)) : []).map((d) => {
     const key = String(d.trackId ?? d.id ?? '');
     const track = tracksRef.current.get(key);
     if (!track) return d;
