@@ -49,7 +49,8 @@ export default function usePredictionCalibration(predictions, observations) {
           if (delta <= 1200 && (!best || delta < best.delta)) best = { ...sample, delta };
         });
         if (!best) return;
-        const forecast = prediction.horizons?.find((h) => h.horizonMs === horizonMs);
+        const horizons = Array.isArray(prediction?.horizons) ? prediction.horizons : [];
+        const forecast = horizons.find((h) => h?.horizonMs === horizonMs);
         const errorM = distance(forecast?.position, best.p);
         if (errorM == null) return;
         const uncertaintyM = Math.max(0.1, finite(forecast?.uncertaintyM) ?? 1);
