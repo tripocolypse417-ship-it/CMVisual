@@ -9,6 +9,8 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
 import PhysicalValidation from './pages/PhysicalValidation';
+import Login from './pages/Login';
+import Register from './pages/Register';
 
 const CMVISUAL_BOOT_SAFE_MODE = (() => { try { return sessionStorage.getItem('cmvisual_safe_mode') === '1'; } catch { return false; } })();
 import Admin from './pages/Admin';
@@ -88,6 +90,8 @@ function App() {
         <Router>
           <ScrollToTop />
           <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
