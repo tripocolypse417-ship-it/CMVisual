@@ -91,7 +91,7 @@ export default function Home() {
   const setDetections = useCallback((next) => {
     setDetectionsRaw((previous) => {
       const value = typeof next === 'function' ? next(previous) : next;
-      if (Array.isArray(value)) return value;
+      if (Array.isArray(value)) return value.filter(item => item && typeof item === 'object' && !Array.isArray(item));
       if (Array.isArray(value?.data)) return value.data;
       if (Array.isArray(value?.items)) return value.items;
       console.warn('[WaveRadar] detections payload was not an array; safely ignored', typeof value);
