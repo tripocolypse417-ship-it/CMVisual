@@ -36,6 +36,9 @@ jobs:
       - name: Audit canonical data contract
         run: npm run audit:data
 
+      - name: Test malformed array boundaries
+        run: npm run test:array-boundaries
+
       - name: Build web application
         run: npm run build
 
