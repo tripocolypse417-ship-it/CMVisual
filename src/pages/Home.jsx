@@ -44,6 +44,7 @@ import PhoneFusionPanel from '../components/PhoneFusionPanel';
 import useSpatialWorld from '../hooks/useSpatialWorld';
 import { vibrate } from '../lib/haptics';
 import CMVisualCommandDeck from '../components/CMVisualCommandDeck';
+import StartupSetupWizard from '../components/StartupSetupWizard';
 import UnifiedSpatialWorkspace from '../components/UnifiedSpatialWorkspace';
 import useRemoteController from '../hooks/useRemoteController';
 import useTrackManager from '../hooks/useTrackManager';
@@ -602,6 +603,7 @@ export default function Home() {
 
   return (
     <div data-waveradar-runtime="live-only" className="min-h-screen bg-background flex flex-col relative overflow-hidden">
+      <StartupSetupWizard />
       {/* Live-only runtime: empty sensor state is a valid state; never synthesize targets. */}
       {/* Scanline overlay */}
       <div className="scanline" aria-hidden="true" />
