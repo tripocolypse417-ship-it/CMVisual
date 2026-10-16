@@ -23,8 +23,10 @@ assert.equal(parseTimestamp("not-a-date"), null, "invalid measurement time must 
 
 const timelineSource = await readFile(new URL("../src/hooks/useWorldTimeline.js", import.meta.url), "utf8");
 assert.match(timelineSource, /sanitizeTimelineEvents\(saved\)/, "persisted timeline data must be sanitized before use");
+assert.match(timelineSource, /parseTimestamp/, "timeline must parse measurement timestamps rather than treating ISO strings as arrival time");
+assert.match(timelineSource, /parsedTime==null/, "invalid explicit measurement times must be excluded");
 const homeSource = await readFile(new URL("../src/pages/Home.jsx", import.meta.url), "utf8");
 assert.match(homeSource, /Array\.isArray\(worldTimeline\?\.tracks\)/, "replay tracks must be array-guarded");
 assert.match(homeSource, /Array\.isArray\(track\.trail\)/, "replay trails must be array-guarded");
 
-console.log("WaveRadar array-boundary regression tests: PASS (8 assertions)");
+console.log("WaveRadar array-boundary regression tests: PASS (10+ assertions)");
