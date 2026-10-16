@@ -392,7 +392,9 @@ export default function Home() {
 
   const replayDetections = useMemo(() => {
     if (worldTimeline?.timeline?.live !== false) return trackedLiveDetections;
-    return (worldTimeline?.tracks || []).map((track) => {
+    const replayTracks = Array.isArray(worldTimeline?.tracks) ? worldTimeline.tracks : [];
+    return replayTracks.filter(track => track && typeof track === 'object').map((track) => {
+      const trail = Array.isArray(track.trail) ? track.trail : [];
       const e = track.latest;
       return {
         id: `replay-${track.trackId}`,
@@ -408,9 +410,9 @@ export default function Home() {
         derivedTrack: {
           position: e?.position,
           speedMps: e?.speedMps,
-          observationCount: track.trail.length,
+          observationCount: trail.length,
           status: 'REPLAY',
-          trail: track.trail.map(x => ({ x: x.position?.x, z: x.position?.z, t: Date.parse(x.observedAt) })).filter(x => Number.isFinite(x.x) && Number.isFinite(x.z)),
+          trail: trail.filter(x => x && typeof x === 'object').map(x => ({ x: x.position?.x, z: x.position?.z, t: Date.parse(x.observedAt) })).filter(x => Number.isFinite(x.x) && Number.isFinite(x.z)),
         },
         observedAt: e?.observedAt,
         replay: true,
