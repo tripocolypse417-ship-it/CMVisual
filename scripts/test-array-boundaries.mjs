@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { asObjectArray, sanitizeTimelineEvents } from "../src/lib/safeArray.js";
+import { parseTimestamp } from "../src/lib/dataContract.js";
 
 assert.deepEqual(asObjectArray(null), []);
 assert.deepEqual(asObjectArray({ length: 3 }), []);
@@ -17,6 +18,8 @@ const malformed = [
 ];
 assert.deepEqual(sanitizeTimelineEvents(malformed), [clean]);
 assert.deepEqual(sanitizeTimelineEvents({ data: [clean] }), []);
+assert.equal(parseTimestamp(clean.observedAt), Date.parse(clean.observedAt), "ISO observation time must remain the measured time");
+assert.equal(parseTimestamp("not-a-date"), null, "invalid measurement time must not be replaced with now");
 
 const timelineSource = await readFile(new URL("../src/hooks/useWorldTimeline.js", import.meta.url), "utf8");
 assert.match(timelineSource, /sanitizeTimelineEvents\(saved\)/, "persisted timeline data must be sanitized before use");
