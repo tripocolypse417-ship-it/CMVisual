@@ -46,17 +46,17 @@ function EventRow({ e }) {
             {dateStr} {timeStr}
           </span>
         </div>
-        <p className="font-mono text-[9px] text-foreground/90 mt-1 truncate">{e.summary}</p>
+        <p className="font-mono text-[9px] text-foreground/90 mt-1 truncate">{typeof e.summary === 'string' || typeof e.summary === 'number' ? e.summary : 'Event recorded'}</p>
         <div className="flex items-center gap-3 mt-1.5 flex-wrap">
           <span className="font-mono text-[8px] px-1.5 py-0.5 rounded-full"
             style={{ color: tColor, background: `${tColor}12`, border: `1px solid ${tColor}30` }}>
             {(e.target_type || '').toUpperCase()}
           </span>
           {[
-            { l: 'DIST', v: `${(e.distance ?? 0).toFixed(1)}m` },
+            { l: 'DIST', v: `${(Number.isFinite(Number(e.distance)) ? Number(e.distance) : 0).toFixed(1)}m` },
             { l: 'BRG',  v: `${Math.round(e.bearing ?? 0)}°` },
             { l: 'SIG',  v: `${Math.round(e.intensity ?? 0)}%` },
-            { l: 'SPD',  v: `${(e.speed ?? 0).toFixed(1)}m/s` },
+            { l: 'SPD',  v: `${(Number.isFinite(Number(e.speed)) ? Number(e.speed) : 0).toFixed(1)}m/s` },
           ].map(s => (
             <span key={s.l} className="font-mono text-[8px] text-muted-foreground">
               <span className="text-muted-foreground/60">{s.l}</span> {s.v}
