@@ -31,7 +31,9 @@ export default function Admin() {
         base44.entities.Team.list('-created_date', 50),
         base44.auth.me().catch(() => null),
       ]);
-      setTeams(t);
+      // API adapters may return either a raw list or a wrapped list. Keep render state array-shaped.
+      const teamList = Array.isArray(t) ? t : Array.isArray(t?.data) ? t.data : Array.isArray(t?.items) ? t.items : [];
+      setTeams(teamList.filter(team => team && typeof team === 'object' && !Array.isArray(team)));
       setMe(u);
     } catch {
       /* bubble */
