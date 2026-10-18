@@ -179,8 +179,14 @@ export default function Environment3D({ detections, scanMode, isScanning }) {
       return r;
     });
 
+    // Treat persisted and external detection payloads as untrusted. A malformed
+    // object or an array containing null entries must not crash the 3D renderer.
+    const safeDetections = Array.isArray(detections)
+      ? detections.filter(d => d && typeof d === 'object' && !Array.isArray(d))
+      : [];
+
     // --- DETECTION OBJECTS ---
-    const detectionMeshes = detections.map((d, idx) => {
+    const detectionMeshes = safeDetections.map((d, idx) => {
       const [x, , z] = polar2cart(d.angle, d.distance, 9);
       const color = TYPE_COLORS[d.type] || 0xffffff;
       const colorHex = `#${color.toString(16).padStart(6, '0')}`;

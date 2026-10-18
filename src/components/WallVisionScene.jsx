@@ -221,7 +221,9 @@ function buildMeasurementGrid(modeColor, modeHex) {
 }
 
 export default function WallVisionScene({ detections, scanMode, isScanning, trailsEnabled = true, heading = 0, selectedDetection: externalSelectedDetection = null, onSelectDetection }) {
-  const safeDetections = Array.isArray(detections) ? detections : [];
+  const safeDetections = Array.isArray(detections)
+    ? detections.filter(d => d && typeof d === 'object' && !Array.isArray(d))
+    : [];
   const spatialWorld = useSpatialWorld(safeDetections, heading, true);
   const isMobileDevice = typeof navigator !== 'undefined' && /Mobi|Android/i.test(navigator.userAgent);
   const mountRef  = useRef(null);
@@ -245,6 +247,8 @@ export default function WallVisionScene({ detections, scanMode, isScanning, trai
   const [hasPermission, setHasPermission] = useState(false);
   const [permDenied, setPermDenied]       = useState(false);
   const [selected, setSelected]           = useState(null);
+  // Optional chaining does not protect against a non-array wallLayers payload.
+  const selectedWallLayers = Array.isArray(selected?.wallLayers) ? selected.wallLayers : [];
   useEffect(() => { setSelected(externalSelectedDetection || null); }, [externalSelectedDetection]);
   const [useGyro, setUseGyro]             = useState(false);
 
@@ -1368,7 +1372,7 @@ export default function WallVisionScene({ detections, scanMode, isScanning, trai
                   <Layers className="w-3 h-3 text-muted-foreground" />
                   <span className="font-mono text-[8px] text-muted-foreground tracking-wider">WALL COMPOSITION</span>
                 </div>
-                {selected.wallLayers?.map((l, i) => (
+                {selectedWallLayers.map((l, i) => (
                   <div key={i} className="flex items-center gap-2">
                     <span className="font-mono text-[8px] text-muted-foreground w-24 truncate">{l.material}</span>
                     <div className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden">
