@@ -20,7 +20,7 @@ export default async function (req) {
           (typeof message === 'string' && message.length > 4000)) {
         return Response.json({ error: 'One or more fields exceed the allowed length' }, { status: 400 });
       }
-      if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email.trim())) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
         return Response.json({ error: 'A valid email address is required' }, { status: 400 });
       }
       const lead = await base44.asServiceRole.entities.InvestorLead.create({
