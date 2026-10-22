@@ -23,7 +23,7 @@ assert.equal(nws[0].evidenceClass, "external_observation");
 assert.equal(nws[0].simulated, false);
 assert.equal(nws[0].payload.event, "Severe Thunderstorm Warning");
 assert.equal(nws[0].location, "Laclede County");
-assert.throws(() => fetchNwsAlerts(999, 0), /Valid latitude/);
+await assert.rejects(() => fetchNwsAlerts(999, 0), /Valid latitude/);
 
 const quakes = await fetchUsgsEarthquakes({
   fetchImpl: mockFetch({features: [{id: "us7000test", properties: {
