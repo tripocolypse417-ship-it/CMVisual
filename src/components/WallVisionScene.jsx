@@ -1185,9 +1185,9 @@ export default function WallVisionScene({ detections, scanMode, isScanning, trai
           <div className="font-mono text-[8px] text-muted-foreground">
             {orientRef.current.hasOrientation ? '📡 Gyro active' : '👆 Drag to look'} · {Math.round(spatialWorld.stats.confidence * 100)}% map confidence
           </div>
-          <div className="font-mono text-[8px] text-muted-foreground">{detections.length} observations · {scanMode} · TRACKED {spatialWorld.stats.tracked}</div>
-          <div className="font-mono text-[8px] mt-1" style={{ color: detections.filter(d => d.type === 'human').length ? '#00ff88' : 'rgba(255,255,255,0.45)' }}>
-            HUMANS {detections.filter(d => d.type === 'human').length} · LIVE 3D {detections.length ? 'ACTIVE' : 'WAITING FOR REAL INPUT'}
+          <div className="font-mono text-[8px] text-muted-foreground">{safeDetections.length} observations · {scanMode} · TRACKED {spatialWorld.stats.tracked}</div>
+          <div className="font-mono text-[8px] mt-1" style={{ color: safeDetections.filter(d => d.type === 'human').length ? '#00ff88' : 'rgba(255,255,255,0.45)' }}>
+            HUMANS {safeDetections.filter(d => d.type === 'human').length} · LIVE 3D {safeDetections.length ? 'ACTIVE' : 'WAITING FOR REAL INPUT'}
           </div>
           <div className="font-mono text-[7px] text-primary/70 mt-1">MEASURED SPACE ONLY · CAMERA DEPTH ESTIMATES LABELED · NO SYNTHETIC TARGETS</div>
         </div>

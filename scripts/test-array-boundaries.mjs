@@ -31,6 +31,9 @@ assert.match(environment3DSource, /safeDetections\.map\(/, "3D scene must map on
 const wallVisionSource = await readFile(new URL("../src/components/WallVisionScene.jsx", import.meta.url), "utf8");
 assert.match(wallVisionSource, /Array\.isArray\(selected\?\.wallLayers\)/, "wall composition must be array-guarded before rendering");
 assert.match(wallVisionSource, /selectedWallLayers\.map\(/, "wall composition must map only normalized layers");
+assert.ok(wallVisionSource.includes("{safeDetections.length} observations"), "WallVision HUD must count only normalized detection arrays");
+assert.ok(wallVisionSource.includes("safeDetections.filter(d => d.type === 'human')"), "WallVision HUD must filter only normalized detections");
+assert.ok(!wallVisionSource.includes("{detections.length} observations") && !wallVisionSource.includes("detections.filter(d => d.type === 'human')"), "WallVision HUD must not dereference malformed raw detections");
 const homeSource = await readFile(new URL("../src/pages/Home.jsx", import.meta.url), "utf8");
 assert.match(homeSource, /Array\.isArray\(worldTimeline\?\.tracks\)/, "replay tracks must be array-guarded");
 assert.match(homeSource, /Array\.isArray\(track\.trail\)/, "replay trails must be array-guarded");
