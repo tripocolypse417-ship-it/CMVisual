@@ -10,7 +10,7 @@ export default function useDeviceSensors(active = true) {
   const [hasSensors, setHasSensors] = useState(false);
   const [needsPermission, setNeedsPermission] = useState(false);
   const [denied, setDenied] = useState(false);
-  const lastAccel = useRef({ x: 0, y: 0, z: 0 });
+  const lastAccel = useRef(null);
   const movingDecay = useRef(0);
   const lastMagnitude = useRef(0);
 
@@ -63,7 +63,31 @@ export default function useDeviceSensors(active = true) {
     const onMotion = (e) => {
       const a = e.accelerationIncludingGravity || e.acceleration;
       if (!a) return;
-      const ax = a.x ?? 0, ay = a.y ?? 0, az = a.z ?? 0;
+      const axis = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
+      const ax = axis(a.x), ay = axis(a.y), az = axis(a.z);
+      const timestamp = Date.now();
+
+      // Missing axes are unknown, not zero acceleration. Reset the heuristic
+      // baseline so a later complete sample does not create a synthetic spike.
+      if (ax == null || ay == null || az == null) {
+        lastAccel.current = null;
+        movingDecay.current = 0;
+        lastMagnitude.current = 0;
+        setMotion({ x: ax, y: ay, z: az, magnitude: null, jerk: null, timestamp });
+        setIsMoving(false);
+        return;
+      }
+
+      if (!lastAccel.current) {
+        // The first complete reading establishes a baseline; it cannot prove
+        // movement because there is no prior sample to compare against.
+        lastAccel.current = { x: ax, y: ay, z: az };
+        lastMagnitude.current = 0;
+        setMotion({ x: ax, y: ay, z: az, magnitude: null, jerk: null, timestamp });
+        setIsMoving(false);
+        return;
+      }
+
       const dx = ax - lastAccel.current.x;
       const dy = ay - lastAccel.current.y;
       const dz = az - lastAccel.current.z;
@@ -71,7 +95,7 @@ export default function useDeviceSensors(active = true) {
       const mag = Math.sqrt(dx * dx + dy * dy + dz * dz);
       const jerk = Math.abs(mag - lastMagnitude.current);
       lastMagnitude.current = mag;
-      setMotion({ x: ax, y: ay, z: az, magnitude: mag, jerk, timestamp: Date.now() });
+      setMotion({ x: ax, y: ay, z: az, magnitude: mag, jerk, timestamp });
       if (mag > 1.5) movingDecay.current = 6; // ~6 frames of "moving" after a shake
       else if (movingDecay.current > 0) movingDecay.current -= 1;
       setIsMoving(movingDecay.current > 0);

@@ -3,6 +3,13 @@ import useDeviceSensors from '@/hooks/useDeviceSensors';
 import { getStableDeviceId, getDeviceIdentityStatus } from '@/lib/deviceIdentity';
 import { base44 } from '@/api/base44Client';
 import { getNativeSensorSnapshot, getNativeSensorCapabilities } from '@/lib/nativeSensors';
+import { buildPhysicalValidationSample } from '@/lib/physicalValidationEvidence';
+import {
+  enqueuePhysicalValidationRecord,
+  getPhysicalValidationQueueStatus,
+  readPhysicalValidationQueue,
+  syncPhysicalValidationQueue,
+} from '@/lib/physicalValidationQueue';
 
 const DURATION_MS = 60000;
 const SAMPLE_MS = 250;
@@ -35,12 +42,15 @@ export default function PhysicalValidation() {
   const [cameraState, setCameraState] = useState('NOT CHECKED');
   const [captureState, setCaptureState] = useState('READY');
   const [saveState, setSaveState] = useState('NOT SAVED');
+  const [queueStatus, setQueueStatus] = useState(() => getPhysicalValidationQueueStatus());
   const [nativeSnapshot, setNativeSnapshot] = useState(null);
   const [nativeCapabilities, setNativeCapabilities] = useState(null);
   const start = useRef(0);
   const timer = useRef(null);
   const sampler = useRef(null);
   const data = useRef([]);
+  const pendingValidationRecord = useRef(null);
+  const savedCapture = useRef(false);
 
   const cameraSupported = typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia;
 
@@ -82,17 +92,15 @@ export default function PhysicalValidation() {
       const native = await getNativeSensorSnapshot();
       const now = Date.now();
       if (native) setNativeSnapshot(native);
-      const sample = {
-        t: Math.max(0, now - start.current),
-        at: new Date(now).toISOString(),
+      const sample = buildPhysicalValidationSample({
+        elapsedMs: now - start.current,
+        capturedAt: new Date(now).toISOString(),
         deviceId,
         heading: latestSensors.current.heading,
         moving: latestSensors.current.isMoving,
         motion: latestSensors.current.motion,
-        evidenceClass: 'MEASURED',
-        nativeSensors: native?.measurements ?? null,
-        nativeSensorAt: native?.lastSensorAt ?? null,
-      };
+        nativeSnapshot: native,
+      });
       data.current = [...data.current, sample];
       setSamples([...data.current]);
     } catch (error) {
@@ -113,6 +121,8 @@ export default function PhysicalValidation() {
 
   const begin = () => {
     data.current = [];
+    pendingValidationRecord.current = null;
+    savedCapture.current = false;
     setSamples([]);
     setMarks([]);
     setSaveState('NOT SAVED');
@@ -174,160 +184,153 @@ export default function PhysicalValidation() {
   };
 
   const saveValidation = async () => {
-    if (!elapsed || !deviceId) return;
+    if (!elapsed || !deviceId || savedCapture.current) {
+      if (savedCapture.current) setSaveState('SAVED');
+      return;
+    }
     setSaveState('SAVING');
 
-    const QUEUE_KEY = 'waveradar:physical-validation:queue:v1';
-    const readQueue = () => {
-      try {
-        const parsed = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
-        return Array.isArray(parsed) ? parsed : [];
-      } catch {
-        return [];
-      }
-    };
-    const writeQueue = (queue) => {
-      try {
-        localStorage.setItem(QUEUE_KEY, JSON.stringify(queue.slice(-20)));
-        return true;
-      } catch (error) {
-        console.warn('[WaveRadar] offline queue unavailable', error);
-        return false;
-      }
-    };
-
     try {
-      const headingSamples = data.current.filter(v => Number.isFinite(Number(v.heading))).length;
-      const motionSamples = data.current.filter(v => v.motion?.timestamp).length;
-      const quality = Math.max(
-        0,
-        Math.min(1, (Math.min(data.current.length, 200) / 200) * 0.5 +
-          (headingSamples > 0 ? 0.25 : 0) +
-          (motionSamples > 0 ? 0.25 : 0))
-      );
+      if (!pendingValidationRecord.current) {
+        const headingSamples = data.current.filter(v => v.heading != null && Number.isFinite(Number(v.heading))).length;
+        const motionSamples = data.current.filter(v => v.evidenceByField?.motionAxes?.evidenceClass === EVIDENCE_CLASS.MEASURED).length;
+        const quality = Math.max(
+          0,
+          Math.min(1, (Math.min(data.current.length, 200) / 200) * 0.5 +
+            (headingSamples > 0 ? 0.25 : 0) +
+            (motionSamples > 0 ? 0.25 : 0))
+        );
 
-      const sessionPayload = {
-        session_id: makeId('validation'),
-        started_at: new Date(start.current).toISOString(),
-        ended_at: new Date(start.current + elapsed).toISOString(),
-        status: elapsed >= DURATION_MS ? 'COMPLETE' : 'STOPPED',
-        frames: data.current.length,
-        targets: marks.length + knownPointChecks.length,
-        quality,
-        notes: 'WaveRadar physical validation; capture completeness and operator annotations only. Spatial accuracy remains unverified.',
-      };
+        const sessionPayload = {
+          session_id: makeId('validation'),
+          started_at: new Date(start.current).toISOString(),
+          ended_at: new Date(start.current + elapsed).toISOString(),
+          status: elapsed >= DURATION_MS ? 'COMPLETE' : 'STOPPED',
+          frames: data.current.length,
+          targets: marks.length + knownPointChecks.length,
+          quality,
+          notes: 'WaveRadar physical validation; capture completeness and operator annotations only. Spatial accuracy remains unverified.',
+        };
 
-      const validationPayload = {
-        sensor_id: deviceId,
-        sensor_type: 'PHONE_IMU_ORIENTATION',
-        observed_at: new Date().toISOString(),
-        quality_score: quality,
-        freshness_score: elapsed > 0 ? 1 : 0,
-        agreement_score: 0,
-        repeatability_score: 0,
-        calibration_status: 'UNVERIFIED',
-        sample_count: data.current.length,
-        metrics_json: JSON.stringify({
-          durationMs: elapsed,
-          qualityMeaning: 'CAPTURE_COMPLETENESS_ONLY_NOT_ACCURACY',
-          headingSamples,
-          motionSamples,
-          cameraState,
-          groundTruthMarkers: marks.length,
-          knownPointChecks,
-        }),
-        limitations_json: JSON.stringify([
-          'Phone/browser sensors are device-dependent.',
-          'No through-wall measurement is claimed by this validation run.',
-          'Calibration and physical accuracy remain unverified until ground-truth comparison is performed.',
-        ]),
-        method_version: 'waveradar-physical-validation-v2',
-      };
+        const validationPayload = {
+          sensor_id: deviceId,
+          sensor_type: 'PHONE_IMU_ORIENTATION',
+          observed_at: new Date().toISOString(),
+          quality_score: quality,
+          freshness_score: elapsed > 0 ? 1 : 0,
+          agreement_score: 0,
+          repeatability_score: 0,
+          calibration_status: 'UNVERIFIED',
+          sample_count: data.current.length,
+          metrics_json: JSON.stringify({
+            durationMs: elapsed,
+            qualityMeaning: 'CAPTURE_COMPLETENESS_ONLY_NOT_ACCURACY',
+            headingSamples,
+            motionSamples,
+            cameraState,
+            groundTruthMarkers: marks.length,
+            knownPointChecks,
+            evidencePolicy: 'Per-field evidenceByField classifications are authoritative; mixed sample envelope is UNKNOWN.',
+          }),
+          limitations_json: JSON.stringify([
+            'Phone/browser sensors are device-dependent.',
+            'No through-wall measurement is claimed by this validation run.',
+            'Calibration and physical accuracy remain unverified until ground-truth comparison is performed.',
+            'Computed motion magnitude and jerk are DERIVED; moving/still is INFERRED.',
+          ]),
+          method_version: 'waveradar-physical-validation-v3',
+        };
 
-      const pending = readQueue();
-      // Track each successful half independently so a retry after a partial
-      // failure does not blindly recreate the first record.
-      const queued = {
-        sessionPayload,
-        validationPayload,
-        sessionSaved: false,
-        validationSaved: false,
-        queuedAt: new Date().toISOString(),
-      };
+        pendingValidationRecord.current = {
+          queueId: sessionPayload.session_id,
+          sessionPayload,
+          validationPayload,
+          queuedAt: new Date().toISOString(),
+          schemaVersion: 2,
+          sessionState: 'pending',
+          validationState: 'pending',
+          sessionSaved: false,
+          validationSaved: false,
+        };
+      }
 
-      try {
-        await base44.entities.ScanSession.create(sessionPayload);
-        queued.sessionSaved = true;
-        await base44.entities.SensorValidation.create(validationPayload);
-        queued.validationSaved = true;
-        if (!writeQueue(pending)) {
-          setSaveState('SAVED · QUEUE CLEANUP FAILED');
-          return;
-        }
-        setSaveState('SAVED');
-      } catch (error) {
-        pending.push(queued);
-        const queuedLocally = writeQueue(pending);
-        console.warn('[WaveRadar] validation save incomplete', error);
-        setSaveState(queuedLocally ? 'QUEUED OFFLINE' : 'SAVE FAILED · OFFLINE STORAGE UNAVAILABLE');
+      // Write-ahead queue persistence must succeed before any remote write.
+      const queued = enqueuePhysicalValidationRecord(pendingValidationRecord.current);
+      if (!queued.ok) {
+        const status = getPhysicalValidationQueueStatus();
+        setQueueStatus(status);
+        setSaveState(queued.error === 'STORAGE_FULL'
+          ? 'SAVE BLOCKED · LOCAL STORAGE FULL'
+          : 'SAVE BLOCKED · QUEUE STORAGE UNAVAILABLE');
+        return;
+      }
+
+      const result = await syncPhysicalValidationQueue({
+        online: typeof navigator !== 'undefined' && navigator.onLine,
+        createSession: payload => base44.entities.ScanSession.create(payload),
+        createValidation: payload => base44.entities.SensorValidation.create(payload),
+      });
+      const status = getPhysicalValidationQueueStatus();
+      setQueueStatus(status);
+      const latestQueue = readPhysicalValidationQueue();
+      const ownRecordPending = !latestQueue.ok ||
+        latestQueue.queue.some(item => item?.queueId === pendingValidationRecord.current.queueId ||
+          item?.sessionPayload?.session_id === pendingValidationRecord.current.queueId);
+
+      if (!result.ok || result.checkpointFailed) {
+        setSaveState('QUEUED · CHECKPOINT / STORAGE REVIEW');
+      } else if (ownRecordPending && result.ambiguousCount > 0) {
+        setSaveState('QUEUED · REVIEW REQUIRED');
+      } else if (ownRecordPending && !(typeof navigator !== 'undefined' && navigator.onLine)) {
+        setSaveState('QUEUED OFFLINE');
+      } else if (ownRecordPending) {
+        setSaveState('QUEUED · SYNC PENDING');
+      } else {
+        savedCapture.current = true;
+        setSaveState(status.ok && status.pendingCount > 0
+          ? 'SAVED · OTHER RECORDS NEED REVIEW'
+          : 'SAVED');
       }
     } catch (error) {
       console.error('[WaveRadar] validation save preparation failed', error);
-      setSaveState('SAVE FAILED');
+      setQueueStatus(getPhysicalValidationQueueStatus());
+      setSaveState('SAVE FAILED · RECORD RETAINED IF QUEUED');
     }
   };
 
   useEffect(() => {
-    const QUEUE_KEY = 'waveradar:physical-validation:queue:v1';
     let flushInFlight = false;
 
+    const refreshQueueStatus = () => setQueueStatus(getPhysicalValidationQueueStatus());
     const flushQueue = async () => {
       if (flushInFlight) return;
+      refreshQueueStatus();
+      if (!navigator.onLine) return;
       flushInFlight = true;
       try {
-      let queue = [];
-      try {
-        const parsed = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
-        queue = Array.isArray(parsed) ? parsed : [];
-      } catch {
-        return;
-      }
-      if (!queue.length || !navigator.onLine) return;
-
-      const remaining = [];
-      for (const item of queue) {
-        // Older queue entries have no flags and are treated as not yet saved.
-        const progress = {
-          ...item,
-          sessionSaved: item.sessionSaved === true,
-          validationSaved: item.validationSaved === true,
-        };
-        try {
-          if (!progress.sessionSaved) {
-            await base44.entities.ScanSession.create(progress.sessionPayload);
-            progress.sessionSaved = true;
-            // Persist progress immediately, before attempting the second write.
-            const rest = queue.slice(queue.indexOf(item) + 1);
-            try { localStorage.setItem(QUEUE_KEY, JSON.stringify([...remaining, progress, ...rest].slice(-20))); } catch {}
-          }
-          if (!progress.validationSaved) {
-            await base44.entities.SensorValidation.create(progress.validationPayload);
-            progress.validationSaved = true;
-          }
-        } catch (error) {
-          console.warn('[WaveRadar] queued validation still pending', error);
-          remaining.push(progress);
+        const result = await syncPhysicalValidationQueue({
+          online: true,
+          createSession: payload => base44.entities.ScanSession.create(payload),
+          createValidation: payload => base44.entities.SensorValidation.create(payload),
+        });
+        const status = getPhysicalValidationQueueStatus();
+        setQueueStatus(status);
+        if (!result.ok || result.checkpointFailed) {
+          setSaveState(previous => previous === 'NOT SAVED' ? 'QUEUE CHECKPOINT NEEDS REVIEW' : previous);
+        } else if (status.ok && status.ambiguousCount > 0) {
+          setSaveState(previous => previous === 'NOT SAVED' ? 'QUEUE REVIEW REQUIRED' : previous);
+        } else if (status.ok && status.pendingCount === 0) {
+          setSaveState(previous => previous.startsWith('QUEUED') ? 'SYNCED' : previous);
         }
-      }
-      try {
-        localStorage.setItem(QUEUE_KEY, JSON.stringify(remaining.slice(-20)));
-      } catch {}
-      if (!remaining.length) setSaveState('SYNCED');
+      } catch (error) {
+        console.warn('[WaveRadar] queued validation sync failed', error);
+        refreshQueueStatus();
       } finally {
         flushInFlight = false;
       }
     };
 
+    refreshQueueStatus();
     void flushQueue();
     window.addEventListener('online', flushQueue);
     const retry = window.setInterval(flushQueue, 30000);
@@ -336,6 +339,26 @@ export default function PhysicalValidation() {
       window.clearInterval(retry);
     };
   }, []);
+
+  const exportPendingQueue = () => {
+    const loaded = readPhysicalValidationQueue();
+    setQueueStatus(loaded.ok ? getPhysicalValidationQueueStatus() : loaded);
+    if (!loaded.ok) {
+      setSaveState('QUEUE EXPORT FAILED · STORAGE UNAVAILABLE');
+      return;
+    }
+    const url = URL.createObjectURL(new Blob([JSON.stringify({
+      schema: 'waveradar-physical-validation-queue-v2',
+      exportedAt: new Date().toISOString(),
+      records: loaded.queue,
+      note: 'Ambiguous records are intentionally not retried automatically; reconcile against server records before any manual retry.',
+    }, null, 2)], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'waveradar-pending-validation-queue.json';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
 
   const exportData = () => {
     const payload = {
@@ -475,6 +498,15 @@ export default function PhysicalValidation() {
           <div className="font-mono text-[10px] text-slate-500 mt-2">
             CAPTURE: {captureState} · STORAGE: {saveState}
           </div>
+          <div className="font-mono text-[10px] text-slate-400 mt-2">
+            OFFLINE QUEUE: {queueStatus.ok ? `${queueStatus.pendingCount} pending · ${queueStatus.ambiguousCount} require review` : `UNAVAILABLE · ${queueStatus.error}`}
+          </div>
+          {queueStatus.ok && queueStatus.pendingCount > 0 && (
+            <div className="mt-2 space-y-2">
+              {queueStatus.ambiguousCount > 0 && <div className="text-[10px] text-amber-200">Some remote write outcomes are ambiguous. They are retained and will not be retried automatically to avoid duplicate evidence.</div>}
+              <button onClick={exportPendingQueue} className="border border-amber-300/30 px-3 py-2 text-xs">EXPORT PENDING QUEUE</button>
+            </div>
+          )}
         </section>
       </div>
     </div>
