@@ -96,9 +96,14 @@ export default function PhysicalValidation() {
       const moving = latestSensors.current.isMoving;
       const motion = latestSensors.current.motion;
       const nativeMeasurements = native?.measurements ?? null;
+      const capturedAt = new Date(now).toISOString();
+      const hasNativeMeasurements = !!nativeMeasurements && typeof nativeMeasurements === 'object' && Object.keys(nativeMeasurements).length > 0;
+      const hasMotionAxes = !!motion?.timestamp && [motion.x, motion.y, motion.z].every(value => typeof value === 'number' && Number.isFinite(value));
+      const hasMotionMagnitude = hasMotionAxes && typeof motion.magnitude === 'number' && Number.isFinite(motion.magnitude);
       const sample = {
         t: Math.max(0, now - start.current),
-        capturedAt: new Date(now).toISOString(),
+        at: capturedAt,
+        capturedAt,
         deviceId,
         // This envelope combines different evidence types; consumers must use
         // evidenceByField instead of treating the whole sample as measured.
@@ -111,41 +116,41 @@ export default function PhysicalValidation() {
         evidenceByField: {
           heading: {
             value: heading,
-            evidenceClass: heading == null ? EVIDENCE_CLASS.UNKNOWN : EVIDENCE_CLASS.DERIVED,
+            evidenceClass: heading == null || !Number.isFinite(Number(heading)) ? EVIDENCE_CLASS.UNKNOWN : EVIDENCE_CLASS.DERIVED,
             modality: 'MODEL',
             source: 'DeviceOrientationEvent heading normalized by useDeviceSensors',
             note: 'Platform-provided orientation may itself be fused; not an independently calibrated bearing.',
           },
           motionAxes: {
-            value: motion?.timestamp ? { x: motion.x, y: motion.y, z: motion.z } : null,
-            evidenceClass: motion?.timestamp ? EVIDENCE_CLASS.MEASURED : EVIDENCE_CLASS.UNKNOWN,
+            value: hasMotionAxes ? { x: motion.x, y: motion.y, z: motion.z } : null,
+            evidenceClass: hasMotionAxes ? EVIDENCE_CLASS.MEASURED : EVIDENCE_CLASS.UNKNOWN,
             modality: 'IMU',
             source: 'DeviceMotionEvent accelerationIncludingGravity or acceleration',
-            observedAt: motion?.timestamp ? new Date(motion.timestamp).toISOString() : null,
+            observedAt: hasMotionAxes ? new Date(motion.timestamp).toISOString() : null,
           },
           motionMagnitude: {
-            value: motion?.magnitude ?? null,
-            evidenceClass: motion?.timestamp ? EVIDENCE_CLASS.DERIVED : EVIDENCE_CLASS.UNKNOWN,
+            value: hasMotionMagnitude ? motion.magnitude : null,
+            evidenceClass: hasMotionMagnitude ? EVIDENCE_CLASS.DERIVED : EVIDENCE_CLASS.UNKNOWN,
             modality: 'MODEL',
             derivedFrom: ['motionAxes'],
             note: 'Computed from changes between successive acceleration samples.',
           },
           motionJerk: {
-            value: motion?.jerk ?? null,
-            evidenceClass: motion?.timestamp ? EVIDENCE_CLASS.DERIVED : EVIDENCE_CLASS.UNKNOWN,
+            value: hasMotionMagnitude && typeof motion.jerk === 'number' && Number.isFinite(motion.jerk) ? motion.jerk : null,
+            evidenceClass: hasMotionMagnitude && typeof motion.jerk === 'number' && Number.isFinite(motion.jerk) ? EVIDENCE_CLASS.DERIVED : EVIDENCE_CLASS.UNKNOWN,
             modality: 'MODEL',
             derivedFrom: ['motionMagnitude'],
           },
           moving: {
-            value: moving,
-            evidenceClass: EVIDENCE_CLASS.INFERRED,
+            value: hasMotionMagnitude ? moving : null,
+            evidenceClass: hasMotionMagnitude ? EVIDENCE_CLASS.INFERRED : EVIDENCE_CLASS.UNKNOWN,
             modality: 'MODEL',
             derivedFrom: ['motionMagnitude'],
             source: 'Motion-threshold heuristic; not ground-truth movement.',
           },
           nativeSensors: {
             value: nativeMeasurements,
-            evidenceClass: nativeMeasurements ? EVIDENCE_CLASS.MEASURED : EVIDENCE_CLASS.UNKNOWN,
+            evidenceClass: hasNativeMeasurements ? EVIDENCE_CLASS.MEASURED : EVIDENCE_CLASS.UNKNOWN,
             modality: 'IMU',
             source: 'WaveRadar native Android sensor bridge',
             observedAt: native?.lastSensorAt ?? null,
@@ -244,8 +249,8 @@ export default function PhysicalValidation() {
 
     try {
       if (!pendingValidationRecord.current) {
-        const headingSamples = data.current.filter(v => Number.isFinite(Number(v.heading))).length;
-        const motionSamples = data.current.filter(v => v.motion?.timestamp).length;
+        const headingSamples = data.current.filter(v => v.heading != null && Number.isFinite(Number(v.heading))).length;
+        const motionSamples = data.current.filter(v => v.evidenceByField?.motionAxes?.evidenceClass === EVIDENCE_CLASS.MEASURED).length;
         const quality = Math.max(
           0,
           Math.min(1, (Math.min(data.current.length, 200) / 200) * 0.5 +
