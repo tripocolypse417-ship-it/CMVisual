@@ -10,7 +10,7 @@ export default function useDeviceSensors(active = true) {
   const [hasSensors, setHasSensors] = useState(false);
   const [needsPermission, setNeedsPermission] = useState(false);
   const [denied, setDenied] = useState(false);
-  const lastAccel = useRef({ x: 0, y: 0, z: 0 });
+  const lastAccel = useRef(null);
   const movingDecay = useRef(0);
   const lastMagnitude = useRef(0);
 
@@ -70,8 +70,18 @@ export default function useDeviceSensors(active = true) {
       // Missing axes are unknown, not zero acceleration. Reset the heuristic
       // baseline so a later complete sample does not create a synthetic spike.
       if (ax == null || ay == null || az == null) {
-        lastAccel.current = { x: 0, y: 0, z: 0 };
+        lastAccel.current = null;
         movingDecay.current = 0;
+        lastMagnitude.current = 0;
+        setMotion({ x: ax, y: ay, z: az, magnitude: null, jerk: null, timestamp });
+        setIsMoving(false);
+        return;
+      }
+
+      if (!lastAccel.current) {
+        // The first complete reading establishes a baseline; it cannot prove
+        // movement because there is no prior sample to compare against.
+        lastAccel.current = { x: ax, y: ay, z: az };
         lastMagnitude.current = 0;
         setMotion({ x: ax, y: ay, z: az, magnitude: null, jerk: null, timestamp });
         setIsMoving(false);
