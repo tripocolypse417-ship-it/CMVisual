@@ -3,7 +3,7 @@ import useDeviceSensors from '@/hooks/useDeviceSensors';
 import { getStableDeviceId, getDeviceIdentityStatus } from '@/lib/deviceIdentity';
 import { base44 } from '@/api/base44Client';
 import { getNativeSensorSnapshot, getNativeSensorCapabilities } from '@/lib/nativeSensors';
-import { EVIDENCE_CLASS } from '@/lib/dataContract';
+import { buildPhysicalValidationSample } from '@/lib/physicalValidationEvidence';
 import {
   enqueuePhysicalValidationRecord,
   getPhysicalValidationQueueStatus,
@@ -92,72 +92,15 @@ export default function PhysicalValidation() {
       const native = await getNativeSensorSnapshot();
       const now = Date.now();
       if (native) setNativeSnapshot(native);
-      const heading = latestSensors.current.heading;
-      const moving = latestSensors.current.isMoving;
-      const motion = latestSensors.current.motion;
-      const nativeMeasurements = native?.measurements ?? null;
-      const capturedAt = new Date(now).toISOString();
-      const hasNativeMeasurements = !!nativeMeasurements && typeof nativeMeasurements === 'object' && Object.keys(nativeMeasurements).length > 0;
-      const hasMotionAxes = !!motion?.timestamp && [motion.x, motion.y, motion.z].every(value => typeof value === 'number' && Number.isFinite(value));
-      const hasMotionMagnitude = hasMotionAxes && typeof motion.magnitude === 'number' && Number.isFinite(motion.magnitude);
-      const sample = {
-        t: Math.max(0, now - start.current),
-        at: capturedAt,
-        capturedAt,
+      const sample = buildPhysicalValidationSample({
+        elapsedMs: now - start.current,
+        capturedAt: new Date(now).toISOString(),
         deviceId,
-        // This envelope combines different evidence types; consumers must use
-        // evidenceByField instead of treating the whole sample as measured.
-        evidenceClass: EVIDENCE_CLASS.UNKNOWN,
-        heading,
-        moving,
-        motion,
-        nativeSensors: nativeMeasurements,
-        nativeSensorAt: native?.lastSensorAt ?? null,
-        evidenceByField: {
-          heading: {
-            value: heading,
-            evidenceClass: heading == null || !Number.isFinite(Number(heading)) ? EVIDENCE_CLASS.UNKNOWN : EVIDENCE_CLASS.DERIVED,
-            modality: 'MODEL',
-            source: 'DeviceOrientationEvent heading normalized by useDeviceSensors',
-            note: 'Platform-provided orientation may itself be fused; not an independently calibrated bearing.',
-          },
-          motionAxes: {
-            value: hasMotionAxes ? { x: motion.x, y: motion.y, z: motion.z } : null,
-            evidenceClass: hasMotionAxes ? EVIDENCE_CLASS.MEASURED : EVIDENCE_CLASS.UNKNOWN,
-            modality: 'IMU',
-            source: 'DeviceMotionEvent accelerationIncludingGravity or acceleration',
-            observedAt: hasMotionAxes ? new Date(motion.timestamp).toISOString() : null,
-          },
-          motionMagnitude: {
-            value: hasMotionMagnitude ? motion.magnitude : null,
-            evidenceClass: hasMotionMagnitude ? EVIDENCE_CLASS.DERIVED : EVIDENCE_CLASS.UNKNOWN,
-            modality: 'MODEL',
-            derivedFrom: ['motionAxes'],
-            note: 'Computed from changes between successive acceleration samples.',
-          },
-          motionJerk: {
-            value: hasMotionMagnitude && typeof motion.jerk === 'number' && Number.isFinite(motion.jerk) ? motion.jerk : null,
-            evidenceClass: hasMotionMagnitude && typeof motion.jerk === 'number' && Number.isFinite(motion.jerk) ? EVIDENCE_CLASS.DERIVED : EVIDENCE_CLASS.UNKNOWN,
-            modality: 'MODEL',
-            derivedFrom: ['motionMagnitude'],
-          },
-          moving: {
-            value: hasMotionMagnitude ? moving : null,
-            evidenceClass: hasMotionMagnitude ? EVIDENCE_CLASS.INFERRED : EVIDENCE_CLASS.UNKNOWN,
-            modality: 'MODEL',
-            derivedFrom: ['motionMagnitude'],
-            source: 'Motion-threshold heuristic; not ground-truth movement.',
-          },
-          nativeSensors: {
-            value: nativeMeasurements,
-            evidenceClass: hasNativeMeasurements ? EVIDENCE_CLASS.MEASURED : EVIDENCE_CLASS.UNKNOWN,
-            modality: 'IMU',
-            source: 'WaveRadar native Android sensor bridge',
-            observedAt: native?.lastSensorAt ?? null,
-            accuracy: native?.accuracy ?? null,
-          },
-        },
-      };
+        heading: latestSensors.current.heading,
+        moving: latestSensors.current.isMoving,
+        motion: latestSensors.current.motion,
+        nativeSnapshot: native,
+      });
       data.current = [...data.current, sample];
       setSamples([...data.current]);
     } catch (error) {
