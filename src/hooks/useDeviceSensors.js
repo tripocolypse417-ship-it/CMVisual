@@ -63,7 +63,21 @@ export default function useDeviceSensors(active = true) {
     const onMotion = (e) => {
       const a = e.accelerationIncludingGravity || e.acceleration;
       if (!a) return;
-      const ax = a.x ?? 0, ay = a.y ?? 0, az = a.z ?? 0;
+      const axis = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
+      const ax = axis(a.x), ay = axis(a.y), az = axis(a.z);
+      const timestamp = Date.now();
+
+      // Missing axes are unknown, not zero acceleration. Reset the heuristic
+      // baseline so a later complete sample does not create a synthetic spike.
+      if (ax == null || ay == null || az == null) {
+        lastAccel.current = { x: 0, y: 0, z: 0 };
+        movingDecay.current = 0;
+        lastMagnitude.current = 0;
+        setMotion({ x: ax, y: ay, z: az, magnitude: null, jerk: null, timestamp });
+        setIsMoving(false);
+        return;
+      }
+
       const dx = ax - lastAccel.current.x;
       const dy = ay - lastAccel.current.y;
       const dz = az - lastAccel.current.z;
@@ -71,7 +85,7 @@ export default function useDeviceSensors(active = true) {
       const mag = Math.sqrt(dx * dx + dy * dy + dz * dz);
       const jerk = Math.abs(mag - lastMagnitude.current);
       lastMagnitude.current = mag;
-      setMotion({ x: ax, y: ay, z: az, magnitude: mag, jerk, timestamp: Date.now() });
+      setMotion({ x: ax, y: ay, z: az, magnitude: mag, jerk, timestamp });
       if (mag > 1.5) movingDecay.current = 6; // ~6 frames of "moving" after a shake
       else if (movingDecay.current > 0) movingDecay.current -= 1;
       setIsMoving(movingDecay.current > 0);
