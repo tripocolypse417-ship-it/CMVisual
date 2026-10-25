@@ -1,4 +1,4 @@
-import { EVIDENCE_CLASS } from '@/lib/dataContract';
+import { EVIDENCE_CLASS } from './dataContract.js';
 
 /**
  * Build a mixed physical-validation sample without assigning one evidence class
