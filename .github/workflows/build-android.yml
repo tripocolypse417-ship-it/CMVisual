@@ -39,6 +39,9 @@ jobs:
       - name: Test malformed array boundaries
         run: npm run test:array-boundaries
 
+      - name: Test physical-validation queue safety
+        run: npm run test:physical-validation-queue
+
       - name: Build web application
         run: npm run build
 
