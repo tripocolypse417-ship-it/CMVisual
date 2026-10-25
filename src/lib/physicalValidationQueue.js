@@ -102,8 +102,14 @@ function normalizeQueueItem(item, index) {
   // The previous queue format explicitly stored these booleans after caught
   // partial failures. Records without either checkpoint are unsafe to replay.
   if (typeof item.sessionSaved === 'boolean' || typeof item.validationSaved === 'boolean') {
-    normalized.sessionState = item.sessionSaved ? WRITE_STATE.SAVED : WRITE_STATE.PENDING;
-    normalized.validationState = item.validationSaved ? WRITE_STATE.SAVED : WRITE_STATE.PENDING;
+    normalized.sessionState = item.sessionSaved ? WRITE_STATE.SAVED : WRITE_STATE.AMBIGUOUS;
+    normalized.validationState = item.validationSaved ? WRITE_STATE.SAVED : WRITE_STATE.AMBIGUOUS;
+    if (!item.sessionSaved || !item.validationSaved) {
+      // Older code recorded false when a request threw. A rejected network
+      // request may still have committed remotely, so false is not proof of
+      // non-delivery and must not trigger an automatic replay.
+      normalized.ambiguityReason = 'LEGACY_FALSE_CHECKPOINT_OUTCOME_UNKNOWN';
+    }
     return normalized;
   }
 
