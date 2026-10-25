@@ -158,4 +158,26 @@ const makeRecord = (id) => ({
   assert.equal(getPhysicalValidationQueueStatus(storage).ok, true);
 }
 
+{
+  // Legacy false checkpoints are ambiguous, not proof that a request never committed.
+  const storage = new MemoryStorage();
+  storage.setItem(PHYSICAL_VALIDATION_QUEUE_KEY, JSON.stringify([{
+    ...makeRecord('legacy-false'),
+    sessionSaved: true,
+    validationSaved: false,
+  }]));
+  let sessions = 0;
+  let validations = 0;
+  const result = await syncPhysicalValidationQueue({
+    storage,
+    createSession: async () => { sessions += 1; },
+    createValidation: async () => { validations += 1; },
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.ambiguousCount, 1);
+  assert.equal(sessions, 0, 'saved session must not be duplicated');
+  assert.equal(validations, 0, 'ambiguous validation must not be blindly retried');
+  assert.equal(readPhysicalValidationQueue(storage).queue.length, 1);
+}
+
 console.log('WaveRadar physical-validation queue regression tests: PASS');
