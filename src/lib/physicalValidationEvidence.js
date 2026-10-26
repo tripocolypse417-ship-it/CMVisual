@@ -2,10 +2,10 @@ import { DATA_STATE, EVIDENCE_CLASS, parseTimestamp } from './dataContract.js';
 
 const SENSOR_STALE_MS = 5000;
 const NON_MEASUREMENT_KEYS = new Set([
-  'timestamp', 'observedat', 'measuredat', 'accuracy', 'status', 'state',
-  'sensortype', 'modality', 'source', 'available', 'enabled', 'supported',
-  'samplecount', 'frequency', 'frequencyhz', 'samplerate', 'sampleratehz',
-  'elapsedrealtimenanos',
+  'timestamp', 'observedat', 'measuredat', 'agems', 'accuracy', 'status', 'state',
+  'sensortype', 'sensor_type', 'modality', 'source', 'available', 'enabled',
+  'supported', 'samplecount', 'frequency', 'frequencyhz', 'samplerate',
+  'sampleratehz', 'elapsedrealtimenanos',
 ]);
 
 function toIso(timestampMs) {
@@ -32,6 +32,14 @@ function hasFiniteValue(value) {
     Number.isFinite(Number(value));
 }
 
+function freshnessFromAge(ageValue) {
+  if (ageValue == null || ageValue === '' || !Number.isFinite(Number(ageValue)) || Number(ageValue) < 0) {
+    return { state: DATA_STATE.UNKNOWN, ageMs: null };
+  }
+  const ageMs = Number(ageValue);
+  return { state: ageMs > SENSOR_STALE_MS ? DATA_STATE.STALE : DATA_STATE.CURRENT, ageMs };
+}
+
 function classifyFreshness(observedAtMs, capturedAtMs) {
   if (toIso(observedAtMs) == null || toIso(capturedAtMs) == null) {
     return { state: DATA_STATE.UNKNOWN, ageMs: null };
@@ -47,13 +55,53 @@ function classifyFreshness(observedAtMs, capturedAtMs) {
   };
 }
 
+function classifySensorFreshness(measurement, capturedAtMs) {
+  if (!measurement || typeof measurement !== 'object' || Array.isArray(measurement)) {
+    return { ...freshnessFromAge(null), observedAt: null };
+  }
+  const hasTimestamp = Object.prototype.hasOwnProperty.call(measurement, 'timestamp') &&
+    measurement.timestamp != null && measurement.timestamp !== '';
+  if (hasTimestamp) {
+    const timestampMs = parseTimestamp(measurement.timestamp);
+    const observedAt = toIso(timestampMs);
+    const freshness = observedAt == null
+      ? { state: DATA_STATE.UNKNOWN, ageMs: null }
+      : classifyFreshness(timestampMs, capturedAtMs);
+    return { ...freshness, observedAt };
+  }
+  // Some bridges provide a monotonic age without an absolute timestamp.
+  // It can classify freshness, but cannot establish a wall-clock observation time.
+  return { ...freshnessFromAge(measurement.ageMs), observedAt: null };
+}
+
+function aggregateSensorFreshness(sensorFields) {
+  const measured = Object.values(sensorFields).filter(field =>
+    field.evidenceClass === EVIDENCE_CLASS.MEASURED
+  );
+  if (!measured.length) {
+    return { state: DATA_STATE.UNKNOWN, ageMs: null, observedAt: null };
+  }
+  const states = new Set(measured.map(field => field.state));
+  if (states.size !== 1 || states.has(DATA_STATE.UNKNOWN)) {
+    return { state: DATA_STATE.UNKNOWN, ageMs: null, observedAt: null };
+  }
+  const ages = measured.map(field => field.ageMs);
+  const ageMs = ages.every(age => age != null) ? Math.max(...ages) : null;
+  const timestamps = measured.map(field => parseTimestamp(field.observedAt));
+  const observedAt = timestamps.every(timestamp => timestamp != null)
+    ? toIso(Math.min(...timestamps))
+    : null;
+  return { state: measured[0].state, ageMs, observedAt };
+}
+
 /**
  * Build a mixed physical-validation sample without assigning one evidence class
  * to every field. Raw axes, derived motion features, and inferred movement are
  * represented separately. This function deliberately makes no accuracy claim.
  *
- * Sensor evidence class and freshness are independent: a stale observation
- * remains measured, but its state must not be presented as current.
+ * Sensor evidence class and freshness are independent. Native freshness is
+ * evaluated per sensor because a bridge-wide last-event timestamp can be recent
+ * while an individual sensor's last reading is old.
  */
 export function buildPhysicalValidationSample({
   elapsedMs,
@@ -65,15 +113,38 @@ export function buildPhysicalValidationSample({
   nativeSnapshot,
 }) {
   const nativeMeasurements = nativeSnapshot?.measurements ?? null;
-  const hasNativeMeasurements = hasFiniteMeasurement(nativeMeasurements);
   const capturedAtMs = parseTimestamp(capturedAt);
-  const nativeSensorAtMs = parseTimestamp(nativeSnapshot?.lastSensorAt);
-  const nativeSensorObservedAt = toIso(nativeSensorAtMs);
-  const nativeFreshness = classifyFreshness(nativeSensorObservedAt == null ? null : nativeSensorAtMs, capturedAtMs);
+  const nativeSnapshotAtMs = parseTimestamp(nativeSnapshot?.lastSensorAt);
+  const nativeSnapshotObservedAt = toIso(nativeSnapshotAtMs);
+  const nativeSnapshotFreshness = classifyFreshness(nativeSnapshotAtMs, capturedAtMs);
+
+  const nativeSensorFields = {};
+  if (nativeMeasurements && typeof nativeMeasurements === 'object' && !Array.isArray(nativeMeasurements)) {
+    for (const [sensorName, measurement] of Object.entries(nativeMeasurements)) {
+      const hasMeasurement = hasFiniteMeasurement(measurement);
+      const freshness = classifySensorFreshness(measurement, capturedAtMs);
+      nativeSensorFields[sensorName] = {
+        value: measurement,
+        evidenceClass: hasMeasurement ? EVIDENCE_CLASS.MEASURED : EVIDENCE_CLASS.UNKNOWN,
+        state: hasMeasurement ? freshness.state : DATA_STATE.UNKNOWN,
+        ageMs: hasMeasurement ? freshness.ageMs : null,
+        observedAt: hasMeasurement ? freshness.observedAt : null,
+        sensorType: measurement?.sensorType ?? null,
+        accuracy: measurement?.accuracy ?? null,
+      };
+    }
+  }
+  const nativeFreshness = aggregateSensorFreshness(nativeSensorFields);
+  const hasNativeMeasurements = Object.values(nativeSensorFields).some(field =>
+    field.evidenceClass === EVIDENCE_CLASS.MEASURED
+  );
 
   const motionTimestamp = parseTimestamp(motion?.timestamp);
   const motionObservedAt = toIso(motionTimestamp);
-  const motionFreshness = classifyFreshness(motionObservedAt == null ? null : motionTimestamp, capturedAtMs);
+  const motionFreshness = classifyFreshness(
+    motionObservedAt == null ? null : motionTimestamp,
+    capturedAtMs
+  );
   const hasMotionAxes = motionObservedAt != null &&
     [motion.x, motion.y, motion.z].every(value => typeof value === 'number' && Number.isFinite(value));
   const hasMotionMagnitude = hasMotionAxes &&
@@ -97,12 +168,15 @@ export function buildPhysicalValidationSample({
     motion,
     nativeSensors: nativeMeasurements,
     nativeSensorAt: nativeSnapshot?.lastSensorAt ?? null,
-    nativeSensorObservedAt,
+    nativeSensorObservedAt: nativeFreshness.observedAt,
     nativeSensorAgeMs: nativeFreshness.ageMs,
     nativeSensorState: nativeFreshness.state,
+    nativeSnapshotObservedAt,
+    nativeSnapshotAgeMs: nativeSnapshotFreshness.ageMs,
+    nativeSnapshotState: nativeSnapshotFreshness.state,
     motionObservedAt,
-    motionAgeMs: motionFreshness.ageMs,
-    motionState: motionFreshness.state,
+    motionAgeMs: hasMotionAxes ? motionFreshness.ageMs : null,
+    motionState: hasMotionAxes ? motionFreshness.state : DATA_STATE.UNKNOWN,
     evidenceByField: {
       heading: {
         value: hasHeading ? Number(heading) : null,
@@ -151,12 +225,14 @@ export function buildPhysicalValidationSample({
         evidenceClass: hasNativeMeasurements ? EVIDENCE_CLASS.MEASURED : EVIDENCE_CLASS.UNKNOWN,
         state: nativeFreshness.state,
         ageMs: nativeFreshness.ageMs,
+        observedAt: nativeFreshness.observedAt,
+        sensorFields: nativeSensorFields,
         modality: 'IMU',
         source: 'WaveRadar native Android sensor bridge',
-        observedAt: nativeSensorObservedAt,
-        accuracy: nativeSnapshot?.accuracy ?? null,
+        snapshotObservedAt: nativeSnapshotObservedAt,
+        snapshotState: nativeSnapshotFreshness.state,
         note: hasNativeMeasurements
-          ? 'At least one finite numeric measurement was present; freshness is classified separately.'
+          ? 'Per-sensor freshness is recorded in sensorFields; a recent bridge-wide timestamp does not make every sensor current.'
           : 'No finite numeric measurement was present in the native snapshot.',
       },
     },
