@@ -21,26 +21,51 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
   private final Map<Integer, Long> sensorTimestamps = new HashMap<>();
   private final Map<Integer, Integer> sensorAccuracies = new HashMap<>();
   private long lastSensorTimestamp = 0L;
+  private boolean sensorsRegistered = false;
 
   @Override
   public void load() {
     sensorManager = (SensorManager) getContext().getSystemService(Context.SENSOR_SERVICE);
-    if (sensorManager != null) {
-      int[] types = new int[] {
-        Sensor.TYPE_ACCELEROMETER,
-        Sensor.TYPE_GYROSCOPE,
-        Sensor.TYPE_MAGNETIC_FIELD,
-        Sensor.TYPE_ROTATION_VECTOR,
-        Sensor.TYPE_GRAVITY,
-        Sensor.TYPE_PRESSURE,
-        Sensor.TYPE_LIGHT,
-        Sensor.TYPE_PROXIMITY
-      };
-      for (int type : types) {
-        Sensor sensor = sensorManager.getDefaultSensor(type);
-        if (sensor != null) sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_GAME);
+    registerSensors();
+  }
+
+  private void registerSensors() {
+    if (sensorManager == null || sensorsRegistered) return;
+    int[] types = new int[] {
+      Sensor.TYPE_ACCELEROMETER,
+      Sensor.TYPE_GYROSCOPE,
+      Sensor.TYPE_MAGNETIC_FIELD,
+      Sensor.TYPE_ROTATION_VECTOR,
+      Sensor.TYPE_GRAVITY,
+      Sensor.TYPE_PRESSURE,
+      Sensor.TYPE_LIGHT,
+      Sensor.TYPE_PROXIMITY
+    };
+    for (int type : types) {
+      Sensor sensor = sensorManager.getDefaultSensor(type);
+      if (sensor != null && sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_GAME)) {
+        sensorsRegistered = true;
       }
     }
+  }
+
+  private void unregisterSensors() {
+    if (sensorManager != null && sensorsRegistered) {
+      sensorManager.unregisterListener(this);
+    }
+    sensorsRegistered = false;
+  }
+
+  @Override
+  public void handleOnPause() {
+    unregisterSensors();
+    super.handleOnPause();
+  }
+
+  @Override
+  public void handleOnResume() {
+    super.handleOnResume();
+    registerSensors();
   }
 
   @Override
@@ -59,7 +84,7 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
 
   @Override
   public void handleOnDestroy() {
-    if (sensorManager != null) sensorManager.unregisterListener(this);
+    unregisterSensors();
     super.handleOnDestroy();
   }
 
