@@ -8,6 +8,12 @@ const NON_MEASUREMENT_KEYS = new Set([
   'elapsedrealtimenanos',
 ]);
 
+function toIso(timestampMs) {
+  if (timestampMs == null || !Number.isFinite(Number(timestampMs))) return null;
+  const date = new Date(Number(timestampMs));
+  return Number.isFinite(date.getTime()) ? date.toISOString() : null;
+}
+
 function hasFiniteMeasurement(value, key = '') {
   if (NON_MEASUREMENT_KEYS.has(String(key).toLowerCase())) return false;
   if (typeof value === 'number') return Number.isFinite(value);
@@ -27,7 +33,7 @@ function hasFiniteValue(value) {
 }
 
 function classifyFreshness(observedAtMs, capturedAtMs) {
-  if (observedAtMs == null || capturedAtMs == null) {
+  if (toIso(observedAtMs) == null || toIso(capturedAtMs) == null) {
     return { state: DATA_STATE.UNKNOWN, ageMs: null };
   }
   const ageMs = capturedAtMs - observedAtMs;
@@ -62,14 +68,13 @@ export function buildPhysicalValidationSample({
   const hasNativeMeasurements = hasFiniteMeasurement(nativeMeasurements);
   const capturedAtMs = parseTimestamp(capturedAt);
   const nativeSensorAtMs = parseTimestamp(nativeSnapshot?.lastSensorAt);
-  const nativeFreshness = classifyFreshness(nativeSensorAtMs, capturedAtMs);
-  const nativeSensorObservedAt = nativeSensorAtMs == null
-    ? null
-    : new Date(nativeSensorAtMs).toISOString();
+  const nativeSensorObservedAt = toIso(nativeSensorAtMs);
+  const nativeFreshness = classifyFreshness(nativeSensorObservedAt == null ? null : nativeSensorAtMs, capturedAtMs);
 
   const motionTimestamp = parseTimestamp(motion?.timestamp);
-  const motionFreshness = classifyFreshness(motionTimestamp, capturedAtMs);
-  const hasMotionAxes = motionTimestamp != null &&
+  const motionObservedAt = toIso(motionTimestamp);
+  const motionFreshness = classifyFreshness(motionObservedAt == null ? null : motionTimestamp, capturedAtMs);
+  const hasMotionAxes = motionObservedAt != null &&
     [motion.x, motion.y, motion.z].every(value => typeof value === 'number' && Number.isFinite(value));
   const hasMotionMagnitude = hasMotionAxes &&
     typeof motion.magnitude === 'number' &&
@@ -95,7 +100,7 @@ export function buildPhysicalValidationSample({
     nativeSensorObservedAt,
     nativeSensorAgeMs: nativeFreshness.ageMs,
     nativeSensorState: nativeFreshness.state,
-    motionObservedAt: motionTimestamp == null ? null : new Date(motionTimestamp).toISOString(),
+    motionObservedAt,
     motionAgeMs: motionFreshness.ageMs,
     motionState: motionFreshness.state,
     evidenceByField: {
@@ -113,7 +118,7 @@ export function buildPhysicalValidationSample({
         ageMs: hasMotionAxes ? motionFreshness.ageMs : null,
         modality: 'IMU',
         source: 'DeviceMotionEvent accelerationIncludingGravity or acceleration',
-        observedAt: hasMotionAxes ? new Date(motionTimestamp).toISOString() : null,
+        observedAt: hasMotionAxes ? motionObservedAt : null,
       },
       motionMagnitude: {
         value: hasMotionMagnitude ? motion.magnitude : null,
