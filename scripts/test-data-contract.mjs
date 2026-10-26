@@ -31,6 +31,21 @@ assert.equal(invalid.observedAt, null);
 assert.equal(invalid.state, DATA_STATE.UNKNOWN);
 assert.equal(normalizeState({ observedAt: 'not-a-date', state: 'CURRENT' }, { now }), DATA_STATE.UNKNOWN);
 
+// Missing source timestamps are not replaced with processing time, even when
+// legacy input claims CURRENT. Receive time is not measurement time.
+const missingTime = normalizeObservation({ modality: 'CAMERA', state: 'CURRENT', bbox: { x: 0, y: 0, width: 10, height: 10 } }, { now });
+assert.equal(missingTime.timestamp, null);
+assert.equal(missingTime.observedAt, null);
+assert.equal(missingTime.state, DATA_STATE.UNKNOWN);
+assert.equal(normalizeState({ state: 'CURRENT' }, { now }), DATA_STATE.UNKNOWN);
+
+// An explicit CURRENT label cannot override stale or future timestamp evidence.
+const forcedCurrentStale = normalizeObservation({ modality: 'CAMERA', observedAt: oldIso, state: 'CURRENT' }, { now });
+assert.equal(forcedCurrentStale.state, DATA_STATE.STALE);
+const futureIso = '2026-10-09T18:01:00.000Z';
+const futureCurrent = normalizeObservation({ modality: 'CAMERA', observedAt: futureIso, state: 'CURRENT' }, { now });
+assert.equal(futureCurrent.state, DATA_STATE.UNKNOWN);
+
 // Model forecasts remain predictions; camera observations remain measured.
 const prediction = normalizePrediction({ id: 'forecast-1', observedAt: currentIso }, { now });
 assert.equal(prediction.evidenceClass, EVIDENCE_CLASS.PREDICTED);
