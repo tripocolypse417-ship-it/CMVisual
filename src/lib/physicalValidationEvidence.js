@@ -32,6 +32,36 @@ function hasFiniteValue(value) {
     Number.isFinite(Number(value));
 }
 
+// Known Android sensor types have known value shapes. A vector measurement
+// requires all three axes; a single surviving axis is not a complete vector.
+function hasValidSensorMeasurement(sensorName, measurement) {
+  if (!measurement || typeof measurement !== 'object' || Array.isArray(measurement)) return false;
+  const name = String(sensorName).toLowerCase();
+  const vectorSensors = new Set(['accelerometer', 'gyroscope', 'magnetometer', 'rotationvector', 'gravity']);
+  const scalarSensors = new Set(['barometer', 'ambientlight', 'proximity']);
+  const values = measurement.values;
+
+  if (vectorSensors.has(name)) {
+    if (Array.isArray(values)) {
+      return values.length >= 3 &&
+        values.slice(0, 3).every(value => typeof value === 'number' && Number.isFinite(value));
+    }
+    return ['x', 'y', 'z'].every(axis =>
+      typeof measurement[axis] === 'number' && Number.isFinite(measurement[axis])
+    );
+  }
+
+  if (scalarSensors.has(name)) {
+    if (Array.isArray(values)) {
+      return values.length >= 1 && typeof values[0] === 'number' && Number.isFinite(values[0]);
+    }
+    const scalar = measurement.value ?? measurement.pressure ?? measurement.lux ?? measurement.distance;
+    return typeof scalar === 'number' && Number.isFinite(scalar);
+  }
+
+  return hasFiniteMeasurement(measurement, sensorName);
+}
+
 function freshnessFromAge(ageValue) {
   if (ageValue == null || ageValue === '' || !Number.isFinite(Number(ageValue)) || Number(ageValue) < 0) {
     return { state: DATA_STATE.UNKNOWN, ageMs: null };
@@ -115,7 +145,7 @@ export function buildPhysicalValidationSample({
   const nativeSensorFields = {};
   if (nativeMeasurements && typeof nativeMeasurements === 'object' && !Array.isArray(nativeMeasurements)) {
     for (const [sensorName, measurement] of Object.entries(nativeMeasurements)) {
-      const hasMeasurement = hasFiniteMeasurement(measurement, sensorName);
+      const hasMeasurement = hasValidSensorMeasurement(sensorName, measurement);
       const freshness = classifySensorFreshness(measurement, capturedAtMs);
       nativeSensorFields[sensorName] = {
         value: measurement,
