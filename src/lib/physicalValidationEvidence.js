@@ -1,6 +1,6 @@
 import { DATA_STATE, EVIDENCE_CLASS, parseTimestamp } from './dataContract.js';
 
-const NATIVE_SENSOR_STALE_MS = 5000;
+const SENSOR_STALE_MS = 5000;
 const NON_MEASUREMENT_KEYS = new Set([
   'timestamp', 'observedat', 'measuredat', 'accuracy', 'status', 'state',
   'sensortype', 'modality', 'source', 'available', 'enabled', 'supported',
@@ -26,15 +26,28 @@ function hasFiniteValue(value) {
     Number.isFinite(Number(value));
 }
 
+function classifyFreshness(observedAtMs, capturedAtMs) {
+  if (observedAtMs == null || capturedAtMs == null) {
+    return { state: DATA_STATE.UNKNOWN, ageMs: null };
+  }
+  const ageMs = capturedAtMs - observedAtMs;
+  if (!Number.isFinite(ageMs) || ageMs < 0) {
+    // A future sensor timestamp is suspicious; do not present it as current.
+    return { state: DATA_STATE.UNKNOWN, ageMs: null };
+  }
+  return {
+    state: ageMs > SENSOR_STALE_MS ? DATA_STATE.STALE : DATA_STATE.CURRENT,
+    ageMs,
+  };
+}
+
 /**
  * Build a mixed physical-validation sample without assigning one evidence class
  * to every field. Raw axes, derived motion features, and inferred movement are
  * represented separately. This function deliberately makes no accuracy claim.
  *
- * Native sensor presence is not inferred from a non-empty object alone: at
- * least one finite measurement value must exist. Freshness is recorded
- * separately from evidence class so a stale reading remains a measurement,
- * but cannot be presented as current.
+ * Sensor evidence class and freshness are independent: a stale observation
+ * remains measured, but its state must not be presented as current.
  */
 export function buildPhysicalValidationSample({
   elapsedMs,
@@ -49,19 +62,13 @@ export function buildPhysicalValidationSample({
   const hasNativeMeasurements = hasFiniteMeasurement(nativeMeasurements);
   const capturedAtMs = parseTimestamp(capturedAt);
   const nativeSensorAtMs = parseTimestamp(nativeSnapshot?.lastSensorAt);
-  const nativeSensorAgeMs = capturedAtMs != null && nativeSensorAtMs != null
-    ? capturedAtMs - nativeSensorAtMs
-    : null;
-  const nativeSensorState = nativeSensorAgeMs == null || nativeSensorAgeMs < 0
-    ? DATA_STATE.UNKNOWN
-    : nativeSensorAgeMs > NATIVE_SENSOR_STALE_MS
-      ? DATA_STATE.STALE
-      : DATA_STATE.CURRENT;
+  const nativeFreshness = classifyFreshness(nativeSensorAtMs, capturedAtMs);
   const nativeSensorObservedAt = nativeSensorAtMs == null
     ? null
     : new Date(nativeSensorAtMs).toISOString();
 
   const motionTimestamp = parseTimestamp(motion?.timestamp);
+  const motionFreshness = classifyFreshness(motionTimestamp, capturedAtMs);
   const hasMotionAxes = motionTimestamp != null &&
     [motion.x, motion.y, motion.z].every(value => typeof value === 'number' && Number.isFinite(value));
   const hasMotionMagnitude = hasMotionAxes &&
@@ -80,14 +87,17 @@ export function buildPhysicalValidationSample({
     deviceId,
     // The envelope combines multiple evidence types; field-level labels govern.
     evidenceClass: EVIDENCE_CLASS.UNKNOWN,
-    heading,
+    heading: hasHeading ? Number(heading) : null,
     moving,
     motion,
     nativeSensors: nativeMeasurements,
     nativeSensorAt: nativeSnapshot?.lastSensorAt ?? null,
     nativeSensorObservedAt,
-    nativeSensorAgeMs,
-    nativeSensorState,
+    nativeSensorAgeMs: nativeFreshness.ageMs,
+    nativeSensorState: nativeFreshness.state,
+    motionObservedAt: motionTimestamp == null ? null : new Date(motionTimestamp).toISOString(),
+    motionAgeMs: motionFreshness.ageMs,
+    motionState: motionFreshness.state,
     evidenceByField: {
       heading: {
         value: hasHeading ? Number(heading) : null,
@@ -99,6 +109,8 @@ export function buildPhysicalValidationSample({
       motionAxes: {
         value: hasMotionAxes ? { x: motion.x, y: motion.y, z: motion.z } : null,
         evidenceClass: hasMotionAxes ? EVIDENCE_CLASS.MEASURED : EVIDENCE_CLASS.UNKNOWN,
+        state: hasMotionAxes ? motionFreshness.state : DATA_STATE.UNKNOWN,
+        ageMs: hasMotionAxes ? motionFreshness.ageMs : null,
         modality: 'IMU',
         source: 'DeviceMotionEvent accelerationIncludingGravity or acceleration',
         observedAt: hasMotionAxes ? new Date(motionTimestamp).toISOString() : null,
@@ -106,6 +118,8 @@ export function buildPhysicalValidationSample({
       motionMagnitude: {
         value: hasMotionMagnitude ? motion.magnitude : null,
         evidenceClass: hasMotionMagnitude ? EVIDENCE_CLASS.DERIVED : EVIDENCE_CLASS.UNKNOWN,
+        state: hasMotionMagnitude ? motionFreshness.state : DATA_STATE.UNKNOWN,
+        ageMs: hasMotionMagnitude ? motionFreshness.ageMs : null,
         modality: 'MODEL',
         derivedFrom: ['motionAxes'],
         note: 'Computed from changes between successive acceleration samples.',
@@ -113,12 +127,16 @@ export function buildPhysicalValidationSample({
       motionJerk: {
         value: hasMotionJerk ? motion.jerk : null,
         evidenceClass: hasMotionJerk ? EVIDENCE_CLASS.DERIVED : EVIDENCE_CLASS.UNKNOWN,
+        state: hasMotionJerk ? motionFreshness.state : DATA_STATE.UNKNOWN,
+        ageMs: hasMotionJerk ? motionFreshness.ageMs : null,
         modality: 'MODEL',
         derivedFrom: ['motionMagnitude'],
       },
       moving: {
         value: hasMotionMagnitude ? Boolean(moving) : null,
         evidenceClass: hasMotionMagnitude ? EVIDENCE_CLASS.INFERRED : EVIDENCE_CLASS.UNKNOWN,
+        state: hasMotionMagnitude ? motionFreshness.state : DATA_STATE.UNKNOWN,
+        ageMs: hasMotionMagnitude ? motionFreshness.ageMs : null,
         modality: 'MODEL',
         derivedFrom: ['motionMagnitude'],
         source: 'Motion-threshold heuristic; not ground-truth movement.',
@@ -126,8 +144,8 @@ export function buildPhysicalValidationSample({
       nativeSensors: {
         value: nativeMeasurements,
         evidenceClass: hasNativeMeasurements ? EVIDENCE_CLASS.MEASURED : EVIDENCE_CLASS.UNKNOWN,
-        state: nativeSensorState,
-        ageMs: nativeSensorAgeMs,
+        state: nativeFreshness.state,
+        ageMs: nativeFreshness.ageMs,
         modality: 'IMU',
         source: 'WaveRadar native Android sensor bridge',
         observedAt: nativeSensorObservedAt,
