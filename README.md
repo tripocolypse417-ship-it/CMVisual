@@ -3,7 +3,7 @@
 WaveRadar is an early-stage, evidence-first spatial-awareness prototype. This repository contains the React/Vite application and Capacitor Android build workflow used to create the phone-installable debug APK.
 
 ## Current status
-- Latest Android workflow known at this revision: build 93 succeeded on 2026-10-08.
+- Latest verified Android debug workflow at the 2026-10-26 review: [run 209 succeeded](https://github.com/tripocolypse417-ship-it/CMVisual/actions/runs/40251426775) and produced the `WaveRadar-debug-apk` artifact (about 5.3 MB). This is a debug APK, not a production-signed release; installation on the target Moto G Play has not been verified.
 - The APK is a **debug build**, not a production-signed Play Store release.
 - The hosted WaveRadar Core workspace is a separate deployment at https://waveradar-20.hatchable.site.
 - Backend portability is unfinished: this repository still uses Base44 SDK integrations for authentication, entities, and backend functions. The hosted WaveRadar Core APIs are not yet a full replacement for those dependencies.
