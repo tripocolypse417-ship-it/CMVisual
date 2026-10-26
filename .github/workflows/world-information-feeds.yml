@@ -1,0 +1,32 @@
+name: World Information Station Feed Tests
+
+on:
+  pull_request:
+    paths:
+      - "src/lib/worldInformationFeeds.js"
+      - "scripts/test-world-information-feeds.mjs"
+      - ".github/workflows/world-information-feeds.yml"
+  push:
+    branches: [ main ]
+    paths:
+      - "src/lib/worldInformationFeeds.js"
+      - "scripts/test-world-information-feeds.mjs"
+      - ".github/workflows/world-information-feeds.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  feed-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Test World Information Station feed adapters
+        run: node scripts/test-world-information-feeds.mjs
