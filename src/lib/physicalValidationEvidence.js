@@ -46,7 +46,6 @@ function classifyFreshness(observedAtMs, capturedAtMs) {
   }
   const ageMs = capturedAtMs - observedAtMs;
   if (!Number.isFinite(ageMs) || ageMs < 0) {
-    // A future sensor timestamp is suspicious; do not present it as current.
     return { state: DATA_STATE.UNKNOWN, ageMs: null };
   }
   return {
@@ -69,8 +68,6 @@ function classifySensorFreshness(measurement, capturedAtMs) {
       : classifyFreshness(timestampMs, capturedAtMs);
     return { ...freshness, observedAt };
   }
-  // Some bridges provide a monotonic age without an absolute timestamp.
-  // It can classify freshness, but cannot establish a wall-clock observation time.
   return { ...freshnessFromAge(measurement.ageMs), observedAt: null };
 }
 
@@ -78,9 +75,7 @@ function aggregateSensorFreshness(sensorFields) {
   const measured = Object.values(sensorFields).filter(field =>
     field.evidenceClass === EVIDENCE_CLASS.MEASURED
   );
-  if (!measured.length) {
-    return { state: DATA_STATE.UNKNOWN, ageMs: null, observedAt: null };
-  }
+  if (!measured.length) return { state: DATA_STATE.UNKNOWN, ageMs: null, observedAt: null };
   const states = new Set(measured.map(field => field.state));
   if (states.size !== 1 || states.has(DATA_STATE.UNKNOWN)) {
     return { state: DATA_STATE.UNKNOWN, ageMs: null, observedAt: null };
@@ -99,9 +94,8 @@ function aggregateSensorFreshness(sensorFields) {
  * to every field. Raw axes, derived motion features, and inferred movement are
  * represented separately. This function deliberately makes no accuracy claim.
  *
- * Sensor evidence class and freshness are independent. Native freshness is
- * evaluated per sensor because a bridge-wide last-event timestamp can be recent
- * while an individual sensor's last reading is old.
+ * Native freshness is evaluated per sensor because a bridge-wide last-event
+ * timestamp can be recent while an individual sensor's last reading is old.
  */
 export function buildPhysicalValidationSample({
   elapsedMs,
@@ -121,7 +115,7 @@ export function buildPhysicalValidationSample({
   const nativeSensorFields = {};
   if (nativeMeasurements && typeof nativeMeasurements === 'object' && !Array.isArray(nativeMeasurements)) {
     for (const [sensorName, measurement] of Object.entries(nativeMeasurements)) {
-      const hasMeasurement = hasFiniteMeasurement(measurement);
+      const hasMeasurement = hasFiniteMeasurement(measurement, sensorName);
       const freshness = classifySensorFreshness(measurement, capturedAtMs);
       nativeSensorFields[sensorName] = {
         value: measurement,
@@ -157,11 +151,9 @@ export function buildPhysicalValidationSample({
 
   return {
     t: Math.max(0, Number(elapsedMs) || 0),
-    // Keep the legacy "at" key while making its capture-time meaning explicit.
     at: capturedAt,
     capturedAt,
     deviceId,
-    // The envelope combines multiple evidence types; field-level labels govern.
     evidenceClass: EVIDENCE_CLASS.UNKNOWN,
     heading: hasHeading ? Number(heading) : null,
     moving,
