@@ -140,8 +140,8 @@ export function normalizeObservation(input = {}, context = {}) {
   const source = input || {};
   const timestampValue = source.observedAt ?? source.measuredAt ?? source.timestamp ?? context.timestamp;
   const parsedTimestamp = parseTimestamp(timestampValue);
-  // Missing timestamps retain legacy arrival-time behavior; malformed supplied timestamps remain unknown.
-  const timestamp = parsedTimestamp ?? (timestampValue == null ? Date.now() : null);
+  // Arrival time is not measurement time. Missing or malformed source timestamps stay unknown.
+  const timestamp = parsedTimestamp;
   const nowMs = parseTimestamp(context.now) ?? Date.now();
   const modality = text(source.modality ?? source.sensorType ?? source.sensorFamily ?? context.modality, 'UNKNOWN');
   const modalityDef = getModalityDefinition(modality);
@@ -182,13 +182,17 @@ export function normalizeState(source = {}, { ageMs = null, now = Date.now(), st
   const timestampValue = source.observedAt ?? source.measuredAt ?? source.timestamp;
   const observedAt = parseTimestamp(timestampValue);
   const nowMs = parseTimestamp(now) ?? Date.now();
-  // An explicitly supplied but invalid timestamp must never retain a CURRENT state.
+  // A source cannot override invalid, future, or stale timestamp evidence by claiming CURRENT.
   if (timestampValue != null && observedAt == null) return DATA_STATE.UNKNOWN;
-  const explicit = String(source.state || '').toUpperCase();
-  if (Object.values(DATA_STATE).includes(explicit)) return explicit;
   if (source.quarantined) return DATA_STATE.QUARANTINED;
   if (source.conflict || source.disagreement || source.sensorConflict) return DATA_STATE.CONFLICT;
+  if (observedAt != null && observedAt - nowMs > 30000) return DATA_STATE.UNKNOWN;
   if (observedAt != null && nowMs - observedAt > staleMs) return DATA_STATE.STALE;
+  const explicit = String(source.state || '').toUpperCase();
+  if (Object.values(DATA_STATE).includes(explicit)) {
+    if (explicit === DATA_STATE.CURRENT && observedAt == null) return DATA_STATE.UNKNOWN;
+    return explicit;
+  }
   if (observedAt != null) return DATA_STATE.CURRENT;
   return DATA_STATE.UNKNOWN;
 }
