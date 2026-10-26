@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { parseTimestamp } from '@/lib/dataContract';
 
 // Cellular telemetry is an environmental/radio layer only. A normal browser
 // cannot access Android TelephonyManager directly, so this hook listens for an
@@ -6,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 const STALE_AFTER_MS = 5000;
 
 function numberOrNull(value) {
+  if (value == null || value === '') return null;
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
 }
@@ -21,7 +23,7 @@ function normalizeCell(cell = {}) {
     pci: cell.pci ?? null,
     mcc: cell.mcc ?? cell.mccString ?? null,
     mnc: cell.mnc ?? cell.mncString ?? null,
-    timestamp: numberOrNull(cell.timestamp ?? cell.measuredAt) ?? Date.now(),
+    timestamp: parseTimestamp(cell.timestamp ?? cell.measuredAt),
   };
 }
 
@@ -59,20 +61,25 @@ export default function useCellularFusion(enabled = true) {
       if (previousId != null && currentId != null && previousId !== currentId) transitionRef.current += 1;
       if (currentId != null) lastRegisteredRef.current = currentId;
 
-      const updatedAt = numberOrNull(payload.timestamp ?? payload.measuredAt) ?? Date.now();
+      const updatedAt = parseTimestamp(payload.timestamp ?? payload.measuredAt ?? registered?.timestamp);
       const radioTechnology = payload.radioTechnology ?? payload.technology ?? registered?.technology ?? null;
       const permissionState = payload.permissionState ?? 'granted';
+      const now = Date.now();
+      const validTimestamp = updatedAt != null && Number.isFinite(updatedAt);
+      const ageMs = validTimestamp ? now - updatedAt : null;
+      const future = ageMs != null && ageMs < -30000;
+      const stale = ageMs != null && ageMs > STALE_AFTER_MS;
       setState({
         available: true,
         permissionState,
-        status: 'LIVE',
-        reason: null,
+        status: !validTimestamp || future ? 'UNVERIFIED TIME' : stale ? 'STALE' : 'LIVE',
+        reason: !validTimestamp ? 'SOURCE TIMESTAMP MISSING' : future ? 'SOURCE TIMESTAMP FUTURE' : stale ? 'SOURCE TIMESTAMP STALE' : null,
         radioTechnology,
         registeredCell: registered,
         cells,
-        ageMs: Math.max(0, Date.now() - updatedAt),
+        ageMs: ageMs == null ? null : Math.max(0, ageMs),
         transitionCount: transitionRef.current,
-        lastUpdateAt: updatedAt,
+        lastUpdateAt: validTimestamp && !future ? updatedAt : null,
       });
     };
 
