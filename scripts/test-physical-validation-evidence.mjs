@@ -59,10 +59,7 @@ const stale = buildPhysicalValidationSample({
   deviceId: 'local-test-device',
   heading: '',
   moving: true,
-  motion: {
-    x: 1, y: 2, z: 3, magnitude: 0.75, jerk: 0.25,
-    timestamp: capturedAtMs - 6001,
-  },
+  motion: { x: 1, y: 2, z: 3, magnitude: 0.75, jerk: 0.25, timestamp: capturedAtMs - 6001 },
   nativeSnapshot: {
     measurements: { accelerometer: { x: 1, y: 2, z: 3 } },
     lastSensorAt: capturedAtMs - 6001,
@@ -130,5 +127,26 @@ const epochZero = buildPhysicalValidationSample({
 assert.equal(epochZero.evidenceByField.motionAxes.evidenceClass, EVIDENCE_CLASS.MEASURED);
 assert.equal(epochZero.evidenceByField.motionAxes.state, DATA_STATE.STALE);
 assert.equal(epochZero.motionObservedAt, new Date(0).toISOString());
+
+// Finite but out-of-range timestamps must not throw or be accepted as measured
+// motion observations merely because Number.isFinite() is true.
+const outOfRange = buildPhysicalValidationSample({
+  elapsedMs: 1,
+  capturedAt,
+  deviceId: 'local-test-device',
+  heading: null,
+  moving: false,
+  motion: { x: 1, y: 2, z: 3, magnitude: 0, jerk: 0, timestamp: 1e30 },
+  nativeSnapshot: {
+    measurements: { accelerometer: { x: 1, y: 2, z: 3 } },
+    lastSensorAt: 1e30,
+  },
+});
+assert.equal(outOfRange.evidenceByField.motionAxes.evidenceClass, EVIDENCE_CLASS.UNKNOWN);
+assert.equal(outOfRange.motionObservedAt, null);
+assert.equal(outOfRange.evidenceByField.nativeSensors.evidenceClass, EVIDENCE_CLASS.MEASURED);
+assert.equal(outOfRange.evidenceByField.nativeSensors.state, DATA_STATE.UNKNOWN);
+assert.equal(outOfRange.nativeSensorObservedAt, null);
+assert.equal(outOfRange.nativeSensorAgeMs, null);
 
 console.log('WaveRadar physical-validation evidence provenance/freshness tests: PASS');
