@@ -145,6 +145,46 @@ const emptyValues = buildPhysicalValidationSample({
 assert.equal(emptyValues.evidenceByField.nativeSensors.evidenceClass, EVIDENCE_CLASS.UNKNOWN);
 assert.equal(emptyValues.evidenceByField.nativeSensors.state, DATA_STATE.UNKNOWN);
 
+// Known vector sensors require a complete three-axis sample; partial vectors
+// must not be marked MEASURED merely because one axis is numeric.
+const partialVector = buildPhysicalValidationSample({
+  elapsedMs: 500,
+  capturedAt,
+  deviceId: 'local-test-device',
+  heading: null,
+  moving: false,
+  motion: null,
+  nativeSnapshot: {
+    measurements: {
+      accelerometer: { values: [1, null, 3], timestamp: capturedAt, ageMs: 0, sensorType: 1 },
+      gyroscope: { values: [1, 2], timestamp: capturedAt, ageMs: 0, sensorType: 4 },
+    },
+    lastSensorAt: capturedAt,
+  },
+});
+assert.equal(partialVector.evidenceByField.nativeSensors.sensorFields.accelerometer.evidenceClass, EVIDENCE_CLASS.UNKNOWN);
+assert.equal(partialVector.evidenceByField.nativeSensors.sensorFields.gyroscope.evidenceClass, EVIDENCE_CLASS.UNKNOWN);
+assert.equal(partialVector.evidenceByField.nativeSensors.evidenceClass, EVIDENCE_CLASS.UNKNOWN);
+
+// Scalar sensors need one finite value; unrelated metadata cannot satisfy it.
+const validScalar = buildPhysicalValidationSample({
+  elapsedMs: 500,
+  capturedAt,
+  deviceId: 'local-test-device',
+  heading: null,
+  moving: false,
+  motion: null,
+  nativeSnapshot: {
+    measurements: {
+      ambientLight: { values: [12.5], timestamp: capturedAt, ageMs: 0, sensorType: 5 },
+      proximity: { values: [null], timestamp: capturedAt, ageMs: 0, sensorType: 8, accuracy: 3 },
+    },
+    lastSensorAt: capturedAt,
+  },
+});
+assert.equal(validScalar.evidenceByField.nativeSensors.sensorFields.ambientLight.evidenceClass, EVIDENCE_CLASS.MEASURED);
+assert.equal(validScalar.evidenceByField.nativeSensors.sensorFields.proximity.evidenceClass, EVIDENCE_CLASS.UNKNOWN);
+
 // Epoch zero is a valid timestamp, not a missing value; its age is stale.
 const epochZero = buildPhysicalValidationSample({
   elapsedMs: 10,
