@@ -12,7 +12,9 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.PluginMethod;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 @CapacitorPlugin(name = "WaveRadarSensors")
 public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListener {
@@ -21,7 +23,7 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
   private final Map<Integer, Long> sensorTimestamps = new HashMap<>();
   private final Map<Integer, Integer> sensorAccuracies = new HashMap<>();
   private long lastSensorTimestamp = 0L;
-  private boolean sensorsRegistered = false;
+  private final Set<Integer> registeredSensorTypes = new HashSet<>();
 
   @Override
   public void load() {
@@ -30,7 +32,7 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
   }
 
   private void registerSensors() {
-    if (sensorManager == null || sensorsRegistered) return;
+    if (sensorManager == null) return;
     int[] types = new int[] {
       Sensor.TYPE_ACCELEROMETER,
       Sensor.TYPE_GYROSCOPE,
@@ -42,18 +44,21 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
       Sensor.TYPE_PROXIMITY
     };
     for (int type : types) {
+      // Track registration per sensor. One successful registration must not
+      // prevent a failed sensor from being retried after the app resumes.
+      if (registeredSensorTypes.contains(type)) continue;
       Sensor sensor = sensorManager.getDefaultSensor(type);
       if (sensor != null && sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_GAME)) {
-        sensorsRegistered = true;
+        registeredSensorTypes.add(type);
       }
     }
   }
 
   private void unregisterSensors() {
-    if (sensorManager != null && sensorsRegistered) {
+    if (sensorManager != null && !registeredSensorTypes.isEmpty()) {
       sensorManager.unregisterListener(this);
     }
-    sensorsRegistered = false;
+    registeredSensorTypes.clear();
   }
 
   @Override
@@ -154,7 +159,28 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
     o.put("mmwave", false);
     o.put("externalPhysiology", false);
     o.put("sensorCount", sensorManager == null ? 0 : sensorManager.getSensorList(Sensor.TYPE_ALL).size());
+    o.put("registeredSensorCount", registeredSensorTypes.size());
+    JSObject sensorRegistration = new JSObject();
+    addSensorRegistration(sensorRegistration, Sensor.TYPE_ACCELEROMETER, "accelerometer");
+    addSensorRegistration(sensorRegistration, Sensor.TYPE_GYROSCOPE, "gyroscope");
+    addSensorRegistration(sensorRegistration, Sensor.TYPE_MAGNETIC_FIELD, "magnetometer");
+    addSensorRegistration(sensorRegistration, Sensor.TYPE_ROTATION_VECTOR, "rotationVector");
+    addSensorRegistration(sensorRegistration, Sensor.TYPE_GRAVITY, "gravity");
+    addSensorRegistration(sensorRegistration, Sensor.TYPE_PRESSURE, "barometer");
+    addSensorRegistration(sensorRegistration, Sensor.TYPE_LIGHT, "ambientLight");
+    addSensorRegistration(sensorRegistration, Sensor.TYPE_PROXIMITY, "proximity");
+    o.put("sensorRegistration", sensorRegistration);
     return o;
+  }
+
+  private void addSensorRegistration(JSObject target, int type, String name) {
+    Sensor sensor = sensorManager == null ? null : sensorManager.getDefaultSensor(type);
+    JSObject status = new JSObject();
+    status.put("supported", sensor != null);
+    status.put("registered", registeredSensorTypes.contains(type));
+    // A prior sample may be stale; this flag indicates history only, not freshness.
+    status.put("hasSampleHistory", latest.containsKey(type));
+    target.put(name, status);
   }
 
   private boolean hasWifiRtt() {

@@ -45,6 +45,9 @@ jobs:
       - name: Test physical-validation evidence provenance
         run: npm run test:physical-validation-evidence
 
+      - name: Test native sensor registration lifecycle
+        run: npm run test:native-sensor-lifecycle
+
       - name: Build web application
         run: npm run build
 

@@ -13,7 +13,8 @@
     "audit:data": "node scripts/audit-data-contract.mjs && node scripts/test-data-contract.mjs",
     "test:array-boundaries": "node scripts/test-array-boundaries.mjs",
     "test:physical-validation-queue": "node scripts/test-physical-validation-queue.mjs",
-    "test:physical-validation-evidence": "node scripts/test-physical-validation-evidence.mjs"
+    "test:physical-validation-evidence": "node scripts/test-physical-validation-evidence.mjs",
+    "test:native-sensor-lifecycle": "node scripts/test-native-sensor-lifecycle.mjs"
   },
   "dependencies": {
     "@base44/sdk": "^0.8.52",
