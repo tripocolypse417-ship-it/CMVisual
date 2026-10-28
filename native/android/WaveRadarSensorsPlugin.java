@@ -133,7 +133,11 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
 
   private void addMeasurement(JSObject target, int type, String name) {
     float[] v = latest.get(type);
-    if (v == null) return;
+    if (v == null || v.length == 0) return;
+    // Non-finite values invalidate the entire vector; never emit a partial reading.
+    for (float value : v) {
+      if (Float.isNaN(value) || Float.isInfinite(value)) return;
+    }
     JSObject item = new JSObject();
     long sensorElapsedNs = sensorTimestamps.getOrDefault(type, 0L);
     long ageMs = sensorElapsedNs > 0L
@@ -152,11 +156,8 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
   private org.json.JSONArray toArray(float[] values) {
     org.json.JSONArray a = new org.json.JSONArray();
     for (float v : values) {
-      try {
-        a.put(v);
-      } catch (org.json.JSONException ignored) {
-        // Skip a value only if JSON encoding rejects it.
-      }
+      // Never silently shorten a measured vector: callers validate finiteness first.
+      a.put(v);
     }
     return a;
   }
@@ -192,9 +193,11 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
   private void addSensorRegistration(JSObject target, int type, String name) {
     Sensor sensor = sensorManager == null ? null : sensorManager.getDefaultSensor(type);
     JSObject status = new JSObject();
-    status.put("supported", sensor != null);
+    // A missing SensorManager means capability is unknown, not unsupported.
+    status.put("supported", sensorManager != null && sensor != null);
+    status.put("capabilityState", sensorManager == null ? "UNKNOWN" : sensor == null ? "UNSUPPORTED" : "SUPPORTED");
     status.put("registered", registeredSensorTypes.contains(type));
-    status.put("registrationState", registrationStates.getOrDefault(type, sensor == null ? "UNSUPPORTED" : "NOT_REGISTERED"));
+    status.put("registrationState", registrationStates.getOrDefault(type, sensorManager == null ? "UNKNOWN" : sensor == null ? "UNSUPPORTED" : "NOT_REGISTERED"));
     // Sample history is not a freshness guarantee; each measurement has its own age.
     status.put("hasSampleHistory", latest.containsKey(type));
     target.put(name, status);
