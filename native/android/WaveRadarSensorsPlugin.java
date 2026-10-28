@@ -22,6 +22,7 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
   private final Map<Integer, float[]> latest = new HashMap<>();
   private final Map<Integer, Long> sensorTimestamps = new HashMap<>();
   private final Map<Integer, Integer> sensorAccuracies = new HashMap<>();
+  private final Map<Integer, String> registrationStates = new HashMap<>();
   private long lastSensorTimestamp = 0L;
   private final Set<Integer> registeredSensorTypes = new HashSet<>();
 
@@ -44,12 +45,22 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
       Sensor.TYPE_PROXIMITY
     };
     for (int type : types) {
-      // Track registration per sensor. One successful registration must not
-      // prevent a failed sensor from being retried after the app resumes.
-      if (registeredSensorTypes.contains(type)) continue;
       Sensor sensor = sensorManager.getDefaultSensor(type);
-      if (sensor != null && sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_GAME)) {
+      if (sensor == null) {
+        registrationStates.put(type, "UNSUPPORTED");
+        registeredSensorTypes.remove(type);
+        continue;
+      }
+      if (registeredSensorTypes.contains(type)) {
+        registrationStates.put(type, "REGISTERED");
+        continue;
+      }
+      boolean registered = sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_GAME);
+      if (registered) {
         registeredSensorTypes.add(type);
+        registrationStates.put(type, "REGISTERED");
+      } else {
+        registrationStates.put(type, "REGISTRATION_FAILED");
       }
     }
   }
@@ -57,6 +68,9 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
   private void unregisterSensors() {
     if (sensorManager != null && !registeredSensorTypes.isEmpty()) {
       sensorManager.unregisterListener(this);
+    }
+    for (int type : registeredSensorTypes) {
+      registrationStates.put(type, "NOT_REGISTERED");
     }
     registeredSensorTypes.clear();
   }
@@ -130,6 +144,8 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
     item.put("ageMs", ageMs);
     item.put("sensorType", type);
     item.put("accuracy", sensorAccuracies.getOrDefault(type, SensorManager.SENSOR_STATUS_UNRELIABLE));
+    item.put("evidenceClass", "MEASURED");
+    item.put("freshness", ageMs <= 5000L ? "FRESH" : "STALE");
     target.put(name, item);
   }
 
@@ -178,7 +194,8 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
     JSObject status = new JSObject();
     status.put("supported", sensor != null);
     status.put("registered", registeredSensorTypes.contains(type));
-    // A prior sample may be stale; this flag indicates history only, not freshness.
+    status.put("registrationState", registrationStates.getOrDefault(type, sensor == null ? "UNSUPPORTED" : "NOT_REGISTERED"));
+    // Sample history is not a freshness guarantee; each measurement has its own age.
     status.put("hasSampleHistory", latest.containsKey(type));
     target.put(name, status);
   }
