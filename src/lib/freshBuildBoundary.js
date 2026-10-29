@@ -32,7 +32,17 @@ export function assessFreshBuildRecord(record, { generation = FRESH_BUILD_GENERA
   if (!source) reasons.push('SOURCE_MISSING');
   if (!deviceId) reasons.push('DEVICE_ID_MISSING');
   if (!finiteTimestamp(record.observedAt ?? record.measuredAt ?? record.timestamp)) reasons.push('MEASUREMENT_TIMESTAMP_MISSING_OR_INVALID');
-  if (record.integrityVerified !== true && record.integrity?.status !== 'VERIFIED') reasons.push('INTEGRITY_NOT_VERIFIED');
+  // Never trust a client-set boolean as proof of integrity. A future server-side
+  // verifier must issue a receipt bound to this record's digest; absent that
+  // receipt the build fails closed and keeps the record quarantined.
+  const integrity = record.integrityReceipt;
+  const validReceiptShape = integrity &&
+    integrity.version === 'server-attestation-v1' &&
+    integrity.issuer === 'waveradar-server-verifier' &&
+    typeof integrity.recordDigest === 'string' && /^[a-f0-9]{64}$/i.test(integrity.recordDigest) &&
+    typeof integrity.signature === 'string' && integrity.signature.length >= 32 &&
+    finiteTimestamp(integrity.verifiedAt);
+  if (!validReceiptShape) reasons.push('SERVER_INTEGRITY_RECEIPT_MISSING_OR_INVALID');
   if (record.quarantined === true || record.state === 'QUARANTINED') reasons.push('QUARANTINED');
   if (suspiciousLabel(source) || suspiciousLabel(record.datasetType) || suspiciousLabel(record.recordType)) reasons.push('SIMULATED_OR_LEGACY_LABEL');
   const evidence = text(record.evidenceClass || record.evidence_class).toUpperCase();
