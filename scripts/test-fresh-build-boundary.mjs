@@ -21,7 +21,10 @@ const valid = {
   },
   datasetType: 'live-measurement',
 };
-assert.equal(assessFreshBuildRecord(valid).eligible, true);
+const testVerifier = (_record, receipt) => receipt?.signature === 'server-signature-placeholder-for-shape-test';
+assert.equal(assessFreshBuildRecord(valid, { verifyIntegrityReceipt: testVerifier }).eligible, true);
+// Without a cryptographic verifier, even a receipt-shaped object is rejected.
+assert.ok(assessFreshBuildRecord(valid).reasons.includes('SERVER_INTEGRITY_RECEIPT_NOT_CRYPTOGRAPHICALLY_VERIFIED'));
 
 // Old data is rejected even if it has a plausible timestamp and calls itself measured.
 const legacy = { ...valid, buildGeneration: undefined, id: 'old-record' };
@@ -36,14 +39,14 @@ assert.ok(assessFreshBuildRecord(malformedReceipt).reasons.includes('SERVER_INTE
 
 // Simulated/demo inputs and predictions cannot enter the trusted measured layer.
 for (const source of ['demo-camera', 'simulated-sensor', 'fixture-feed', 'legacy-import']) {
-  assert.equal(assessFreshBuildRecord({ ...valid, source }).eligible, false, source);
+  assert.equal(assessFreshBuildRecord({ ...valid, source }, { verifyIntegrityReceipt: testVerifier }).eligible, false, source);
 }
-assert.equal(assessFreshBuildRecord({ ...valid, evidenceClass: 'PREDICTED' }).eligible, false);
-assert.equal(assessFreshBuildRecord({ ...valid, observedAt: 'not-a-time' }).eligible, false);
+assert.equal(assessFreshBuildRecord({ ...valid, evidenceClass: 'PREDICTED' }, { verifyIntegrityReceipt: testVerifier }).eligible, false);
+assert.equal(assessFreshBuildRecord({ ...valid, observedAt: 'not-a-time' }, { verifyIntegrityReceipt: testVerifier }).eligible, false);
 
 // Invalid/empty input remains empty; rejected records are retained for audit.
 assert.deepEqual(partitionFreshBuildRecords([]).eligible, []);
-const partition = partitionFreshBuildRecords([legacy, valid]);
+const partition = partitionFreshBuildRecords([legacy, valid], { verifyIntegrityReceipt: testVerifier });
 assert.equal(partition.inputCount, 2);
 assert.equal(partition.eligible.length, 1);
 assert.equal(partition.quarantined.length, 1);
