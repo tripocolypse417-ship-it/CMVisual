@@ -62,7 +62,19 @@ const malformedTime = createFederationEnvelope({
 assert.equal(malformedTime.observation.timestamp, null);
 assert.equal(malformedTime.sourceTimestampValid, false);
 
-assert.throws(() => createFederationEnvelope({ ...envelope, sequence: -1 }), /sequence/);
-assert.throws(() => createFederationEnvelope({ ...envelope, deviceId: '' }), /deviceId/);
+const invalidSequenceInput = {
+  incidentId: 'incident-42',
+  teamId: 'team-alpha',
+  deviceId: 'device-7',
+  sequence: 0,
+  sentAt,
+  observation: { modality: 'IMU', observedAt },
+};
+assert.throws(() => createFederationEnvelope(invalidSequenceInput), /sequence/);
+assert.throws(() => createFederationEnvelope({
+  ...invalidSequenceInput,
+  deviceId: '',
+  sequence: 4,
+}), /deviceId/);
 
 console.log('WaveRadar federated observation envelope tests: PASS');
