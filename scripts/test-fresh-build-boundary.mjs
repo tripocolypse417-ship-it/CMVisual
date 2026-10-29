@@ -12,7 +12,13 @@ const valid = {
   deviceId: 'device-001',
   observedAt: '2026-10-29T18:00:00.000Z',
   evidenceClass: 'MEASURED',
-  integrityVerified: true,
+  integrityReceipt: {
+    version: 'server-attestation-v1',
+    issuer: 'waveradar-server-verifier',
+    recordDigest: 'a'.repeat(64),
+    signature: 'server-signature-placeholder-for-shape-test',
+    verifiedAt: '2026-10-29T18:00:01.000Z',
+  },
   datasetType: 'live-measurement',
 };
 assert.equal(assessFreshBuildRecord(valid).eligible, true);
@@ -22,9 +28,11 @@ const legacy = { ...valid, buildGeneration: undefined, id: 'old-record' };
 assert.equal(assessFreshBuildRecord(legacy).eligible, false);
 assert.ok(assessFreshBuildRecord(legacy).reasons.includes('NOT_FROM_FRESH_BUILD_GENERATION'));
 
-// Timestamp alone never proves a real measurement.
-const noIntegrity = { ...valid, integrityVerified: false, integrity: undefined };
-assert.ok(assessFreshBuildRecord(noIntegrity).reasons.includes('INTEGRITY_NOT_VERIFIED'));
+// A client-set boolean or an unsigned status flag is not an integrity receipt.
+const noIntegrity = { ...valid, integrityReceipt: undefined, integrityVerified: true, integrity: { status: 'VERIFIED' } };
+assert.ok(assessFreshBuildRecord(noIntegrity).reasons.includes('SERVER_INTEGRITY_RECEIPT_MISSING_OR_INVALID'));
+const malformedReceipt = { ...valid, integrityReceipt: { ...valid.integrityReceipt, recordDigest: 'not-a-digest' } };
+assert.ok(assessFreshBuildRecord(malformedReceipt).reasons.includes('SERVER_INTEGRITY_RECEIPT_MISSING_OR_INVALID'));
 
 // Simulated/demo inputs and predictions cannot enter the trusted measured layer.
 for (const source of ['demo-camera', 'simulated-sensor', 'fixture-feed', 'legacy-import']) {
