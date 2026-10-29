@@ -81,8 +81,11 @@ jobs:
 
       - name: Verify isolated package ID
         run: |
-          grep -q "com.waveradar.app.safetest" capacitor.config.ts
-          echo 'This APK uses com.waveradar.app.safetest and installs separately from com.waveradar.app.'
+          # Verify the generated Android package, not the TypeScript config
+          # source (which intentionally reads the package ID from an env var).
+          grep -Eq "applicationId[[:space:]]+['\"]com\\.waveradar\\.app\\.safetest['\"]" android/app/build.gradle
+          echo 'Verified generated Android package ID: com.waveradar.app.safetest'
+          echo 'This APK installs separately from com.waveradar.app and does not overwrite the existing installation.'
 
       - name: Build isolated debug APK
         working-directory: android
