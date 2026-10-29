@@ -14,7 +14,8 @@
     "test:array-boundaries": "node scripts/test-array-boundaries.mjs",
     "test:physical-validation-queue": "node scripts/test-physical-validation-queue.mjs",
     "test:physical-validation-evidence": "node scripts/test-physical-validation-evidence.mjs",
-    "test:native-sensor-lifecycle": "node scripts/test-native-sensor-lifecycle.mjs"
+    "test:native-sensor-lifecycle": "node scripts/test-native-sensor-lifecycle.mjs",
+    "test:federation-envelope": "node scripts/test-federation-envelope.mjs"
   },
   "dependencies": {
     "@base44/sdk": "^0.8.52",

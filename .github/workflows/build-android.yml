@@ -36,6 +36,9 @@ jobs:
       - name: Audit canonical data contract
         run: npm run audit:data
 
+      - name: Test federated observation envelope
+        run: npm run test:federation-envelope
+
       - name: Test malformed array boundaries
         run: npm run test:array-boundaries
 
