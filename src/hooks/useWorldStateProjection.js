@@ -49,6 +49,7 @@ export default function useWorldStateProjection({ live = [], federated = [], rep
   const replayPartition = partitionFreshBuildRecords(replay);
   const hazardPartition = partitionFreshBuildRecords(hazards);
   const cleanLive = livePartition.eligible;
+  const trustedLiveIds = new Set(cleanLive.map(o => String(o?.eventId ?? o?.observationId ?? o?.id ?? '')).filter(Boolean));
   const cleanFederated = federatedPartition.eligible;
   const cleanReplay = replayPartition.eligible;
   const cleanHazards = hazardPartition.eligible;
@@ -58,6 +59,7 @@ export default function useWorldStateProjection({ live = [], federated = [], rep
     p?.buildGeneration === FRESH_BUILD_GENERATION &&
     typeof p?.modelVersion === 'string' && p.modelVersion.trim() &&
     Array.isArray(p?.sourceObservationIds) && p.sourceObservationIds.length > 0 &&
+    p.sourceObservationIds.every(id => trustedLiveIds.has(String(id))) &&
     (p?.observedAt || p?.generatedAt || p?.timestamp)
   );
   return useMemo(() => {
@@ -93,7 +95,17 @@ export default function useWorldStateProjection({ live = [], federated = [], rep
       hazards: objectiveHazards,
       tracks: [...byTrack.values()],
       counts: { measured: measured.length, federatedMeasured: federatedMeasured.length, historical: historical.length, predicted: predicted.length, hazards: objectiveHazards.length },
-      dataQuality: quality.stats,
+      dataQuality: {
+        input: quality.stats.input,
+        accepted: livePartition.eligible.length,
+        quarantined: quality.quarantined.length + livePartition.quarantined.length,
+        limitedProvenance: 0,
+        acceptancePct: quality.stats.input
+          ? Math.round(livePartition.eligible.length / quality.stats.input * 100)
+          : null,
+        schemaVersion: DATA_CONTRACT_VERSION,
+        trustPolicy: FRESH_BUILD_POLICY_VERSION,
+      },
       quarantined: [
         ...quality.quarantined.map(q => ({ id: q.id, reasons: q.reasons, ageMs: q.ageMs })),
         ...livePartition.quarantined.map(q => ({ id: q.id, reasons: q.reasons, ageMs: null })),
