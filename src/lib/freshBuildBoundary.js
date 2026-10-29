@@ -21,7 +21,7 @@ const finiteTimestamp = value => {
 
 const suspiciousLabel = value => /(^|[\s_:-])(demo|mock|fixture|fake|simulated|sample|seed|legacy|replay|test-only)([\s_:-]|$)/i.test(String(value || ''));
 
-export function assessFreshBuildRecord(record, { generation = FRESH_BUILD_GENERATION } = {}) {
+export function assessFreshBuildRecord(record, { generation = FRESH_BUILD_GENERATION, verifyIntegrityReceipt = null } = {}) {
   const reasons = [];
   if (!record || typeof record !== 'object' || Array.isArray(record)) {
     return { eligible: false, reasons: ['INVALID_RECORD'] };
@@ -42,7 +42,11 @@ export function assessFreshBuildRecord(record, { generation = FRESH_BUILD_GENERA
     typeof integrity.recordDigest === 'string' && /^[a-f0-9]{64}$/i.test(integrity.recordDigest) &&
     typeof integrity.signature === 'string' && integrity.signature.length >= 32 &&
     finiteTimestamp(integrity.verifiedAt);
-  if (!validReceiptShape) reasons.push('SERVER_INTEGRITY_RECEIPT_MISSING_OR_INVALID');
+  if (!validReceiptShape) {
+    reasons.push('SERVER_INTEGRITY_RECEIPT_MISSING_OR_INVALID');
+  } else if (typeof verifyIntegrityReceipt !== 'function' || verifyIntegrityReceipt(record, integrity) !== true) {
+    reasons.push('SERVER_INTEGRITY_RECEIPT_NOT_CRYPTOGRAPHICALLY_VERIFIED');
+  }
   if (record.quarantined === true || record.state === 'QUARANTINED') reasons.push('QUARANTINED');
   if (suspiciousLabel(source) || suspiciousLabel(record.datasetType) || suspiciousLabel(record.recordType)) reasons.push('SIMULATED_OR_LEGACY_LABEL');
   const evidence = text(record.evidenceClass || record.evidence_class).toUpperCase();
