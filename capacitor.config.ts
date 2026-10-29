@@ -8,7 +8,8 @@ const hostedUrl = process.env.WAVERADAR_HOSTED_URL?.trim();
 // An isolated test build must use its own Android package so it can be installed
 // beside the recovery app without replacing it or touching its local data.
 const appId = process.env.WAVERADAR_APP_ID?.trim() || 'com.waveradar.app';
-if (!/^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)+$/.test(appId)) {
+const appIdParts = appId.split('.');
+if (appIdParts.length < 2 || appIdParts.some(part => !/^[A-Za-z][A-Za-z0-9_]*$/.test(part))) {
   throw new Error(`Invalid WAVERADAR_APP_ID: ${appId}`);
 }
 
