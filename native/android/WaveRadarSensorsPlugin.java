@@ -157,7 +157,8 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
     org.json.JSONArray a = new org.json.JSONArray();
     for (float v : values) {
       // Never silently shorten a measured vector: callers validate finiteness first.
-      a.put(v);
+      // Values were checked for finiteness before conversion; use Object overload to avoid checked JSONException.
+      a.put((Object) Double.valueOf(v));
     }
     return a;
   }
