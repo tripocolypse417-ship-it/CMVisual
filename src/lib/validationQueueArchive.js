@@ -186,14 +186,49 @@ export async function restoreValidationQueueArchive(input, { storage, cryptoProv
       archiveSourceRecordSha256: sourceDigest,
     });
   }
-  const write = writePhysicalValidationQueue([...loaded.queue, ...quarantinedAdditions], storage);
+  // Re-read and reconcile synchronously after all asynchronous hashing, immediately
+  // before setItem, so a concurrent writer cannot slip in during digest generation.
+  const finalLoaded = readPhysicalValidationQueue(storage);
+  if (!finalLoaded.ok) return { ok: false, error: finalLoaded.error, restored: false };
+  const finalExisting = new Map(finalLoaded.queue.map((item, index) => [recordId(item, index), item]));
+  const finalAdditions = [];
+  const finalConflicts = [];
+  const finalDuplicates = [];
+  for (let index = 0; index < additions.length; index += 1) {
+    const sourceItem = additions[index];
+    const restoredItem = quarantinedAdditions[index];
+    const id = recordId(sourceItem, index);
+    if (!finalExisting.has(id)) {
+      finalAdditions.push(restoredItem);
+      continue;
+    }
+    const current = finalExisting.get(id);
+    if (stableStringify(current) === stableStringify(sourceItem) ||
+        (current?.restoredFromArchive && current.archiveSourceRecordSha256 === restoredItem.archiveSourceRecordSha256)) {
+      finalDuplicates.push(id);
+    } else {
+      finalConflicts.push(id);
+    }
+  }
+  if (finalConflicts.length) {
+    return {
+      ...preview,
+      identicalDuplicates: [...preview.identicalDuplicates, ...finalDuplicates],
+      conflicts: [...new Set(finalConflicts)],
+      canRestore: false,
+      restored: false,
+      error: 'RECORD_ID_CONFLICTS_REQUIRE_REVIEW',
+    };
+  }
+  const write = writePhysicalValidationQueue([...finalLoaded.queue, ...finalAdditions], storage);
   if (!write.ok) return { ok: false, error: write.error, restored: false };
   return {
     ...preview,
+    identicalDuplicates: [...preview.identicalDuplicates, ...finalDuplicates],
     ok: true,
     restored: true,
-    restoredCount: quarantinedAdditions.length,
-    quarantinedCount: quarantinedAdditions.length,
+    restoredCount: finalAdditions.length,
+    quarantinedCount: finalAdditions.length,
     finalRecordCount: write.count,
   };
 }
