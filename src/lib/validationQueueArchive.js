@@ -133,7 +133,7 @@ export async function restoreValidationQueueArchive(input, { storage, cryptoProv
   const archiveSeen = new Map();
   const additions = [];
   const conflicts = [];
-  const identicalDuplicates = [...preview.identicalDuplicates];
+  const identicalDuplicates = [];
   for (let index = 0; index < verified.archive.records.length; index += 1) {
     const item = verified.archive.records[index];
     const id = recordId(item, index);
