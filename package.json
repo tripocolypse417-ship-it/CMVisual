@@ -16,7 +16,8 @@
     "test:physical-validation-evidence": "node scripts/test-physical-validation-evidence.mjs",
     "test:native-sensor-lifecycle": "node scripts/test-native-sensor-lifecycle.mjs",
     "audit:providers": "node scripts/audit-provider-dependencies.mjs",
-    "test:world-model-contract": "node scripts/test-world-model-contract.mjs"
+    "test:world-model-contract": "node scripts/test-world-model-contract.mjs",
+    "test:validation-queue-archive": "node scripts/test-validation-queue-archive.mjs"
   },
   "dependencies": {
     "@base44/sdk": "^0.8.52",
