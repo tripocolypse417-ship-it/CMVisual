@@ -370,6 +370,10 @@ Artifacts:
 
 **Head-of-branch limitation:** these results apply to commit `28bd2d5...`. The evidence-taxonomy compatibility corrections and adapter-contract documentation were committed afterward. Those latest changes require a fresh CI run before the current PR head is considered verified. Neither APK has been installed on a physical device or tested in airplane mode.
 
+### Additional provider package finding
+
+The provider inventory now also reports vendor-specific package dependencies from `dependencies`, `devDependencies`, and `optionalDependencies`. It explicitly identifies Base44 SDK/plugin packages and Stripe packages. The current manifest includes `@stripe/react-stripe-js` and `@stripe/stripe-js`; these indicate a Stripe integration surface, not proof that payment processing is currently active or that fees are being incurred. Trace every Stripe import and call before classifying it as required, optional, or removable. Do not remove billing code until any active payment, subscription, webhook, and customer-record behavior is understood.
+
 ## Explicitly not done
 
 - No Base44 SDK/plugin was removed.
