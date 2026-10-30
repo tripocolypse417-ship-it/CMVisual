@@ -275,6 +275,27 @@ A provider dependency inventory was also added:
 
 The audit is intentionally observational: it reports existing coupling rather than failing the build simply because known legacy dependencies remain. It fails only if its scan stops detecting the expected Base44 reference, which protects against a broken or incomplete scan. The script and newly added contract tests have been committed to the draft PR branch; a new CI result for the latest head is still required before these changes are treated as tested.
 
+## Local validation-queue archive prototype — 2026-10-30
+
+Added an isolated export/verification/restore utility:
+
+- `src/lib/validationQueueArchive.js`
+- `scripts/test-validation-queue-archive.mjs`
+- `npm run test:validation-queue-archive`
+
+The archive contains only the records currently stored under the physical-validation browser queue key. It includes a versioned manifest, source queue key/version, export timestamp, record count, and SHA-256 digest over a deterministic JSON representation.
+
+Restore is deliberately non-destructive:
+- Hash and record count are verified before preview.
+- Existing records are never overwritten or deleted.
+- Identical records are skipped to avoid duplicates.
+- Same-ID/different-content records are reported as conflicts and block restore until reviewed.
+- Repeated restore is tested to be idempotent.
+
+The test command is wired into the standard and experimental offline Android workflows.
+
+**Scope limitation:** this is not a complete WaveRadar backup. It does not export Base44 entities, remote evidence objects, app configuration, authentication records, or arbitrary phone storage. SHA-256 detects accidental/tampered content relative to the manifest but is not a digital signature and does not prove who created an archive. No real user queue was read, exported, uploaded, or modified during this source-code work. Production UI integration and real-device export/restore testing remain outstanding.
+
 ## Explicitly not done
 
 - No Base44 SDK/plugin was removed.
