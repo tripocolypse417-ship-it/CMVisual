@@ -26,7 +26,7 @@ The World Model is the shared spatial and operational representation consumed by
 
 ### Evidence classes
 
-Use explicit classes: MEASURED, DERIVED, INFERRED, PREDICTED, SIMULATED, UNKNOWN, and UNAVAILABLE. Preserve the original class through transformations. Never relabel inferred or simulated data as measured. Do not present a presence hypothesis as a confirmed victim, a model reconstruction as a scan, or a route as safe without supporting evidence.
+Preserve the existing canonical classes MEASURED, FEDERATED_MEASURED, DERIVED, INFERRED, PREDICTED, ENVIRONMENTAL, GROUND_TRUTH_OPERATOR_MARKER, CONFLICT, and UNKNOWN. Add SIMULATED and UNAVAILABLE through a versioned schema extension. Preserve the original class through transformations. Never relabel inferred, predicted, simulated, environmental, ground-truth, or federated records as ordinary MEASURED data. Do not present a presence hypothesis as a confirmed victim, a model reconstruction as a scan, or a route as safe without supporting evidence.
 
 ### Sensor independence
 
