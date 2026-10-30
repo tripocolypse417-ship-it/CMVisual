@@ -22,6 +22,12 @@ const exported = await createValidationQueueArchive({ storage: source, exportedA
 assert.equal(exported.ok, true);
 assert.equal(JSON.parse(exported.json).recordCount, 2);
 assert.equal((await verifyValidationQueueArchive(exported.json)).ok, true);
+const wrongSource = JSON.parse(exported.json);
+wrongSource.source.queueKey = 'unrelated:queue';
+assert.equal((await verifyValidationQueueArchive(wrongSource)).error, 'ARCHIVE_SOURCE_MISMATCH');
+const badExportTime = JSON.parse(exported.json);
+badExportTime.exportedAt = 'not-a-timestamp';
+assert.equal((await verifyValidationQueueArchive(badExportTime)).error, 'ARCHIVE_TIMESTAMP_INVALID');
 
 const emptyDestination = memoryStorage([]);
 const preview = await previewValidationQueueRestore(exported.json, { storage: emptyDestination });
