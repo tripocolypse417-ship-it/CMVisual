@@ -235,6 +235,30 @@ A dependency may be removed only when all applicable conditions are true:
 - Rollback is documented and tested.
 - No historical evidence or user data is lost.
 
+
+## Experimental offline-shell build result — 2026-10-30
+
+The isolated workflow `.github/workflows/build-android-offline.yml` was executed on this audit branch.
+
+- Workflow run: **#3**, run ID `41128036966`.
+- Result: **success**.
+- Job: `offline-shell-debug`; all 14 substantive steps completed successfully.
+- Confirmed steps: evidence/sensor safety tests, bundled web build, output verification, Capacitor project generation without a hosted URL, native sensor bridge installation, bundled asset/native plugin sync, Android debug packaging, and artifact upload.
+- Artifact: `WaveRadar-offline-shell-experimental`, 5,341,120 bytes.
+- Artifact SHA-256: `e5a9d7592c588deb8c30a622d7c169d56ff813a481ccc6ab46ed58eb49204ca1`.
+- Artifact expires: **2026-11-29 21:05 UTC**.
+- Run/artifact page: https://github.com/tripocolypse417-ship-it/CMVisual/actions/runs/41128036966
+
+**Important limitations from the actual job log:**
+
+1. `WAVERADAR_DEBUG_KEYSTORE_BASE64` was not configured. The job explicitly warns that this APK is for isolated testing only and may not update an installed app. Signing compatibility remains unresolved.
+2. The Vite build warned that `VITE_BASE44_APP_ID` was not set. The web bundle and APK packaging succeeded, but this does not establish that Base44-backed authentication, entities, or server functions work in the offline build.
+3. The workflow did not perform a physical-device install, airplane-mode launch, camera test, process-death persistence test, or restore test.
+4. The APK is an experimental offline *shell build*, not evidence that all application workflows or data services operate offline.
+
+**Next acceptance sequence:** inspect APK signing certificate and package ID; install only on a spare/test device or emulator with no production data; disable network and test launch/navigation/camera/local functions; test restart/process death; test queued-write behavior and reconnect reconciliation; then test a clean export/restore. Do not install over the owner's current phone app until its installed certificate and package identity are matched and local-only data is safely exported.
+
+
 ## Explicitly not done
 
 - No Base44 SDK/plugin was removed.
