@@ -415,7 +415,7 @@ export default function PhysicalValidation() {
       setQueueStatus(getPhysicalValidationQueueStatus());
       setArchivePreview(null);
       setArchiveFileText('');
-      setSaveState('ARCHIVE RESTORED · ' + result.restoredCount + ' NEW RECORDS');
+      setSaveState('ARCHIVE RESTORED · ' + result.quarantinedCount + ' RECORDS QUARANTINED FOR REVIEW');
     } catch (error) {
       console.error('[WaveRadar] queue archive restore failed', error);
       setSaveState('ARCHIVE RESTORE FAILED');
@@ -568,7 +568,7 @@ export default function PhysicalValidation() {
           {queueStatus.ok && (
             <div className="mt-3 space-y-2 rounded border border-amber-300/20 bg-black/10 p-3">
               {queueStatus.ambiguousCount > 0 && <div className="text-[10px] text-amber-200">Some remote write outcomes are ambiguous. They are retained and will not be retried automatically to avoid duplicate evidence.</div>}
-              <div className="text-[10px] text-slate-400">LOCAL QUEUE ARCHIVE ONLY · Does not back up Base44 records, known-point checks, or the complete phone/app data.</div>
+              <div className="text-[10px] text-slate-400">LOCAL QUEUE ARCHIVE ONLY · Restored entries are quarantined and will not sync automatically. Does not back up Base44 records, known-point checks, or complete phone/app data.</div>
               <button disabled={archiveBusy} onClick={exportPendingQueue} className="border border-amber-300/30 px-3 py-2 text-xs disabled:opacity-40">{archiveBusy ? 'WORKING…' : 'EXPORT HASHED QUEUE ARCHIVE'}</button>
               <label className="block text-[10px] text-slate-300">Preview an archive before restoring
                 <input type="file" accept="application/json,.json" disabled={archiveBusy} onChange={e => previewQueueArchiveFile(e.target.files?.[0])} className="block w-full mt-1 text-xs text-slate-400 file:mr-2 file:border file:border-white/20 file:bg-slate-800 file:px-2 file:py-1 file:text-slate-200" />
@@ -580,7 +580,7 @@ export default function PhysicalValidation() {
                       <div className="text-emerald-200">ARCHIVE HASH VERIFIED · {archivePreview.archiveRecordCount} RECORDS</div>
                       <div>Existing records: {archivePreview.existingRecordCount} · New records: {archivePreview.additions} · Identical duplicates: {archivePreview.identicalDuplicates.length}</div>
                       {archivePreview.conflicts.length > 0 && <div className="text-amber-200">Conflicting record IDs: {archivePreview.conflicts.join(', ')}</div>}
-                      <button disabled={archiveBusy || !archivePreview.canRestore || !archiveFileText} onClick={restoreQueueArchive} className="mt-1 border border-emerald-300/30 px-3 py-2 text-xs disabled:opacity-30">RESTORE NEW RECORDS ONLY</button>
+                      <button disabled={archiveBusy || !archivePreview.canRestore || !archiveFileText} onClick={restoreQueueArchive} className="mt-1 border border-emerald-300/30 px-3 py-2 text-xs disabled:opacity-30">RESTORE TO LOCAL REVIEW QUARANTINE</button>
                     </>
                   ) : <div className="text-red-200">ARCHIVE NOT VERIFIED · {archivePreview.error}</div>}
                 </div>
