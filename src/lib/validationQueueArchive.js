@@ -197,7 +197,8 @@ export async function restoreValidationQueueArchive(input, { storage, cryptoProv
   for (let index = 0; index < additions.length; index += 1) {
     const sourceItem = additions[index];
     const restoredItem = quarantinedAdditions[index];
-    const id = recordId(sourceItem, index);
+    const archiveIndex = verified.archive.records.indexOf(sourceItem);
+    const id = recordId(sourceItem, archiveIndex >= 0 ? archiveIndex : index);
     if (!finalExisting.has(id)) {
       finalAdditions.push(restoredItem);
       continue;
@@ -213,7 +214,7 @@ export async function restoreValidationQueueArchive(input, { storage, cryptoProv
   if (finalConflicts.length) {
     return {
       ...preview,
-      identicalDuplicates: [...preview.identicalDuplicates, ...finalDuplicates],
+      identicalDuplicates: [...new Set([...preview.identicalDuplicates, ...finalDuplicates])],
       conflicts: [...new Set(finalConflicts)],
       canRestore: false,
       restored: false,
