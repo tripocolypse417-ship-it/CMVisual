@@ -29,6 +29,32 @@ Rules: never store passwords or long-lived secrets in application local storage.
 
 Rules: stable IDs, schema version, timestamps, and tenant/owner scope on every entity. Use optimistic concurrency for updates. Paginate all lists. Make retryable writes idempotent. Keep audit history for security-sensitive changes. Client-supplied owner IDs are never authorization proof.
 
+### WorldModelRepository
+
+- appendObservation(observation) validates the versioned World Model contract and stores the immutable source event.
+- getEntity(entityId), queryEntities(query), and getSnapshot(scope, asOf) return versioned materialized state.
+- applyEntityUpdate(entityId, patch, sourceEventIds, expectedVersion) creates a new entity revision only when the expected version matches.
+- getLineage(entityId) returns source events, transforms, algorithms, calibration records, and review/ground-truth references.
+
+Rules: observations are append-only; materialized entities are versioned projections. Never update an entity without source-event lineage. A failed validation is rejected or quarantined with reason codes, not silently normalized into a valid observation. Preserve conflicting source events. Keep coordinate reference systems, transforms, units, and uncertainty explicit. The repository is not allowed to upgrade evidence classes or validation state on its own.
+
+### ScannerAdapterRegistry
+
+- register(adapterDescriptor) registers an adapter ID/version and supported modality declarations.
+- listCapabilities(deviceContext) reports hardware, OS/driver/API, permission, calibration, runtime, sample-arrival, freshness, and validation states separately.
+- get(adapterId, adapterVersion) returns a versioned adapter implementation.
+- start(adapterId, sessionId), read(adapterId, signal), and stop(adapterId, sessionId) manage lifecycle.
+
+Rules: adapters are isolated and replaceable. A declared capability is not proof of a sample. Adapters cannot write directly to WorldModelRepository. All outputs pass through the ingestion validator. Unknown modalities are retained as unknown/quarantined evidence, not coerced into a known modality. A failing or disconnected adapter must not disable unrelated sensors or the local field interface.
+
+### ClockAndCoordinateRegistry
+
+- registerClockSource(sourceId, clockDescriptor) records clock type, resolution, synchronization method, and estimated offset/uncertainty.
+- registerCoordinateFrame(frameId, frameDescriptor) records frame origin, axes, units, handedness, datum, and calibration reference.
+- estimateTransform(fromFrame, toFrame, calibrationId) returns a transform plus uncertainty and validity interval.
+
+Rules: preserve original timestamps and coordinates. Never overwrite raw values after conversion. Missing or invalid clock/frame metadata is an explicit quality condition. A transform must be versioned, traceable, and uncertainty-bearing; do not silently mix device-local, building-local, and geographic coordinates.
+
 ### EvidenceObjectStore
 - put(bytes, descriptor) returns object ID, SHA-256, byte length, media type, created time, evidence class, and state.
 - get(objectId) returns original bytes and descriptor.
