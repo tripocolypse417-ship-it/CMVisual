@@ -415,6 +415,17 @@ Artifacts:
 
 The persistent signing secret is still not configured. The certificate differs from previous runner-generated APKs. This artifact is for isolated testing only; it is not approved to update the existing phone installation. These CI results establish code/build checks only, not physical-device operation, airplane-mode behavior, data restore, sensor accuracy, or life-safety validation.
 
+### Physical Validation page archive controls — source implementation added
+
+The draft branch now wires the queue archive utility into `src/pages/PhysicalValidation.jsx`:
+- Export a SHA-256-verified, versioned local validation-queue archive.
+- Select a JSON archive and verify its manifest/hash before showing a restore preview.
+- Show existing/new/duplicate/conflicting record counts.
+- Restore only new records; disable restore when same-ID/different-content conflicts exist.
+- Enforce a 20 MB import-file limit and label the archive scope explicitly.
+
+The UI states that it does not back up Base44 records, known-point checks, or complete phone/app data. This code is in the draft PR only and has not been deployed or tested on the physical phone. Latest-head lint/build/CI must pass before it is considered ready.
+
 ## Explicitly not done
 
 - No Base44 SDK/plugin was removed.
