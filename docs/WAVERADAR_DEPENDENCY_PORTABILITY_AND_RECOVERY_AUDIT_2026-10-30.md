@@ -348,6 +348,28 @@ Use WaveRadar's own versioned observation and World Model contracts as the autho
 
 For the present Moto G Play 2024, prioritize native camera/sensor enumeration and a narrow visual-tracking feasibility experiment. Defer heavy mapping/SLAM integration until a device with supported tracking hardware or an external sensor/edge-compute configuration is available.
 
+## Latest complete CI results and APK identity — 2026-10-30
+
+On branch commit `28bd2d5059eebae7d5cfe52250e24f545eb8556e`, the following GitHub Actions jobs completed successfully:
+
+- Code quality run #165 — lint, project typecheck step (labelled legacy baseline debt), and web build all completed successfully.
+- Runtime safety run #179 — passed.
+- Standard Android build run #272 — passed all data/provider/World Model/archive and existing sensor/evidence tests, web build, Capacitor sync, and APK packaging.
+- Experimental offline-shell build run #22 — passed all data/provider/World Model/archive and existing sensor/evidence tests, bundled web build, no-hosted-URL configuration check, Capacitor sync, Android packaging, APK identity inspection, and artifact upload.
+
+Artifacts:
+- Standard debug APK artifact: https://github.com/tripocolypse417-ship-it/CMVisual/actions/runs/41130429901/artifacts/13013201759
+  - 5,341,166 bytes; artifact ZIP SHA-256 `a3d86001568b29d6725bd0d94067174ac93ce655cd7df089f2ef08a9b04f3ed2`; expiry 2027-01-28.
+- Experimental offline-shell artifact (APK plus identity report): https://github.com/tripocolypse417-ship-it/CMVisual/actions/runs/41130429817/artifacts/13011664791
+  - 5,341,585 bytes; artifact ZIP SHA-256 `c2feae5dc1d66fb9e23d6219107e8a8744b3f152e6869f3b48d231e69573ee0f`; expiry 2026-11-29.
+  - APK SHA-256 `c9a81161feb31cf4b769dcc563835632f363b3f54d162daf7f5dd0bee78f2f1d`.
+  - Package identity `com.waveradar.app`, versionCode 1, versionName 1.0.
+  - Signing certificate SHA-256 `29b034f34ea774c711d30b0ea2f2718d30fd8b0a312514e1f1f1266a23a942dc`.
+
+**Signing warning:** both build logs explicitly say `WAVERADAR_DEBUG_KEYSTORE_BASE64` is not configured. The offline APK was signed with a runner-generated debug key. It is suitable only for isolated testing and is not approved to update the installed phone app. Do not uninstall or overwrite the current installation.
+
+**Head-of-branch limitation:** these results apply to commit `28bd2d5...`. The evidence-taxonomy compatibility corrections and adapter-contract documentation were committed afterward. Those latest changes require a fresh CI run before the current PR head is considered verified. Neither APK has been installed on a physical device or tested in airplane mode.
+
 ## Explicitly not done
 
 - No Base44 SDK/plugin was removed.
