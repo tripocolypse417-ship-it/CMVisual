@@ -426,7 +426,7 @@ The draft branch now wires the queue archive utility into `src/pages/PhysicalVal
 - Restore only new records; disable restore when same-ID/different-content conflicts exist.
 - Enforce a 20 MB import-file limit and label the archive scope explicitly.
 
-The UI states that it does not back up Base44 records, known-point checks, or complete phone/app data. Archive verification checks the queue source key/version, export timestamp, record count, and SHA-256 digest. Restored records are quarantined from automatic sync until reviewed; the UI labels this explicitly. The digest is not a signature, so the quarantine is important for imported/untrusted files. This code is in the draft PR only and has not been deployed or tested on the physical phone. Latest-head lint/build/CI must pass before it is considered ready.
+The UI states that it does not back up Base44 records, known-point checks, or complete phone/app data. Archive verification checks the queue source key/version, export timestamp, record count, and SHA-256 digest. The exported JSON is not encrypted and must be stored privately. Restored records are quarantined from automatic sync until reviewed; the UI labels this explicitly. The digest is not a signature, so the quarantine is important for imported/untrusted files. This code is in the draft PR only and has not been deployed or tested on the physical phone. Latest-head lint/build/CI must pass before it is considered ready.
 
 ## Explicitly not done
 
