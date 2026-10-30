@@ -428,6 +428,26 @@ The draft branch now wires the queue archive utility into `src/pages/PhysicalVal
 
 The UI states that it does not back up Base44 records, known-point checks, or complete phone/app data. Archive verification checks the queue source key/version, export timestamp, record count, and SHA-256 digest. The exported JSON is not encrypted and must be stored privately. Restored records are quarantined from automatic sync until reviewed; the UI labels this explicitly. The digest is not a signature, so the quarantine is important for imported/untrusted files. This code is in the draft PR only and has not been deployed or tested on the physical phone. Latest-head lint/build/CI must pass before it is considered ready.
 
+### Physical Validation archive UI CI pass — commit 8622f04
+
+The archive export/preview/restore UI and queue quarantine implementation passed all four workflows on commit `8622f04d913ffedf0b07d28b1065a555c64cec90`:
+
+- Code quality run #197: success (lint, typecheck, web build).
+- Runtime safety run #211: success.
+- Standard Android build run #304: success.
+- Experimental offline-shell build run #53: success, including archive/restore tests, bundled-assets build, no-hosted-URL check, APK packaging, identity report, and artifact upload.
+
+Artifacts:
+- [Standard debug APK](https://github.com/tripocolypse417-ship-it/CMVisual/actions/runs/41132111805/artifacts/13014215744) — 5,343,604 bytes; expires 2027-01-28.
+- [Offline-shell APK + identity report](https://github.com/tripocolypse417-ship-it/CMVisual/actions/runs/41132111570/artifacts/13013592747) — 5,343,975 bytes; ZIP SHA-256 `cb772c3f815a1b519091df3979e04e19c80ea3b1cece920b4120a66698b11ebf`; expires 2026-11-29.
+  - APK SHA-256 `d73785deade4b7bb809c9c58a38d493b7d088b54debffce5032c79ae94be1085`.
+  - Package ID `com.waveradar.app`, versionCode 1, versionName 1.0.
+  - Signing certificate SHA-256 `214f0c9c7c5e9025c631e0a44d0128112552f7c9af90f643e96ac7172976fadd`.
+
+The signing secret remained unconfigured, so this artifact is signed with an ephemeral key and is not approved for updating the installed app.
+
+After this CI pass, one test-only change moved the simulated concurrent-write mutation to the archive-record hashing phase so it specifically exercises the final synchronous pre-write reconciliation. The UI copy was also clarified to state that the archive is unencrypted JSON. These final small changes still require a fresh CI pass. The production behavior remains un-deployed and not physically tested.
+
 ## Explicitly not done
 
 - No Base44 SDK/plugin was removed.
