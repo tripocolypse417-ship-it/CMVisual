@@ -88,15 +88,25 @@ export async function previewValidationQueueRestore(input, { storage, cryptoProv
   const loaded = readPhysicalValidationQueue(storage);
   if (!loaded.ok) return { ok: false, error: loaded.error };
   const existing = new Map(loaded.queue.map((item, index) => [recordId(item, index), item]));
+  const archiveSeen = new Map();
   const additions = [];
   const identicalDuplicates = [];
   const conflicts = [];
   for (let index = 0; index < verified.archive.records.length; index += 1) {
     const item = verified.archive.records[index];
     const id = recordId(item, index);
-    if (!existing.has(id)) { additions.push(item); continue; }
-    if (stableStringify(existing.get(id)) === stableStringify(item)) identicalDuplicates.push(id);
-    else conflicts.push(id);
+    if (existing.has(id)) {
+      if (stableStringify(existing.get(id)) === stableStringify(item)) identicalDuplicates.push(id);
+      else conflicts.push(id);
+      continue;
+    }
+    if (archiveSeen.has(id)) {
+      if (stableStringify(archiveSeen.get(id)) === stableStringify(item)) identicalDuplicates.push(id);
+      else conflicts.push(id);
+      continue;
+    }
+    archiveSeen.set(id, item);
+    additions.push(item);
   }
   return {
     ok: true,
@@ -120,7 +130,14 @@ export async function restoreValidationQueueArchive(input, { storage, cryptoProv
   const loaded = readPhysicalValidationQueue(storage);
   if (!loaded.ok) return { ok: false, error: loaded.error };
   const existingIds = new Set(loaded.queue.map((item, index) => recordId(item, index)));
-  const additions = verified.archive.records.filter((item, index) => !existingIds.has(recordId(item, index)));
+  const additions = [];
+  for (let index = 0; index < verified.archive.records.length; index += 1) {
+    const item = verified.archive.records[index];
+    const id = recordId(item, index);
+    if (existingIds.has(id)) continue;
+    existingIds.add(id);
+    additions.push(item);
+  }
   const write = writePhysicalValidationQueue([...loaded.queue, ...additions], storage);
   if (!write.ok) return { ok: false, error: write.error, restored: false };
   return { ...preview, ok: true, restored: true, restoredCount: additions.length, finalRecordCount: write.count };
