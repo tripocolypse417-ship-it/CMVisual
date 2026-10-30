@@ -393,6 +393,10 @@ The signing secret remained unconfigured. This second offline APK's certificate 
 
 Commits after `17d1d95` added numeric timestamp range rejection, a test for out-of-range timestamps, a vendor-package inventory for Stripe SDKs, and a concurrent-write conflict recheck immediately before queue restore. Those newest commits still need a fresh CI pass. No physical device, airplane-mode, or end-to-end restore test has been performed.
 
+### Restore race-condition hardening — latest source change
+
+The queue restore path now repeats ID/content reconciliation immediately before writing the merged queue, after archive verification. This closes a race where another writer could add a same-ID/different-content record after the preview but before the restore write. A regression test mutates the destination during the second digest operation and confirms restore is blocked while the concurrent record remains untouched. This latest regression test still requires the current-head CI run.
+
 ## Explicitly not done
 
 - No Base44 SDK/plugin was removed.
