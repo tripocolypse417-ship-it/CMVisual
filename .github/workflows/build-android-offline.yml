@@ -107,10 +107,28 @@ jobs:
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
 
+      - name: Record APK identity and signing certificate
+        shell: bash
+        run: |
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          AAPT=$(find "$ANDROID_HOME/build-tools" -name aapt -type f | sort -V | tail -n 1)
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)
+          test -n "$AAPT" && test -n "$APKSIGNER"
+          {
+            echo "APK SHA-256: $(sha256sum "$APK" | cut -d' ' -f1)"
+            echo "Package identity:"
+            "$AAPT" dump badging "$APK" | head -n 1
+            echo "Signing certificate:"
+            "$APKSIGNER" verify --print-certs "$APK"
+          } | tee android/app/build/outputs/apk/debug/apk-identity.txt
+          cat android/app/build/outputs/apk/debug/apk-identity.txt >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload experimental APK
         uses: actions/upload-artifact@v4
         with:
           name: WaveRadar-offline-shell-experimental
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/debug/apk-identity.txt
           if-no-files-found: error
           retention-days: 30
