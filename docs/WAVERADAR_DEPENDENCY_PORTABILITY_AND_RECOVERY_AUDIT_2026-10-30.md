@@ -1,0 +1,246 @@
+# WaveRadar Dependency, Portability & Recovery Audit
+
+**Audit date:** 2026-10-30  
+**Repository reviewed:** `tripocolypse417-ship-it/CMVisual`  
+**Baseline:** `main` at `5e639f1862b179238b1bab4803f3c8389631f4dd`  
+**Status:** Source-level audit. No production migration, deletion, or phone installation was performed.
+
+## Executive finding
+
+WaveRadar has a useful separation of concerns in its sensor/evidence code, and its Android CI currently passes its automated checks. However, the current application is **not yet dependency-independent, not yet a verified offline application, and not yet protected by a demonstrated end-to-end backup/restore process**.
+
+Do not remove Base44, Hatchable, Google Drive, or any other existing service until the replacement is running, exported data has been restored successfully, and acceptance tests pass. Preserve all existing evidence and workspaces.
+
+## Verified findings and risk register
+
+### P0 — Android update signing identity is not configured
+
+**Evidence**
+- Workflow: `.github/workflows/build-android.yml`
+- Secret expected: `WAVERADAR_DEBUG_KEYSTORE_BASE64`
+- CI run: Android build run 249, job `android-debug`, 2026-10-30.
+- The job log explicitly reports: `WAVERADAR_DEBUG_KEYSTORE_BASE64 is not configured`.
+- The workflow therefore generated an ephemeral runner debug key for this APK.
+
+**Impact**
+- This APK is not guaranteed to update an existing installation.
+- A successful build is not proof of signing compatibility.
+- Uninstalling the installed app can erase app-private local data.
+
+**Required action**
+- Do not install this artifact over the current app and do not uninstall the current app.
+- The owner must configure a persistent signing key through GitHub Actions secrets from a trusted computer, or we must establish a separately approved migration path.
+- Verify the signing certificate of the existing installed APK and the new APK before attempting an update. The old runner key may be unrecoverable; a new key cannot reproduce a missing private key.
+- Preserve local data first. Only consider a one-time reinstall after export and restore are independently verified.
+
+### P0 — Hosted interface dependency prevents an offline/independent APK claim
+
+**Evidence**
+- `capacitor.config.ts` uses `WAVERADAR_HOSTED_URL` to set Capacitor's `server.url`.
+- `.github/workflows/build-android.yml` sets that variable to `https://waveradar-20.hatchable.site/workspace/`.
+- The configuration comments explicitly state that this path requires internet and is not an offline/production deployment configuration.
+
+**Impact**
+- The APK loads its web interface from a hosted service rather than solely from its bundled `dist` assets.
+- If the host, account, project, URL, DNS, or network is unavailable, the interface may fail even though native Android code is installed.
+- This is a runtime dependency, not merely a development convenience.
+
+**Required action**
+- Build and test a bundled-assets APK with no `server.url` override.
+- Define which features must work offline and which may synchronize later.
+- Add explicit offline, stale-data, and reconnect states.
+- Keep hosted deployment as an optional environment, not the only runtime path.
+
+### P0 — Base44 remains a core application dependency
+
+**Evidence**
+- `package.json` includes `@base44/sdk` and `@base44/vite-plugin`.
+- `src/api/base44Client.js` creates the shared Base44 client.
+- `src/lib/AuthContext.jsx` imports the Base44 client and a Base44 SDK internal Axios module.
+- `vite.config.js` loads the Base44 Vite plugin.
+- `docs/BASE44_DEPENDENCY_MAP.md` lists entity persistence, authentication, server functions, file upload, email, and AI integrations still used by the application.
+- `MIGRATION.md` states Base44 is the primary working source and that the independent runtime is not a byte-for-byte source export.
+
+**Impact**
+- Removing the SDK/plugin now would break authentication, persistence, and integrations.
+- The independent hosted fallback is not a complete backend replacement.
+
+**Required action**
+1. Inventory every Base44 entity operation and caller.
+2. Define portable application interfaces for identity, database, file/object storage, email, AI, and server functions.
+3. Export and reconcile existing records, IDs, timestamps, ownership, and relationships.
+4. Implement replacements behind adapters.
+5. Run parity tests against copies of data.
+6. Verify backup and restore in the replacement.
+7. Only then remove Base44 SDK/plugin references in a separate reviewed change.
+
+### P1 — No committed dependency lockfile was found in the repository tree
+
+**Evidence**
+- The repository tree contains `package.json` but no `package-lock.json`, `pnpm-lock.yaml`, or `yarn.lock`.
+- The Android workflow runs `npm install`.
+- Most direct dependencies use semver ranges (for example, caret ranges).
+
+**Impact**
+- Two builds made at different times may resolve different dependency versions.
+- Reproducing a previously passing build or investigating a regression becomes harder.
+- This weakens software supply-chain traceability.
+
+**Required action**
+- Choose one package manager and commit its lockfile.
+- Change CI to the matching frozen install command (for npm, `npm ci`).
+- Pin GitHub Actions to reviewed immutable commit SHAs where practical, and use automated update PRs rather than floating unreviewed updates.
+- Generate an SBOM and preserve it with each release artifact.
+- Run license and vulnerability audits; do not automatically upgrade or remove packages without compatibility tests.
+
+### P1 — Local validation queue is browser localStorage, not a verified archive
+
+**Evidence**
+- `src/lib/physicalValidationQueue.js` persists the queue under `waveradar:physical-validation:queue:v1` using `globalThis.localStorage`.
+- It handles storage-unavailable and quota errors and preserves ambiguous writes, which is good defensive behavior.
+- The code does not itself provide encrypted, independent, off-device backup or a verified restore workflow.
+- `src/lib/deviceIdentity.js` stores device identity in localStorage/sessionStorage/cookies and suppresses storage exceptions.
+
+**Impact**
+- Browser/WebView storage can be cleared, unavailable, quota-limited, or lost with app removal.
+- A local queue is not an independent backup.
+- A successful write to localStorage is not proof of recoverability.
+
+**Required action**
+- Preserve the existing queue behavior and records.
+- Add a versioned export package containing raw observations, session metadata, queue states, and evidence manifests.
+- Hash every export and verify the hash after download/restore.
+- Add a restore preview and duplicate-safe import procedure.
+- Evaluate a native durable store for Android (SQLite or equivalent) with explicit transaction semantics and a documented browser fallback.
+- Add tests for app restart, process death, low storage, interrupted synchronization, duplicate upload, export, and restore.
+- Do not auto-retry ambiguous remote writes without idempotency keys or server-side reconciliation.
+
+### P1 — Existing Drive archive function is not a provider-independent backup
+
+**Evidence**
+- `base44/functions/exportSnapshotToDrive/entry.ts` imports `npm:@base44/sdk@0.8.40`.
+- It obtains a Google Drive connector token through Base44 and exports a snapshot JSON file.
+- The function catches JSON parse errors by falling back to an empty detections array.
+
+**Impact**
+- The archive path depends on both Base44 and a Google Drive connector.
+- It exports a snapshot-shaped record, not a verified full application/evidence/database backup.
+- Replacing malformed detections with an empty array can conceal export loss if the failure is not separately recorded.
+
+**Required action**
+- Keep this existing export as a convenience only; do not call it the sole backup.
+- Add a provider-neutral export format and independent destination support.
+- Make malformed source data fail the export or explicitly mark the affected payload incomplete; never silently represent parse failure as a complete empty dataset.
+- Include schema version, export manifest, record counts, content hashes, source IDs, and explicit completeness status.
+- Test restore into a clean environment and compare counts and hashes.
+
+### P1 — Source backup hash needs provenance and restore verification
+
+**Evidence**
+- `public/cmvisual-source-backup.sha256` contains a digest for `/tmp/cmvisual-source-backup.tar.gz`.
+- The referenced archive path is not part of the repository tree.
+
+**Impact**
+- The checksum alone does not prove the archive is currently available, complete, or restorable.
+- A digest for a missing or inaccessible file is not a usable recovery copy.
+
+**Required action**
+- Locate the exact archive from its actual storage location; do not recreate or overwrite it by guessing.
+- Verify its SHA-256 against the recorded digest.
+- Restore it into a clean temporary directory and compare its source tree with the intended commit.
+- Record the archive location, date, commit, size, digest, and restore-test result in a backup manifest.
+- Maintain independent copies in at least two storage types, with one isolated/offline copy where feasible.
+
+### P2 — Native sensor bridge reports hardware capability separately from samples, but needs physical verification
+
+**Evidence**
+- `native/android/WaveRadarSensorsPlugin.java` enumerates Android sensor hardware and tracks per-sensor registration and sample history.
+- It reports capabilities for Wi-Fi RTT, UWB, camera, depth, thermal, and mmWave; unsupported advanced modalities are explicitly false.
+- `native/android/WaveRadarRangingPlugin.java` gates Wi-Fi RTT on Android API level, permissions, service availability, and compatible responders.
+- CI run 249 passed the native sensor lifecycle test.
+
+**Impact**
+- CI verifies code paths and tests, not the physical Moto G Play's actual sensor availability, sample freshness, coordinate accuracy, Wi-Fi RTT support, or pose estimation.
+- The device may not have Wi-Fi RTT responders or required hardware.
+- IMU measurements alone do not provide absolute position or reliable 6-DoF pose.
+
+**Required action**
+- Perform a fresh device-specific baseline with capability, registration, sample arrival, timestamp, freshness, and permission checks kept separate.
+- Record missing capabilities as UNAVAILABLE, not zero or simulated values.
+- Use independent surveyed/tape-measured ground truth for each narrowly defined accuracy claim.
+- Keep all new runs separate from historical runs; preserve failed/incomplete runs.
+
+## Positive controls already present
+
+- A dependency-light canonical data contract exists in `src/lib/dataContract.js`.
+- The physical-validation queue explicitly treats interrupted remote writes as ambiguous rather than blindly retrying them.
+- Evidence code checks for finite sensor measurements and freshness.
+- The native Android sensor bridge tracks registration per sensor and re-registers on resume.
+- The World Model architecture plan is documented in PR #39.
+- CI run 249 passed data-contract, array-boundary, physical-validation queue, physical-validation evidence, native sensor lifecycle, web build, and Android packaging steps.
+- Code-quality and runtime-safety workflows also passed on the PR commit.
+
+These are useful engineering controls, but they do not establish physical validation or full recovery readiness.
+
+## Ordered implementation plan
+
+### Phase A — Protect the current state
+1. Preserve main, all repositories, the original Base44 workspace, hosted services, and all raw evidence.
+2. Verify the source archive and restore test.
+3. Establish a repeatable, versioned release artifact manifest.
+4. Resolve Android signing identity before any update attempt.
+5. Export local-only phone data before any uninstall/reinstall decision.
+
+### Phase B — Reproducible builds
+1. Add the package lockfile.
+2. Switch CI to frozen dependency installation.
+3. Pin workflow actions and record toolchain versions.
+4. Generate and retain an SBOM, license report, and vulnerability report.
+5. Build a bundled-assets APK and test it with network access disabled.
+
+### Phase C — Portable platform adapters
+1. Enumerate every Base44 caller and entity operation.
+2. Define portable interfaces and schema mappings.
+3. Implement a self-hostable backend and object storage.
+4. Migrate authentication and account recovery.
+5. Migrate entities/functions one domain at a time.
+6. Verify record parity, authorization, export, and restore.
+7. Remove Base44 only after the replacement passes acceptance tests.
+
+### Phase D — Durable evidence and World Model
+1. Use the canonical observation envelope and shared versioned World Model.
+2. Preserve raw records as immutable inputs; keep derived records separate.
+3. Add native durable queue storage and explicit export/restore.
+4. Add idempotent synchronization and reconciliation.
+5. Keep scanner adapters replaceable and optional.
+6. Keep MEASURED, DERIVED, INFERRED, PREDICTED, SIMULATED, UNKNOWN, and UNAVAILABLE distinct.
+
+### Phase E — Physical validation
+1. Run a fresh native Android sensor baseline on the actual target phone.
+2. Verify every sample source and timestamp.
+3. Use independent ground truth for the specific tested metric.
+4. Record failures, deviations, and missing capabilities.
+5. Do not promote any capability to operational use until independent validation and safety review pass.
+
+## Acceptance gates before removing any dependency
+
+A dependency may be removed only when all applicable conditions are true:
+- Replacement source and configuration are version-controlled and recoverable.
+- Data export is complete, machine-readable, and hashed.
+- Restore succeeds in a clean environment.
+- Authentication and authorization parity tests pass.
+- Core workflows work without the old provider.
+- Offline/degraded behavior is tested where required.
+- CI build, tests, SBOM, license, and vulnerability checks pass.
+- Rollback is documented and tested.
+- No historical evidence or user data is lost.
+
+## Explicitly not done
+
+- No Base44 SDK/plugin was removed.
+- No Hatchable runtime was shut down or replaced.
+- No Google Drive archive was deleted.
+- No historical measurements or validation records were deleted or relabelled.
+- No APK was installed on the owner's phone.
+- No current app data was cleared.
+- No claim of successful full backup/restore or offline production operation is made.
