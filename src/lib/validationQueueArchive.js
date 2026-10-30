@@ -31,6 +31,13 @@ function recordId(item, index) {
     item?.validationPayload?.validation_id || `legacy-${index}-${item?.queuedAt || 'unknown'}`;
 }
 
+async function recordMatches(existing, incoming, cryptoProvider) {
+  if (stableStringify(existing) === stableStringify(incoming)) return true;
+  if (!existing?.restoredFromArchive || !/^[a-f0-9]{64}$/i.test(existing.archiveSourceRecordSha256 || '')) return false;
+  const digest = await sha256(stableStringify(incoming), cryptoProvider);
+  return !!digest && digest === existing.archiveSourceRecordSha256;
+}
+
 function archivePayload(archive) {
   return {
     archiveVersion: archive.archiveVersion,
@@ -96,7 +103,7 @@ export async function previewValidationQueueRestore(input, { storage, cryptoProv
     const item = verified.archive.records[index];
     const id = recordId(item, index);
     if (existing.has(id)) {
-      if (stableStringify(existing.get(id)) === stableStringify(item)) identicalDuplicates.push(id);
+      if (await recordMatches(existing.get(id), item, cryptoProvider)) identicalDuplicates.push(id);
       else conflicts.push(id);
       continue;
     }
@@ -138,7 +145,7 @@ export async function restoreValidationQueueArchive(input, { storage, cryptoProv
     const item = verified.archive.records[index];
     const id = recordId(item, index);
     if (existing.has(id)) {
-      if (stableStringify(existing.get(id)) === stableStringify(item)) identicalDuplicates.push(id);
+      if (await recordMatches(existing.get(id), item, cryptoProvider)) identicalDuplicates.push(id);
       else conflicts.push(id);
       continue;
     }
@@ -160,7 +167,26 @@ export async function restoreValidationQueueArchive(input, { storage, cryptoProv
       error: 'RECORD_ID_CONFLICTS_REQUIRE_REVIEW',
     };
   }
-  const write = writePhysicalValidationQueue([...loaded.queue, ...additions], storage);
+  const quarantinedAdditions = [];
+  for (const item of additions) {
+    const sourceDigest = await sha256(stableStringify(item), cryptoProvider);
+    if (!sourceDigest) return { ...preview, ok: false, restored: false, error: 'SHA256_UNAVAILABLE' };
+    quarantinedAdditions.push({
+      ...item,
+      quarantined: true,
+      quarantineReason: 'ARCHIVE_RESTORE_REVIEW_REQUIRED',
+      restoredFromArchive: true,
+      archiveSourceRecordSha256: sourceDigest,
+    });
+  }
+  const write = writePhysicalValidationQueue([...loaded.queue, ...quarantinedAdditions], storage);
   if (!write.ok) return { ok: false, error: write.error, restored: false };
-  return { ...preview, ok: true, restored: true, restoredCount: additions.length, finalRecordCount: write.count };
+  return {
+    ...preview,
+    ok: true,
+    restored: true,
+    restoredCount: quarantinedAdditions.length,
+    quarantinedCount: quarantinedAdditions.length,
+    finalRecordCount: write.count,
+  };
 }
