@@ -43,6 +43,9 @@ jobs:
       - name: Test World Model contract and provenance gates
         run: npm run test:world-model-contract
 
+      - name: Test validation queue archive and restore
+        run: npm run test:validation-queue-archive
+
       - name: Test malformed array boundaries
         run: npm run test:array-boundaries
 
