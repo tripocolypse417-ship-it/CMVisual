@@ -33,7 +33,9 @@ const nonEmpty = value => typeof value === 'string' && value.trim().length > 0;
 const finite = value => typeof value === 'number' && Number.isFinite(value);
 
 function validTimestamp(value) {
-  return value != null && parseTimestamp(value) != null;
+  if (value == null) return false;
+  const parsed = parseTimestamp(value);
+  return parsed != null && Number.isFinite(new Date(parsed).getTime());
 }
 
 /**
