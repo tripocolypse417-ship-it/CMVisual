@@ -5,7 +5,7 @@ import {
   restoreValidationQueueArchive,
   verifyValidationQueueArchive,
 } from '../src/lib/validationQueueArchive.js';
-import { PHYSICAL_VALIDATION_QUEUE_KEY } from '../src/lib/physicalValidationQueue.js';
+import { PHYSICAL_VALIDATION_QUEUE_KEY, syncPhysicalValidationQueue } from '../src/lib/physicalValidationQueue.js';
 
 function memoryStorage(seed = []) {
   const data = new Map([[PHYSICAL_VALIDATION_QUEUE_KEY, JSON.stringify(seed)]]);
@@ -42,6 +42,16 @@ const restoredQueue = JSON.parse(emptyDestination.getItem(PHYSICAL_VALIDATION_QU
 assert.equal(restoredQueue[0].quarantined, true);
 assert.equal(restoredQueue[0].quarantineReason, 'ARCHIVE_RESTORE_REVIEW_REQUIRED');
 assert.equal(restoredQueue[0].restoredFromArchive, true);
+let remoteWrites = 0;
+const quarantinedSync = await syncPhysicalValidationQueue({
+  storage: emptyDestination,
+  online: true,
+  createSession: async () => { remoteWrites += 1; },
+  createValidation: async () => { remoteWrites += 1; },
+});
+assert.equal(quarantinedSync.ok, true);
+assert.equal(remoteWrites, 0, 'restored archive records must not auto-sync while quarantined');
+assert.equal(quarantinedSync.ambiguousCount, 2);
 
 const repeated = await restoreValidationQueueArchive(exported.json, { storage: emptyDestination });
 assert.equal(repeated.restored, true);
