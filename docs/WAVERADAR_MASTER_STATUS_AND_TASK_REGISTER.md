@@ -24,6 +24,27 @@ The project is not yet a validated life-safety product. No through-wall sensing,
 
 Do not delete old workspaces or duplicate repositories merely to make the inventory appear simpler. Reconcile contents, verify a canonical replacement, and preserve a recovery path before any deletion.
 
+## 1A. Latest dependency-independence and recovery work — 2026-10-30
+
+A separate draft pull request is tracking the next portability and recovery improvements:
+- [PR #40 — Dependency portability and recovery audit](https://github.com/tripocolypse417-ship-it/CMVisual/pull/40).
+- [PR #39 — Independent World Model and institutional research plan](https://github.com/tripocolypse417-ship-it/CMVisual/pull/39).
+
+On the PR #40 branch:
+- Added an experimental bundled-assets Android APK workflow. Earlier revision run #3 completed successfully and uploaded a 5.34 MB APK artifact. The artifact used an ephemeral debug signing key, and has not been tested on a physical device or in airplane mode.
+- Added a provider-dependency inventory script. It is designed to report Base44 SDK/plugin, Base44 client/function, and hosted Hatchable URL references without pretending those dependencies have been removed.
+- Added an additive versioned World Model contract and test suite. It explicitly distinguishes MEASURED, DERIVED, INFERRED, PREDICTED, SIMULATED, UNKNOWN, and UNAVAILABLE; checks timestamps, provenance, units, uncertainty, coordinate frames, and entity lineage. It is not yet wired into production ingestion.
+- Added a local physical-validation queue archive prototype with SHA-256 integrity checking, preview, duplicate detection, and conflict-blocking restore. It covers only the browser-based local validation queue, not Base44 records or the complete app.
+
+**Current PR status:** draft/open, not merged. The latest head has no recorded CI run yet. Do not treat the new code as CI-verified or production-ready. Main branch and hosted services remain unchanged.
+
+### Target phone compatibility note
+
+The target handset is the Moto G Play (2024), Android 14. Motorola's official specification lists accelerometer, proximity, ambient light, sensor hub, e-compass, and barometer; it does not list a gyroscope. Treat gyroscope availability as unknown until enumerated on the device. The exact Moto G Play (2024) model is not listed on Google's current ARCore supported-device page. This is consistent with the earlier spatial-pose-unavailable diagnostic, but does not independently prove its cause.
+
+The phone remains useful for baseline camera, available motion/environmental sensors, GPS, connectivity, UI, queue, and evidence-pipeline tests. Do not require ARCore or claim validated 6-DoF pose on this handset. See the dependency audit for sources and the revised device-specific test sequence.
+
+
 ## 2. Completed and verified work
 
 ### 2.1 Evidence-reporting correction in WaveRadar Core
