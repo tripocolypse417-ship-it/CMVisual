@@ -374,6 +374,25 @@ Artifacts:
 
 The provider inventory now also reports vendor-specific package dependencies from `dependencies`, `devDependencies`, and `optionalDependencies`. It explicitly identifies Base44 SDK/plugin packages and Stripe packages. The current manifest includes `@stripe/react-stripe-js` and `@stripe/stripe-js`; these indicate a Stripe integration surface, not proof that payment processing is currently active or that fees are being incurred. Trace every Stripe import and call before classifying it as required, optional, or removable. Do not remove billing code until any active payment, subscription, webhook, and customer-record behavior is understood.
 
+### Follow-on CI confirmation — commit 17d1d95
+
+A second CI pass on commit `17d1d959f10cd2ae48e563587b18460e0c349df9` completed successfully:
+- Code quality run #166: passed, including lint, typecheck, and web build.
+- Runtime safety run #180: passed.
+- Standard Android build run #273: passed and uploaded its APK.
+- Experimental offline-shell build run #23: passed the complete test suite, bundled-assets/no-hosted-URL build, APK package identity inspection, and artifact upload.
+
+Latest artifacts for that commit:
+- [Standard APK artifact](https://github.com/tripocolypse417-ship-it/CMVisual/actions/runs/41130841389/artifacts/13013351231) — 5,341,166 bytes; ZIP SHA-256 `ae3a659b99a6bd120e98bfd329a4f3fa3402fd776136048727186e3f967e0f35`; expires 2027-01-28.
+- [Offline-shell APK + identity report](https://github.com/tripocolypse417-ship-it/CMVisual/actions/runs/41130841366/artifacts/13013585876) — 5,341,590 bytes; ZIP SHA-256 `c49e9542fd8b02ae5bf74537bd36e3e382f8bc18b2c15b66013f068a3004271e`; expires 2026-11-29.
+  - APK SHA-256 `d77334131fddfb6dc492799c52724bd075e0fcc72fcf94f52aa4e7a5655dd75c`.
+  - Package ID `com.waveradar.app`, versionCode 1, versionName 1.0.
+  - Signing certificate SHA-256 `43868ce046fa56be71079481ce7714ff47e588422bf3a4aab4586127ce7d64e8`.
+
+The signing secret remained unconfigured. This second offline APK's certificate fingerprint differs from the earlier build, confirming that the runner-generated debug identity is ephemeral. It is not safe for updating the installed phone app.
+
+Commits after `17d1d95` added numeric timestamp range rejection, a test for out-of-range timestamps, a vendor-package inventory for Stripe SDKs, and a concurrent-write conflict recheck immediately before queue restore. Those newest commits still need a fresh CI pass. No physical device, airplane-mode, or end-to-end restore test has been performed.
+
 ## Explicitly not done
 
 - No Base44 SDK/plugin was removed.
