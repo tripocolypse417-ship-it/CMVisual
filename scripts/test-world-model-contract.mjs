@@ -36,6 +36,19 @@ assert.equal(validateWorldObservation({
   ...base, eventId: 'evt-predicted', evidenceClass: E.PREDICTED,
 }).ok, true);
 
+// Preserve existing evidence classes from the canonical WaveRadar contract.
+for (const evidenceClass of [E.ENVIRONMENTAL, E.GROUND_TRUTH, E.FEDERATED_MEASURED]) {
+  assert.equal(validateWorldObservation({
+    ...base, eventId: 'evt-' + evidenceClass.toLowerCase(), evidenceClass,
+  }).ok, true);
+}
+assert.ok(validateWorldObservation({
+  ...base, eventId: 'evt-conflict', evidenceClass: E.CONFLICT, state: S.CONFLICT,
+}).ok);
+assert.ok(validateWorldObservation({
+  ...base, eventId: 'evt-conflict-invalid', evidenceClass: E.CONFLICT, state: S.CURRENT,
+}).errors.includes('CONFLICT_STATE_REQUIRED'));
+
 // Simulated observations are accepted as simulated, with a warning if marked CURRENT.
 const simulated = validateWorldObservation({
   ...base, eventId: 'evt-simulated', evidenceClass: E.SIMULATED,
