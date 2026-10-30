@@ -286,10 +286,12 @@ Added an isolated export/verification/restore utility:
 The archive contains only the records currently stored under the physical-validation browser queue key. It includes a versioned manifest, source queue key/version, export timestamp, record count, and SHA-256 digest over a deterministic JSON representation.
 
 Restore is deliberately non-destructive:
-- Hash and record count are verified before preview.
+- Hash and record count are verified before preview; SHA-256 is an integrity check, not a signature or proof of archive origin.
 - Existing records are never overwritten or deleted.
 - Identical records are skipped to avoid duplicates.
 - Same-ID/different-content records are reported as conflicts and block restore until reviewed.
+- A concurrent-write conflict check runs immediately before the restore write.
+- Newly restored records are marked quarantined with `ARCHIVE_RESTORE_REVIEW_REQUIRED`; they cannot be automatically synchronized until separately reviewed.
 - Repeated restore is tested to be idempotent.
 
 The test command is wired into the standard and experimental offline Android workflows.
