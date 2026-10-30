@@ -129,14 +129,36 @@ export async function restoreValidationQueueArchive(input, { storage, cryptoProv
   if (!verified.ok) return verified;
   const loaded = readPhysicalValidationQueue(storage);
   if (!loaded.ok) return { ok: false, error: loaded.error };
-  const existingIds = new Set(loaded.queue.map((item, index) => recordId(item, index)));
+  const existing = new Map(loaded.queue.map((item, index) => [recordId(item, index), item]));
+  const archiveSeen = new Map();
   const additions = [];
+  const conflicts = [];
+  const identicalDuplicates = [...preview.identicalDuplicates];
   for (let index = 0; index < verified.archive.records.length; index += 1) {
     const item = verified.archive.records[index];
     const id = recordId(item, index);
-    if (existingIds.has(id)) continue;
-    existingIds.add(id);
+    if (existing.has(id)) {
+      if (stableStringify(existing.get(id)) === stableStringify(item)) identicalDuplicates.push(id);
+      else conflicts.push(id);
+      continue;
+    }
+    if (archiveSeen.has(id)) {
+      if (stableStringify(archiveSeen.get(id)) === stableStringify(item)) identicalDuplicates.push(id);
+      else conflicts.push(id);
+      continue;
+    }
+    archiveSeen.set(id, item);
     additions.push(item);
+  }
+  if (conflicts.length) {
+    return {
+      ...preview,
+      identicalDuplicates,
+      conflicts: [...new Set(conflicts)],
+      canRestore: false,
+      restored: false,
+      error: 'RECORD_ID_CONFLICTS_REQUIRE_REVIEW',
+    };
   }
   const write = writePhysicalValidationQueue([...loaded.queue, ...additions], storage);
   if (!write.ok) return { ok: false, error: write.error, restored: false };
