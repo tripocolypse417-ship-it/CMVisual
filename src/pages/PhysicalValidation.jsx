@@ -568,7 +568,7 @@ export default function PhysicalValidation() {
           {queueStatus.ok && (
             <div className="mt-3 space-y-2 rounded border border-amber-300/20 bg-black/10 p-3">
               {queueStatus.ambiguousCount > 0 && <div className="text-[10px] text-amber-200">Some remote write outcomes are ambiguous. They are retained and will not be retried automatically to avoid duplicate evidence.</div>}
-              <div className="text-[10px] text-slate-400">LOCAL QUEUE ARCHIVE ONLY · SHA-256 checks file integrity, not archive origin or authenticity. Restored entries are quarantined and will not sync automatically. Does not back up Base44 records, known-point checks, or complete phone/app data.</div>
+              <div className="text-[10px] text-slate-400">LOCAL QUEUE ARCHIVE ONLY · Plain JSON, not encrypted; store privately. SHA-256 checks file integrity, not archive origin or authenticity. Restored entries are quarantined and will not sync automatically. Does not back up Base44 records, known-point checks, or complete phone/app data.</div>
               <button disabled={archiveBusy} onClick={exportPendingQueue} className="border border-amber-300/30 px-3 py-2 text-xs disabled:opacity-40">{archiveBusy ? 'WORKING…' : 'EXPORT HASHED QUEUE ARCHIVE'}</button>
               <label className="block text-[10px] text-slate-300">Preview an archive before restoring
                 <input type="file" accept="application/json,.json" disabled={archiveBusy} onChange={e => previewQueueArchiveFile(e.target.files?.[0])} className="block w-full mt-1 text-xs text-slate-400 file:mr-2 file:border file:border-white/20 file:bg-slate-800 file:px-2 file:py-1 file:text-slate-200" />
