@@ -66,7 +66,7 @@ const raceCrypto = {
   subtle: {
     async digest(algorithm, bytes) {
       digestCalls += 1;
-      if (digestCalls === 2) {
+      if (digestCalls === 3) {
         raceDestination.setItem(PHYSICAL_VALIDATION_QUEUE_KEY, JSON.stringify([
           { ...recordA, note: 'concurrent conflicting write' },
         ]));
