@@ -99,6 +99,11 @@ for (const code of [
 const noFrame = validateWorldObservation({ ...base, coordinateFrame: null });
 assert.ok(noFrame.errors.includes('SPATIAL_COORDINATE_FRAME_REQUIRED'));
 
+// Finite but out-of-range numeric timestamps must not pass as valid dates.
+assert.ok(validateWorldObservation({
+  ...base, eventId: 'evt-out-of-range', observedAt: 1e30,
+}).errors.includes('OBSERVED_AT_INVALID'));
+
 // A measured sample cannot borrow receive-time as measurement-time.
 const noObservedAt = validateWorldObservation({ ...base, observedAt: null });
 assert.ok(noObservedAt.errors.includes('MEASURED_OBSERVED_AT_REQUIRED'));
