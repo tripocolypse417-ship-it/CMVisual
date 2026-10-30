@@ -37,6 +37,9 @@ The strongest strategic opportunity is not to claim that WaveRadar invented any 
 - Grace Industries firefighter accountability: https://graceindustries.com/industries/firefighter-accountability-systems/
 - DHS / USFA DePLife: https://www.usfa.fema.gov/blog/help-responders-see-through-walls-with-deplife/
 - NIST FRST Challenge context: https://www.nist.gov/blogs/taking-measure/how-thousands-tiny-dots-can-save-first-responders-lives
+- NIST FRST final-phase teams and awards: https://www.nist.gov/news-events/news/2024/01/saving-seconds-saving-lives-nist-funded-challenge-crowns-winners-3d
+- NIST indoor-localization test facilities (Buildings with Dots and PSITC): https://www.nist.gov/ctl/pscr/testing-facilities
+- DHS radar through-wall limitations assessment: https://www.dhs.gov/sites/default/files/publications/Radar-TWS-MSR_0913-508.pdf
 - Longan FVS: https://ctssb.com/portfolio/longan-fvs/
 - Ignis XR: https://www.ignisxr.com/
 - ResQ Vision: https://www.jamesdysonaward.org/en-US/2026/project/resq-vision
@@ -80,6 +83,8 @@ These are strategic opportunities, not capabilities already proven:
 
 ## 5. Research opportunities
 
+- Contact NIST PSCR and Indiana University's FRST collaborators to explore whether WaveRadar can participate in a future test effort or access an appropriate indoor-localization facility. NIST describes two test environments: the Gaithersburg “Buildings with Dots” facility for large-space and non-line-of-sight RF scenarios, and the Boulder Public Safety Immersive Test Center, which can provide ground-truth location/pose at rates up to 120 Hz. Access, cost, eligibility, and partnership terms must be confirmed directly; this is not an assumed entitlement.
+- Benchmark against the published FRST finalist approaches, especially Ascent's sensor-fusion/3D-tracking direction and AdaptiTrace's sensor-plus-robotics mapping approach. Compare using the same protocol, environment, ground truth, and metrics.
 - Compare Wi-Fi BFI/CSI feasibility with UWB, mmWave radar, thermal, and inertial methods. Do not assume these are interchangeable.
 - Investigate sensor fusion at the edge so loss of cloud connectivity does not disable essential local functions.
 - Study uncertainty-aware indoor localization, loop closure, map alignment, and coordinate-frame consistency.
