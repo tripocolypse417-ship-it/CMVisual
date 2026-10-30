@@ -36,7 +36,7 @@ On the PR #40 branch:
 - Added an additive versioned World Model contract and test suite. It explicitly distinguishes MEASURED, DERIVED, INFERRED, PREDICTED, SIMULATED, UNKNOWN, and UNAVAILABLE; checks timestamps, provenance, units, uncertainty, coordinate frames, and entity lineage. It is not yet wired into production ingestion.
 - Added a local physical-validation queue archive prototype with SHA-256 integrity checking, preview, duplicate detection, and conflict-blocking restore. It covers only the browser-based local validation queue, not Base44 records or the complete app.
 
-**Current PR status:** draft/open, not merged. CI passed on commits `28bd2d5...` and `17d1d95...`: code quality, runtime safety, standard Android packaging, and experimental offline-shell packaging. The offline APK identity was recorded, but the signing secret was not configured; separate builds produced different ephemeral certificate fingerprints, so neither is safe to update the installed phone app. Later timestamp-boundary, Stripe package inventory, and concurrent-restore conflict checks still require a fresh CI pass. Main branch and hosted services remain unchanged.
+**Current PR status:** draft/open, not merged. All four CI workflows passed on implementation commit `a546a2d...`: code quality, runtime safety, standard Android packaging, and experimental offline-shell packaging, including the new World Model, provider inventory, and queue archive/restore tests. The offline APK identity was recorded, but the signing secret was not configured; separate builds produced different ephemeral certificate fingerprints, so the APK is not safe to update the installed phone app. Main branch and hosted services remain unchanged.
 
 ### Target phone compatibility note
 
