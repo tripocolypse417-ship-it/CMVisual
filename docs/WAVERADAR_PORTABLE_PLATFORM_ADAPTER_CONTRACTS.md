@@ -106,11 +106,11 @@ The existing src/lib/dataContract.js is the initial semantic reference. The long
 - eventId, sessionId, deviceId, sequence, schemaVersion.
 - observedAt (nullable) and receivedAt (required).
 - modality, sensorFamily, frameId, coordinateFrame, value, unit, uncertainty.
-- evidenceClass: MEASURED, DERIVED, INFERRED, PREDICTED, SIMULATED, ENVIRONMENTAL, GROUND_TRUTH_OPERATOR_MARKER, CONFLICT, UNKNOWN.
+- evidenceClass: MEASURED, FEDERATED_MEASURED, DERIVED, INFERRED, PREDICTED, ENVIRONMENTAL, GROUND_TRUTH_OPERATOR_MARKER, CONFLICT, SIMULATED, UNKNOWN, UNAVAILABLE.
 - state: CURRENT, STALE, HISTORICAL, QUARANTINED, CONFLICT, UNVALIDATED, UNKNOWN, UNAVAILABLE.
 - provenance: sourceId, sourceVersion, calibrationId, methodVersion, parentEventIds.
 
-Important: SIMULATED and UNAVAILABLE are required in the future event vocabulary. The current contract does not yet define both as first-class enum members. Adding them requires a versioned schema migration and tests, not an unreviewed string substitution.
+The existing canonical taxonomy remains intact. SIMULATED and UNAVAILABLE are additive versioned extensions; do not collapse ENVIRONMENTAL, GROUND_TRUTH_OPERATOR_MARKER, FEDERATED_MEASURED, or CONFLICT into generic MEASURED.
 
 ## 5. Scanner adapter contract
 
