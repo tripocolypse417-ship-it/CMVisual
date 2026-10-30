@@ -114,6 +114,17 @@ These actions require the project owner's account or physical phone and cannot b
 4. **Fresh physical baseline:** On the actual Android phone, sign in, complete enrollment, confirm native sensor registration and sample arrival, then run the new baseline protocol with an independent physical reference.
 5. **Existing APK update:** Do not uninstall the installed APK until local-only data has been exported or confirmed recoverable. The old signing private key is unavailable, so a one-time reinstall may ultimately be necessary.
 
+### Dimension X Cohort 8 — application submitted
+
+- The WaveRadar pitch was submitted under the “Out-of-the-box innovative technologies” route.
+- A supplementary technical specification email was sent to Gerald Chow on 2026-10-27.
+- Gerald Chow replied on 2026-10-27: the submission is received; no additional information or action is required at this stage; the team is reviewing applications.
+- The open call closes 2026-11-06. Shortlist notifications are expected within four weeks after closing.
+- If shortlisted: first-round virtual pitch sessions are scheduled for 2027-01-04 to 2027-01-08; second-round finalist meetings are scheduled for 2027-01-25 to 2027-01-29; winners are expected in late February 2027.
+- Selected teams have two required Singapore visits: onboarding in February 2027 and Demo Day/on-site tests in July 2027 (Demo Day stated as 2027-07-01).
+- The S$100,000 non-dilutive award is discretionary, disbursed in two 50% tranches, and must cover the team's proof-of-concept and travel expenses.
+- **Current disposition:** wait for shortlist notification; do not send another status request unless the programme team asks for clarification. Prepare to explain current spatial-mapping capabilities, public-safety relevance, evidence limitations, and a bounded proof-of-concept if shortlisted.
+
 ## 5. Prioritized engineering backlog
 
 ### P0 — Evidence and physical validation
