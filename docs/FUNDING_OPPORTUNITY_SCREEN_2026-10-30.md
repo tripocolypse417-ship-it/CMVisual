@@ -13,7 +13,23 @@ Two currently open federal solicitations were reviewed, but neither is an obviou
 
 FEMA AFG and Fire Prevention & Safety FY 2025 application windows have closed. NIST SBIR currently lists no active NOFO. Monitor future cycles rather than misrepresenting closed opportunities as available.
 
-## 2. Opportunity screen
+## 2. Submitted programme application: Dimension X Cohort 8
+
+This is a programme application already submitted by WaveRadar, not an open grant application.
+
+- **Route:** Out-of-the-box innovative technologies.
+- **Status:** Pitch submitted; supplementary technical specifications sent; programme manager confirmed receipt and said no further information is required now.
+- **Programme response date:** 2026-10-27.
+- **Shortlist timing:** within four weeks after the open call closes on 2026-11-06.
+- **First-round pitch:** 2027-01-04 to 2027-01-08.
+- **Second-round finalist meeting:** 2027-01-25 to 2027-01-29.
+- **Winners:** late February 2027.
+- **Funding:** S$100,000 discretionary non-dilutive support, 50% upfront after contract and 50% after Demo Day and closing report; travel and proof-of-concept costs are borne from the award.
+- **Travel:** two one-week Singapore visits, onboarding in February 2027 and Demo Day/on-site tests in July 2027 (Demo Day stated as 2027-07-01).
+
+**Next action:** wait for the shortlist decision. If shortlisted, prepare a concise explanation of WaveRadar's current spatial-mapping prototype, its public-safety adaptability, and the independent-validation plan. The programme manager said a highly specific proof-of-concept proposal is not required at the initial application stage.
+
+## 3. Opportunity screen
 
 | Opportunity | Status / deadline | Eligibility and fit | Recommendation |
 |---|---|---|---|
