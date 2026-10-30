@@ -296,6 +296,31 @@ The test command is wired into the standard and experimental offline Android wor
 
 **Scope limitation:** this is not a complete WaveRadar backup. It does not export Base44 entities, remote evidence objects, app configuration, authentication records, or arbitrary phone storage. SHA-256 detects accidental/tampered content relative to the manifest but is not a digital signature and does not prove who created an archive. No real user queue was read, exported, uploaded, or modified during this source-code work. Production UI integration and real-device export/restore testing remain outstanding.
 
+## Target-phone capability constraint: Moto G Play (2024) — 2026-10-30
+
+The target test phone is a Motorola moto g play (2024), Android 14.
+
+Motorola's published specification lists an accelerometer, proximity sensor, ambient-light sensor, sensor hub, e-compass, and barometer. It does not list a gyroscope in that official sensor inventory. Treat gyroscope availability as **unknown until Android SensorManager enumerates the physical device**; do not infer it from third-party specification pages.
+
+Google's current ARCore certified-device list does not contain an exact `moto g play (2024)` model entry. Google explains that ARCore device certification evaluates camera, motion sensors, device design, and CPU performance for real-time motion tracking. This is consistent with—but does not by itself prove the cause of—the previous WaveRadar diagnostic result `SPATIAL POSE SOURCE UNAVAILABLE`.
+
+Sources:
+- Motorola official specifications: https://en-us.support.motorola.com/app/answers/detail/a_id/177738/~/specifications--moto-g-play-%25282024%2529
+- Google ARCore supported-device list and certification explanation: https://developers.google.com/ar/devices
+
+### Consequence for WaveRadar validation
+
+Do not make ARCore/6-DoF pose a required baseline on this handset. The device remains useful for camera, accelerometer, compass, barometer, GPS, connectivity, UI, queue, and evidence-pipeline testing, subject to actual runtime enumeration and sample verification.
+
+The fresh device test should:
+1. Enumerate every Android sensor by type/name/vendor/version/resolution/power and report missing types as UNAVAILABLE.
+2. Record camera capabilities and real sample arrival separately from permission and camera-open success.
+3. Measure actual sensor sample timestamps, rates, dropped samples, clock alignment, and process-resume behavior.
+4. Test visual tracking as a separate experimental path with explicit drift/uncertainty; do not label camera feature tracks as validated 6-DoF pose.
+5. Keep spatial accuracy tests blocked until an independent pose/position reference is available.
+
+For dependable spatial tracking, evaluate a separately certified ARCore handset or an external sensor stack (for example, UWB anchors, depth/LiDAR, or surveyed fiducials) as an independently validated adapter. These are candidate test routes, not claims that the current phone contains those sensors or that an external stack is already integrated.
+
 ## Explicitly not done
 
 - No Base44 SDK/plugin was removed.
