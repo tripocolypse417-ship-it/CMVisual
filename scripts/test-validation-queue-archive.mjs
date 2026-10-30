@@ -31,6 +31,11 @@ assert.equal(preview.canRestore, true);
 const restored = await restoreValidationQueueArchive(exported.json, { storage: emptyDestination });
 assert.equal(restored.restored, true);
 assert.equal(restored.restoredCount, 2);
+assert.equal(restored.quarantinedCount, 2);
+const restoredQueue = JSON.parse(emptyDestination.getItem(PHYSICAL_VALIDATION_QUEUE_KEY));
+assert.equal(restoredQueue[0].quarantined, true);
+assert.equal(restoredQueue[0].quarantineReason, 'ARCHIVE_RESTORE_REVIEW_REQUIRED');
+assert.equal(restoredQueue[0].restoredFromArchive, true);
 
 const repeated = await restoreValidationQueueArchive(exported.json, { storage: emptyDestination });
 assert.equal(repeated.restored, true);
