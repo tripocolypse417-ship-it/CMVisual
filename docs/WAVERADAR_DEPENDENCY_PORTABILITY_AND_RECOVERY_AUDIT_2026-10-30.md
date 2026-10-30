@@ -397,6 +397,24 @@ Commits after `17d1d95` added numeric timestamp range rejection, a test for out-
 
 The queue restore path now repeats ID/content reconciliation immediately before writing the merged queue, after archive verification. This closes a race where another writer could add a same-ID/different-content record after the preview but before the restore write. A regression test mutates the destination during the second digest operation and confirms restore is blocked while the concurrent record remains untouched. This latest regression test still requires the current-head CI run.
 
+### Current code revision CI pass — commit a546a2d
+
+All four workflows completed successfully on commit `a546a2d3bcde3f491816b76af57a05705ed11980`. The subsequent commit `85fa252...` changed audit documentation only.
+
+- Code quality run #182: success (lint, typecheck, web build).
+- Runtime safety run #196: success.
+- Standard Android build run #289: success.
+- Experimental offline-shell build run #38: success, including the provider inventory, World Model evidence tests, archive/restore tests including concurrent-write conflict protection, bundled web build, no-hosted-URL check, APK identity report, and artifact upload.
+
+Artifacts:
+- [Standard APK artifact](https://github.com/tripocolypse417-ship-it/CMVisual/actions/runs/41131230740/artifacts/13012738640) — 5,341,166 bytes; ZIP SHA-256 `8eced6e918b261d4d8eca7da881a52758f908c9f2fb8743379b65492aa4cd9a2`; expires 2027-01-28.
+- [Offline-shell APK + identity report](https://github.com/tripocolypse417-ship-it/CMVisual/actions/runs/41131230579/artifacts/13012843370) — 5,341,580 bytes; ZIP SHA-256 `c5b41eb05949ad53764cc76b1f31d8d20772ddf3a06dc9828740e82a2540f6aa`; expires 2026-11-29.
+  - APK SHA-256 `d06ddedf45618e7b52872e3a3a5b18197d3d17705842de322220f6b600b07419`.
+  - Package ID `com.waveradar.app`, versionCode 1, versionName 1.0.
+  - Signing certificate SHA-256 `549969e2419097505706f0fa934b04b77d349364a3739a4d0006b3b0bb10630b`.
+
+The persistent signing secret is still not configured. The certificate differs from previous runner-generated APKs. This artifact is for isolated testing only; it is not approved to update the existing phone installation. These CI results establish code/build checks only, not physical-device operation, airplane-mode behavior, data restore, sensor accuracy, or life-safety validation.
+
 ## Explicitly not done
 
 - No Base44 SDK/plugin was removed.
