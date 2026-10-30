@@ -14,7 +14,7 @@ function walk(dir) {
       if (!ignoredDirs.has(entry.name)) walk(path.join(dir, entry.name));
       continue;
     }
-    if (!/\\.(?:[cm]?[jt]sx?|json|ya?ml|md)$/.test(entry.name)) continue;
+    if (!/\.(?:[cm]?[jt]sx?|json|ya?ml|md)$/.test(entry.name)) continue;
     inspect(path.join(dir, entry.name));
   }
 }
@@ -23,16 +23,16 @@ function inspect(file) {
   const relative = path.relative(root, file).replaceAll(path.sep, '/');
   const source = fs.readFileSync(file, 'utf8');
   const rules = [
-    ['base44-sdk-import', /(?:from\\s*|import\\s*\\(|require\\s*\\()\\s*['\"]@base44\\/(?:sdk|vite-plugin)/g],
-    ['base44-sdk-reference', /@base44\\/(?:sdk|vite-plugin)/g],
-    ['hosted-runtime-url', /waveradar-20\\.hatchable\\.site|WAVERADAR_HOSTED_URL/g],
-    ['base44-function-or-client', /base44Client|base44\\/functions|base44\\.functions/g],
+    ['base44-sdk-import', /(?:from\s*|import\s*\(|require\s*\()\s*['"]@base44\/(?:sdk|vite-plugin)/g],
+    ['base44-sdk-reference', /@base44\/(?:sdk|vite-plugin)/g],
+    ['hosted-runtime-url', /waveradar-20\.hatchable\.site|WAVERADAR_HOSTED_URL/g],
+    ['base44-function-or-client', /base44Client|base44\/functions|base44\.functions/g],
   ];
   for (const [category, regex] of rules) {
     regex.lastIndex = 0;
     let match;
     while ((match = regex.exec(source)) !== null) {
-      const line = source.slice(0, match.index).split('\\n').length;
+      const line = source.slice(0, match.index).split('\n').length;
       findings.push({ file: relative, line, category, token: match[0] });
       if (match[0].length === 0) regex.lastIndex += 1;
     }
