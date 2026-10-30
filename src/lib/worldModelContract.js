@@ -7,6 +7,10 @@ export const WORLD_EVIDENCE_CLASS = Object.freeze({
   DERIVED: 'DERIVED',
   INFERRED: 'INFERRED',
   PREDICTED: 'PREDICTED',
+  ENVIRONMENTAL: 'ENVIRONMENTAL',
+  GROUND_TRUTH: 'GROUND_TRUTH_OPERATOR_MARKER',
+  FEDERATED_MEASURED: 'FEDERATED_MEASURED',
+  CONFLICT: 'CONFLICT',
   SIMULATED: 'SIMULATED',
   UNKNOWN: 'UNKNOWN',
   UNAVAILABLE: 'UNAVAILABLE',
@@ -61,8 +65,13 @@ export function validateWorldObservation(input = {}) {
       value.evidenceClass !== WORLD_EVIDENCE_CLASS.UNAVAILABLE) {
     errors.push('UNAVAILABLE_EVIDENCE_CLASS_REQUIRED');
   }
-  if (value.evidenceClass === WORLD_EVIDENCE_CLASS.MEASURED && value.observedAt == null) {
+  if ([WORLD_EVIDENCE_CLASS.MEASURED, WORLD_EVIDENCE_CLASS.ENVIRONMENTAL,
+    WORLD_EVIDENCE_CLASS.GROUND_TRUTH, WORLD_EVIDENCE_CLASS.FEDERATED_MEASURED].includes(value.evidenceClass) &&
+      value.observedAt == null) {
     errors.push('MEASURED_OBSERVED_AT_REQUIRED');
+  }
+  if (value.evidenceClass === WORLD_EVIDENCE_CLASS.CONFLICT && value.state !== WORLD_OBSERVATION_STATE.CONFLICT) {
+    errors.push('CONFLICT_STATE_REQUIRED');
   }
   if (value.evidenceClass === WORLD_EVIDENCE_CLASS.SIMULATED &&
       value.state === WORLD_OBSERVATION_STATE.CURRENT) {
