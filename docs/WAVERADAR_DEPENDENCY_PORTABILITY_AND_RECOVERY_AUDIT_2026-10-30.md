@@ -263,7 +263,7 @@ The isolated workflow `.github/workflows/build-android-offline.yml` was executed
 
 Two additional safeguards have been added on this audit branch:
 
-1. `src/lib/worldModelContract.js` defines an additive, versioned World Model validation boundary (`waveradar-world-model-v1`). It keeps MEASURED, DERIVED, INFERRED, PREDICTED, SIMULATED, UNKNOWN, and UNAVAILABLE separate; requires source identity, modality, receive time, provenance, and valid evidence/state classes; checks measurement timestamps, numeric units, confidence bounds, uncertainty, and coordinate frames; and requires World Model entities to retain source-event lineage.
+1. `src/lib/worldModelContract.js` defines an additive, versioned World Model validation boundary (`waveradar-world-model-v1`). It preserves the existing MEASURED, FEDERATED_MEASURED, DERIVED, INFERRED, PREDICTED, ENVIRONMENTAL, GROUND_TRUTH_OPERATOR_MARKER, CONFLICT, and UNKNOWN classes, while adding SIMULATED and UNAVAILABLE as explicit versioned classes. It requires source identity, modality, receive time, provenance, and valid evidence/state classes; checks measurement timestamps, numeric units, confidence bounds, uncertainty, and coordinate frames; and requires World Model entities to retain source-event lineage.
 2. `scripts/test-world-model-contract.mjs` exercises valid, simulated, unavailable, malformed, spatial, and lineage cases. It is wired to `npm run test:world-model-contract` in both standard and experimental offline CI workflows.
 
 This contract is **not yet wired into production ingestion or the live World Model**. It is an additive gate and does not change or reinterpret historical evidence. Existing `dataContract.js` enums remain unchanged pending compatibility and migration review.
