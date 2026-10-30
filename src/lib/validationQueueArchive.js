@@ -79,6 +79,13 @@ export async function verifyValidationQueueArchive(input, { cryptoProvider = glo
   if (!Array.isArray(archive.records) || archive.recordCount !== archive.records.length) {
     return { ok: false, error: 'ARCHIVE_RECORD_COUNT_MISMATCH' };
   }
+  if (archive.source?.queueKey !== PHYSICAL_VALIDATION_QUEUE_KEY ||
+      archive.source?.queueVersion !== PHYSICAL_VALIDATION_QUEUE_VERSION) {
+    return { ok: false, error: 'ARCHIVE_SOURCE_MISMATCH' };
+  }
+  if (typeof archive.exportedAt !== 'string' || !Number.isFinite(Date.parse(archive.exportedAt))) {
+    return { ok: false, error: 'ARCHIVE_TIMESTAMP_INVALID' };
+  }
   if (archive.integrity?.algorithm !== 'SHA-256' || !/^[a-f0-9]{64}$/i.test(archive.integrity?.digest || '')) {
     return { ok: false, error: 'ARCHIVE_INTEGRITY_METADATA_INVALID' };
   }
