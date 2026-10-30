@@ -7,6 +7,26 @@ const explicitFiles = ['package.json', 'vite.config.js', 'capacitor.config.ts', 
 const ignoredDirs = new Set(['node_modules', '.git', 'dist', 'build', 'coverage']);
 const findings = [];
 
+const vendorPackagePrefixes = [
+  { provider: 'Base44', prefix: '@base44/' },
+  { provider: 'Stripe', prefix: '@stripe/' },
+];
+const packageManifest = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+for (const section of ['dependencies', 'devDependencies', 'optionalDependencies']) {
+  for (const [name, version] of Object.entries(packageManifest[section] || {})) {
+    const match = vendorPackagePrefixes.find(item => name.startsWith(item.prefix));
+    if (match) findings.push({
+      file: 'package.json',
+      line: 1,
+      category: 'vendor-package',
+      provider: match.provider,
+      package: name,
+      version,
+      dependencySection: section,
+    });
+  }
+}
+
 function walk(dir) {
   if (!fs.existsSync(dir)) return;
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
