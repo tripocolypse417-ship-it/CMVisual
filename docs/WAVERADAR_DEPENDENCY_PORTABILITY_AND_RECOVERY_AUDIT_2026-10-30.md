@@ -259,6 +259,22 @@ The isolated workflow `.github/workflows/build-android-offline.yml` was executed
 **Next acceptance sequence:** inspect APK signing certificate and package ID; install only on a spare/test device or emulator with no production data; disable network and test launch/navigation/camera/local functions; test restart/process death; test queued-write behavior and reconnect reconciliation; then test a clean export/restore. Do not install over the owner's current phone app until its installed certificate and package identity are matched and local-only data is safely exported.
 
 
+## New isolated contract and automated dependency inventory — 2026-10-30
+
+Two additional safeguards have been added on this audit branch:
+
+1. `src/lib/worldModelContract.js` defines an additive, versioned World Model validation boundary (`waveradar-world-model-v1`). It keeps MEASURED, DERIVED, INFERRED, PREDICTED, SIMULATED, UNKNOWN, and UNAVAILABLE separate; requires source identity, modality, receive time, provenance, and valid evidence/state classes; checks measurement timestamps, numeric units, confidence bounds, uncertainty, and coordinate frames; and requires World Model entities to retain source-event lineage.
+2. `scripts/test-world-model-contract.mjs` exercises valid, simulated, unavailable, malformed, spatial, and lineage cases. It is wired to `npm run test:world-model-contract` in both standard and experimental offline CI workflows.
+
+This contract is **not yet wired into production ingestion or the live World Model**. It is an additive gate and does not change or reinterpret historical evidence. Existing `dataContract.js` enums remain unchanged pending compatibility and migration review.
+
+A provider dependency inventory was also added:
+- `scripts/audit-provider-dependencies.mjs`
+- `npm run audit:providers`
+- Standard Android CI runs the inventory and emits a JSON finding list for Base44 SDK/plugin references, Base44 client/function references, and hosted runtime URL references.
+
+The audit is intentionally observational: it reports existing coupling rather than failing the build simply because known legacy dependencies remain. It fails only if its scan stops detecting the expected Base44 reference, which protects against a broken or incomplete scan. The script and newly added contract tests have been committed to the draft PR branch; a new CI result for the latest head is still required before these changes are treated as tested.
+
 ## Explicitly not done
 
 - No Base44 SDK/plugin was removed.
