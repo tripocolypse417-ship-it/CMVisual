@@ -321,6 +321,33 @@ The fresh device test should:
 
 For dependable spatial tracking, evaluate a separately certified ARCore handset or an external sensor stack (for example, UWB anchors, depth/LiDAR, or surveyed fiducials) as an independently validated adapter. These are candidate test routes, not claims that the current phone contains those sensors or that an external stack is already integrated.
 
+## Open technology shortlist for scanner fusion — research only, not dependencies
+
+The following are candidate building blocks and exchange standards. None has been added as a production dependency or selected as the final WaveRadar stack.
+
+| Candidate | Best-fit role | License / constraint | Assessment |
+|---|---|---|---|
+| OGC SensorThings API 1.1 | Interoperable sensor metadata and observations across heterogeneous devices | Open OGC standard | Strong external sensor-data exchange model; WaveRadar still needs its own richer evidence/provenance envelope |
+| OGC 3D Tiles 1.1 | Streaming building geometry, point clouds, photogrammetry, BIM/CAD-derived 3D content | Open OGC community standard | Strong large-scene delivery format for command/building views; not the fusion database |
+| RTAB-Map | RGB-D, stereo, and LiDAR graph-based SLAM / mapping | BSD when OpenCV is built without its nonfree module; research-only restriction applies when SURF/nonfree OpenCV is used | Best first SLAM candidate to benchmark for an external Linux/edge computer or suitable sensor rig; not assumed viable on the Moto G Play |
+| Open3D | Point-cloud processing, reconstruction, alignment, visualization | MIT | Good research/processing toolkit for lab and command-side 3D workflows; not an Android sensor driver |
+| ORB-SLAM3 | Monocular, stereo, RGB-D, visual-inertial and multi-map SLAM | GPLv3 | Technically relevant benchmark, but copyleft implications require legal review before incorporation in a closed-source distributed product |
+| OpenVINS | Filter-based visual-inertial estimation / research | GPLv3 | Useful independent algorithm benchmark; depends on adequate calibrated camera + IMU streams and has the same copyleft review requirement |
+
+References:
+- OGC SensorThings API: https://www.ogc.org/standards/sensorthings/
+- OGC 3D Tiles: https://www.ogc.org/standards/3DTiles/
+- RTAB-Map overview and license conditions: https://introlab.github.io/rtabmap/
+- Open3D overview and MIT license: https://www.open3d.org/
+- ORB-SLAM3 license: https://github.com/UZ-SLAMLab/ORB_SLAM3
+- OpenVINS documentation and GPLv3 notice: https://docs.openvins.com/
+
+### Recommended architecture decision
+
+Use WaveRadar's own versioned observation and World Model contracts as the authoritative semantics. Adopt OGC SensorThings and 3D Tiles as optional import/export or transport formats. Keep SLAM and point-cloud engines behind replaceable adapters, and run license/security/performance review before choosing one. Benchmark on representative hardware with independent ground truth; do not use a successful demo or a library's published benchmark as WaveRadar validation.
+
+For the present Moto G Play 2024, prioritize native camera/sensor enumeration and a narrow visual-tracking feasibility experiment. Defer heavy mapping/SLAM integration until a device with supported tracking hardware or an external sensor/edge-compute configuration is available.
+
 ## Explicitly not done
 
 - No Base44 SDK/plugin was removed.
