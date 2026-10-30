@@ -48,4 +48,29 @@ const conflictRestore = await restoreValidationQueueArchive(exported.json, { sto
 assert.equal(conflictRestore.restored, false);
 assert.equal(conflictRestore.error, 'RECORD_ID_CONFLICTS_REQUIRE_REVIEW');
 
+// Recheck immediately before writing: a concurrent change after preview must block restore.
+const raceDestination = memoryStorage([]);
+let digestCalls = 0;
+const raceCrypto = {
+  subtle: {
+    async digest(algorithm, bytes) {
+      digestCalls += 1;
+      if (digestCalls === 2) {
+        raceDestination.setItem(PHYSICAL_VALIDATION_QUEUE_KEY, JSON.stringify([
+          { ...recordA, note: 'concurrent conflicting write' },
+        ]));
+      }
+      return globalThis.crypto.subtle.digest(algorithm, bytes);
+    },
+  },
+};
+const raceRestore = await restoreValidationQueueArchive(exported.json, {
+  storage: raceDestination,
+  cryptoProvider: raceCrypto,
+});
+assert.equal(raceRestore.restored, false);
+assert.equal(raceRestore.error, 'RECORD_ID_CONFLICTS_REQUIRE_REVIEW');
+assert.deepEqual(raceRestore.conflicts, ['q-a']);
+assert.equal(JSON.parse(raceDestination.getItem(PHYSICAL_VALIDATION_QUEUE_KEY))[0].note, 'concurrent conflicting write');
+
 console.log('WaveRadar validation queue archive/restore tests: PASS');
