@@ -43,6 +43,7 @@ jobs:
           npm run audit:data
           npm run audit:providers
           npm run test:world-model-contract
+          npm run test:validation-queue-archive
           npm run test:array-boundaries
           npm run test:physical-validation-queue
           npm run test:physical-validation-evidence
