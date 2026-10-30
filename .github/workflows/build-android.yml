@@ -40,6 +40,9 @@ jobs:
       - name: Inventory provider dependencies
         run: npm run audit:providers
 
+      - name: Test World Model contract and provenance gates
+        run: npm run test:world-model-contract
+
       - name: Test malformed array boundaries
         run: npm run test:array-boundaries
 
