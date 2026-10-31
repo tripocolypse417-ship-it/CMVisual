@@ -48,5 +48,9 @@ assert.match(source, /out\.put\("model", Build\.MODEL\)/);
 assert.match(source, /out\.put\("evidenceClass", "UNKNOWN"\)/);
 assert.match(source, /out\.put\("measurementEvidenceClass", "MEASURED"\)/);
 assert.match(source, /These are not a spatial-pose provider/);
+assert.match(source, /out\.put\("arcoreDepth", null\)/);
+assert.match(source, /out\.put\("arcoreRawDepth", null\)/);
+assert.match(source, /out\.put\("spatialPoseProviderState", "NOT_INSTRUMENTED"\)/);
+assert.doesNotMatch(source, /out\.put\("arcoreDepth", false\)/);
 
 console.log('Native sensor lifecycle source-contract checks passed (physical-device validation still required).');
