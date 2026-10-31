@@ -50,6 +50,10 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
   }
 
   private void registerSensors() {
+    // Reacquire the service on resume if the initial lookup was unavailable.
+    if (sensorManager == null) {
+      sensorManager = (SensorManager) getContext().getSystemService(Context.SENSOR_SERVICE);
+    }
     if (sensorManager == null) {
       for (int type : sensorTypes()) registrationStates.put(type, "UNKNOWN");
       return;
