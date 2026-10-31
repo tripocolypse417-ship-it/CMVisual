@@ -252,6 +252,10 @@ export function summarizeNativeSensorBaseline({
       .filter(record => record?.schema === NATIVE_SENSOR_BASELINE_SCHEMA)
     : [];
   const latestRecord = newest(records);
+  const lastKnownCapabilityRecord = newest(records.filter(record =>
+    record?.nativeSensorManager?.state && record.nativeSensorManager.state !== 'UNKNOWN'
+  ));
+  const latestBridgeCallState = newest(Array.isArray(bridgeCallStates) ? bridgeCallStates : []) ?? 'UNKNOWN';
   const sensors = {};
 
   for (const name of NATIVE_SENSOR_NAMES) {
@@ -259,16 +263,20 @@ export function summarizeNativeSensorBaseline({
     const arrived = captures.filter(record => record.sampleArrival?.state === 'ARRIVED');
     const arrivalRecords = arrived.map(record => record.sampleArrival);
     const seq = sequenceRange(arrivalRecords);
-    const capability = newest(captures.map(record => record.capability));
-    const registration = newest(captures.map(record => record.registration));
+    const capability = newest(captures.filter(record => record.capability?.state !== 'UNKNOWN').map(record => record.capability));
+    const registration = newest(captures.filter(record => record.registration?.state !== 'UNKNOWN').map(record => record.registration));
+    const latestCapture = newest(captures);
     const first = arrivalRecords.length ? arrivalRecords[0] : null;
     const last = newest(arrivalRecords);
     sensors[name] = {
       capabilityState: capability?.state ?? 'UNKNOWN',
       registrationState: registration?.state ?? 'UNKNOWN',
+      latestSampleArrivalState: latestCapture?.sampleArrival?.state ?? 'UNKNOWN',
       capturedSampleCount: arrived.length,
-      firstCaptureAt: first?.receivedAt ?? first?.measurementTimestamp ?? null,
-      lastCaptureAt: last?.receivedAt ?? last?.measurementTimestamp ?? null,
+      firstEventReceivedAt: first?.receivedAt ?? null,
+      lastEventReceivedAt: last?.receivedAt ?? null,
+      firstMeasurementTimestamp: first?.measurementTimestamp ?? null,
+      lastMeasurementTimestamp: last?.measurementTimestamp ?? null,
       firstSequence: seq.first,
       lastSequence: seq.last,
       observedSequenceSpan: seq.observedSpan,
@@ -283,16 +291,18 @@ export function summarizeNativeSensorBaseline({
     generatedAt: normalizeIso(generatedAt),
     captureCount: records.length,
     bridgeCallStates: Array.isArray(bridgeCallStates) ? bridgeCallStates : [],
-    nativeSensorManager: latestRecord?.nativeSensorManager ?? {
+    latestBridgeCallState,
+    lastKnownCapabilityCapturedAt: lastKnownCapabilityRecord?.capturedAt ?? null,
+    nativeSensorManager: lastKnownCapabilityRecord?.nativeSensorManager ?? {
       state: capabilities?.androidSensorManager === true ? 'AVAILABLE'
         : capabilities?.androidSensorManager === false ? 'UNAVAILABLE' : 'UNKNOWN',
       sensorCount: finiteNonNegative(capabilities?.sensorCount) ? capabilities.sensorCount : null,
       registeredSensorCount: finiteNonNegative(capabilities?.registeredSensorCount) ? capabilities.registeredSensorCount : null,
       nativeBridgeVersion: typeof capabilities?.nativeBridgeVersion === 'string' ? capabilities.nativeBridgeVersion : null,
     },
-    platform: latestRecord?.platform ?? {},
+    platform: lastKnownCapabilityRecord?.platform ?? {},
     permissions: {
-      nativeAndroidSensorRuntime: latestRecord?.permissions?.nativeAndroidSensorRuntime ?? {
+      nativeAndroidSensorRuntime: lastKnownCapabilityRecord?.permissions?.nativeAndroidSensorRuntime ?? {
         state: capabilities?.androidSensorManager === true ? 'NOT_REQUIRED' : 'UNKNOWN',
         source: 'Android SensorManager policy',
       },
