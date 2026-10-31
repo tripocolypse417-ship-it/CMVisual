@@ -287,6 +287,8 @@ export default function PhysicalValidation() {
             cameraState,
             groundTruthMarkers: marks.length,
             knownPointChecks,
+            groundTruthEvidenceStatus: 'OPERATOR_RECORDED_NOT_INDEPENDENTLY_VERIFIED',
+            independentReferenceEvidence: 'NOT_ATTACHED',
             nativeSensorBaseline: buildBaselineSummary(),
             evidencePolicy: 'Per-field evidenceByField classifications are authoritative; native capability, registration, sample arrival, permission, timestamps, and spatial-pose status are separate.',
           }),
@@ -438,6 +440,8 @@ export default function PhysicalValidation() {
       samples: data.current,
       groundTruthMarkers: marks,
       knownPointChecks,
+      groundTruthEvidenceStatus: 'OPERATOR_RECORDED_NOT_INDEPENDENTLY_VERIFIED',
+      independentReferenceEvidence: 'NOT_ATTACHED',
     };
     const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
     const a = document.createElement('a');
@@ -517,7 +521,7 @@ export default function PhysicalValidation() {
         <section className="rounded-xl border border-amber-400/25 bg-slate-900 p-4 space-y-3">
           <div>
             <b className="text-xs text-amber-200">KNOWN-POINT ACCURACY CHECK</b>
-            <p className="text-[11px] text-slate-400 mt-1">Use a physical landmark with a known distance and bearing. Enter the reference and observed values; WaveRadar calculates the difference and saves the evidence. This does not pass calibration automatically.</p>
+            <p className="text-[11px] text-slate-400 mt-1">Use a physical landmark with independently measured distance and bearing. The values entered here are operator-recorded; they are not independently verified by the app. WaveRadar calculates the difference but does not pass calibration automatically. Attach a reference photo / measurement record and independent reviewer before treating this as ground truth.</p>
           </div>
           <div className="grid sm:grid-cols-2 gap-2">
             <label className="text-[11px] text-slate-300">Reference / landmark name
