@@ -123,10 +123,8 @@ export default function PhysicalValidation() {
       bridgeCallStatesRef.current = [...bridgeCallStatesRef.current, nativeResult.state];
       setNativeBridgeState(nativeResult.state);
       setNativeSnapshot(native);
-      if (native) {
-        nativeCapabilitiesRef.current = native;
-        setNativeCapabilities(native);
-      }
+      // Keep capability metadata from getCapabilities() separate from per-sample readings.
+      // A snapshot contains measurements; it is not a replacement capability record.
       const sample = buildPhysicalValidationSample({
         elapsedMs: now - start.current,
         capturedAt: new Date(now).toISOString(),
@@ -138,7 +136,7 @@ export default function PhysicalValidation() {
       });
       sample.nativeSensorBridgeCallState = nativeResult.state;
       sample.nativeSensorBaseline = buildNativeSensorBaseline({
-        capabilities: native,
+        capabilities: nativeCapabilitiesRef.current,
         snapshot: native,
         bridgeCallState: nativeResult.state,
         capturedAt: sample.capturedAt,
