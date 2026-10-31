@@ -86,7 +86,13 @@ assert.equal(noBridge.permissions.nativeAndroidSensorRuntime.state, 'UNKNOWN');
 assert.equal(noBridge.spatialPose.state, 'NOT_INSTRUMENTED');
 
 const invalidVector = buildNativeSensorBaseline({
-  capabilities: supported,
+  capabilities: {
+    ...supported,
+    sensorRegistration: {
+      ...supported.sensorRegistration,
+      accelerometer: { ...supported.sensorRegistration.accelerometer, hasSampleHistory: false },
+    },
+  },
   snapshot: { measurements: { accelerometer: { values: [1, null, 3], timestamp: at, ageMs: 0 } } },
   bridgeCallState: 'OK',
   capturedAt: at,
