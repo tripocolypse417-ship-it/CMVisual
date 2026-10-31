@@ -242,3 +242,26 @@ Not allowed without independent evidence:
 - Debug signing certificate fingerprint: WaveRadar-debug-keystore-fingerprint.txt
 
 The keystore and its base64 representation are private signing material. Do not commit or share them publicly. The base64 file is intended only for the GitHub Actions secret described in the Android signing guide.
+
+## 9. Status update — 2026-10-31
+
+### Dependency portability / World Model pull requests
+- PR #39, `docs/dependency-independent-world-model`, remains open, draft, and unmerged. It documents the shared World Model, scanner adapter contracts, evidence lineage, portability controls, validation gates, and prospective institutional research plan.
+- PR #40, `audit/dependency-portability-recovery-2026-10-30`, remains open, draft, and unmerged. Latest inspected head: `0939e03d286a411b53df051962abcf6dc7b7e9b4`. Main remains unchanged; no production migration or deployment was performed.
+- Latest-head code-quality and runtime-safety checks passed. Standard Android build run `41132626000` and experimental offline-shell build run `41132626049` both completed successfully, including APK packaging and artifact upload.
+- Standard APK artifact: `13014341142`, SHA-256 `00459c794266c2022fe9a8b7b9ac6558a882e6478836461ff1dce8e5baeec72d`, expires 2027-01-28.
+- Experimental offline-shell artifact: `13013174354`, SHA-256 `f0ac468876d775d1d7a5626d65c6de0be77d1b2b1246b4c67e564e6bca9353c2`, expires 2026-11-29.
+- The experimental offline-shell bundles the interface but does not establish offline authentication, backend, or full product operation.
+- Neither APK is approved for installation on the owner's primary phone. The persistent signing secret remains unconfigured; compare signing identity and preserve local data before any update or uninstall.
+
+### Cinematic fire-chief presentation — production status
+- Descript project: `WaveRadar — See More. Save More. | 90-Second Showcase`, project ID `c5ef5f8a-cab7-4b54-a3cd-a389ee92951a`, composition ID `048dc73e-4ba4-4e76-b65d-be6df99521d7`.
+- The composition contains seven timed scene placeholders, chapter markers, approved narration stored in scene markers, and editable text overlays. It is not a finished video: project media inventory is empty, no narration audio is inserted, and no publish/export exists.
+- No media footage, UI/3D animation, or voice audio has been generated or imported. The Descript agent explicitly stopped before voice generation to avoid additional credits.
+- Higgsfield balance at the latest check: 109.77 credits; one free generation remains but is restricted to motion-control/object-replacement modes. No cinematic generation was submitted. No paid generation, upgrade, or credit spend is authorized.
+- The production constraint is strict $0 additional spend. Do not initiate paid generation, paid AI editing, subscription upgrades, or credit-consuming voice generation. Use only genuinely free, licensed assets and non-credit-consuming editing workflows; disclose if the requested cinematic quality cannot be achieved under this constraint.
+- Descript project link: https://web.descript.com/c5ef5f8a-cab7-4b54-a3cd-a389ee92951a/048dc
+
+### Current safety and validation boundary
+- Successful CI confirms code and APK packaging checks only. It does not validate the Moto G Play's physical sensors, spatial pose, indoor positioning, scanner fusion, through-wall sensing, victim localization, or rescue performance.
+- Keep all unvalidated functions visibly experimental/inferred/unavailable. Do not use simulated footage or fabricated UI data as evidence of a live operational capability.
