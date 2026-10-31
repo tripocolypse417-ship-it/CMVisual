@@ -28,6 +28,9 @@ jobs:
       - name: Audit canonical data contract
         run: npm run audit:data
 
+      - name: Verify fresh-build zero-trust boundary
+        run: npm run test:fresh-build-boundary
+
       - name: Check JavaScript and JSX lint
         run: npm run lint
 
