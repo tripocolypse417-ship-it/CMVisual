@@ -1,9 +1,16 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   NATIVE_SENSOR_BASELINE_SCHEMA,
   buildNativeSensorBaseline,
   summarizeNativeSensorBaseline,
 } from '../src/lib/nativeSensorBaseline.js';
+
+const physicalValidationSource = readFileSync(new URL('../src/pages/PhysicalValidation.jsx', import.meta.url), 'utf8');
+assert.match(physicalValidationSource, /nativeCapabilitiesRef\\.current = result\\.value/);
+assert.match(physicalValidationSource, /sample\\.nativeSensorBaseline = buildNativeSensorBaseline\\(\\{\\s*capabilities: nativeCapabilitiesRef\\.current,\\s*snapshot: native/);
+assert.doesNotMatch(physicalValidationSource, /nativeCapabilitiesRef\\.current = native\\s*;/);
+assert.doesNotMatch(physicalValidationSource, /setNativeCapabilities\\(native\\)/);
 
 const at = '2026-10-30T20:00:00.000Z';
 const supported = {
