@@ -47,6 +47,9 @@ jobs:
       - name: Test native sensor registration lifecycle
         run: npm run test:native-sensor-lifecycle
 
+      - name: Test native Android baseline evidence contract
+        run: npm run test:native-sensor-baseline
+
       - name: Build web application
         run: npm run build
 
