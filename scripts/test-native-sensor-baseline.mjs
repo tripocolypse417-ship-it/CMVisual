@@ -7,10 +7,10 @@ import {
 } from '../src/lib/nativeSensorBaseline.js';
 
 const physicalValidationSource = readFileSync(new URL('../src/pages/PhysicalValidation.jsx', import.meta.url), 'utf8');
-assert.match(physicalValidationSource, /nativeCapabilitiesRef\\.current = result\\.value/);
-assert.match(physicalValidationSource, /sample\\.nativeSensorBaseline = buildNativeSensorBaseline\\(\\{\\s*capabilities: nativeCapabilitiesRef\\.current,\\s*snapshot: native/);
-assert.doesNotMatch(physicalValidationSource, /nativeCapabilitiesRef\\.current = native\\s*;/);
-assert.doesNotMatch(physicalValidationSource, /setNativeCapabilities\\(native\\)/);
+assert.ok(physicalValidationSource.includes('nativeCapabilitiesRef.current = result.value'), 'capability response is retained separately');
+assert.ok(physicalValidationSource.includes('capabilities: nativeCapabilitiesRef.current,\n        snapshot: native'), 'each baseline combines the retained capability record with the current sample');
+assert.ok(!physicalValidationSource.includes('nativeCapabilitiesRef.current = native;'), 'a sample snapshot must not overwrite capability metadata');
+assert.ok(!physicalValidationSource.includes('setNativeCapabilities(native)'), 'a sample snapshot must not replace capability UI state');
 
 const at = '2026-10-30T20:00:00.000Z';
 const supported = {
