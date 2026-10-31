@@ -228,7 +228,7 @@ function newest(items) {
 }
 
 function sequenceRange(records) {
-  const sequences = records.map(record => record?.sampleArrival?.sampleSequence).filter(finiteNonNegative);
+  const sequences = records.map(record => record?.sampleSequence).filter(finiteNonNegative);
   if (!sequences.length) return { first: null, last: null, observedSpan: null };
   const first = sequences[0];
   const last = sequences[sequences.length - 1];
