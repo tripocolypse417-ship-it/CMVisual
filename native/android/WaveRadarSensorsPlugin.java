@@ -205,9 +205,11 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
     out.put("androidWifiRtt", hasWifiRtt());
     out.put("uwb", hasFeature("android.hardware.uwb"));
     out.put("camera", hasFeature(PackageManager.FEATURE_CAMERA_ANY));
-    // These are not a spatial-pose provider. Do not infer pose availability from them.
-    out.put("arcoreDepth", false);
-    out.put("arcoreRawDepth", false);
+    // These are not a spatial-pose provider. False would incorrectly imply a checked negative.
+    // Null preserves the old falsey behavior while making availability explicitly unknown.
+    out.put("arcoreDepth", null);
+    out.put("arcoreRawDepth", null);
+    out.put("spatialPoseProviderState", "NOT_INSTRUMENTED");
     out.put("thermal", false);
     out.put("mmwave", false);
     out.put("externalPhysiology", false);
