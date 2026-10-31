@@ -14,6 +14,7 @@ jobs:
     timeout-minutes: 45
     env:
       WAVERADAR_HOSTED_URL: https://waveradar-20.hatchable.site/workspace/
+      WAVERADAR_DEBUG_KEYSTORE_BASE64: ${{ secrets.WAVERADAR_DEBUG_KEYSTORE_BASE64 }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -47,6 +48,9 @@ jobs:
       - name: Test native sensor registration lifecycle
         run: npm run test:native-sensor-lifecycle
 
+      - name: Test native Android baseline evidence contract
+        run: npm run test:native-sensor-baseline
+
       - name: Build web application
         run: npm run build
 
@@ -78,6 +82,19 @@ jobs:
 
       - name: Sync web assets and Capacitor plugins
         run: npx cap sync android
+
+      - name: Restore persistent debug signing identity
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.android"
+          if [ -n "${WAVERADAR_DEBUG_KEYSTORE_BASE64:-}" ]; then
+            printf '%s' "$WAVERADAR_DEBUG_KEYSTORE_BASE64" | base64 --decode > "$HOME/.android/debug.keystore"
+            keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey >/dev/null
+            echo "Signing mode: persistent WaveRadar debug key." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::WAVERADAR_DEBUG_KEYSTORE_BASE64 is not configured. This APK uses a runner-generated debug key and may require reinstall; back up app data first."
+            echo "Signing mode: ephemeral debug key; update compatibility is not guaranteed." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Build debug APK
         working-directory: android
