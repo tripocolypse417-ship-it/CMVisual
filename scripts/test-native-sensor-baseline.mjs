@@ -65,7 +65,7 @@ assert.equal(baseline.sensors.accelerometer.sampleArrival.sampleSequence, 42);
 assert.equal(baseline.sensors.accelerometer.sampleArrival.timestampElapsedRealtimeNanos, '1234567890000');
 assert.equal(baseline.sensors.gyroscope.capability.state, 'SUPPORTED');
 assert.equal(baseline.sensors.gyroscope.registration.state, 'REGISTRATION_FAILED');
-assert.equal(baseline.sensors.gyroscope.sampleArrival.state, 'NOT_ARRIVED');
+assert.equal(baseline.sensors.gyroscope.sampleArrival.state, 'UNKNOWN', 'registration failure does not prove sample non-arrival');
 assert.equal(baseline.sensors.magnetometer.capability.state, 'UNSUPPORTED');
 assert.equal(baseline.sensors.magnetometer.registration.state, 'UNSUPPORTED');
 assert.equal(baseline.sensors.rotationVector.registration.state, 'NOT_REGISTERED');
