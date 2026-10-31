@@ -121,15 +121,23 @@ const sample2 = { nativeSensorBaseline: buildNativeSensorBaseline({
   capturedAt: '2026-10-30T20:00:00.250Z',
   sampleIndex: 1,
 }) };
+const failedBridgeSample = { nativeSensorBaseline: noBridge };
 const summary = summarizeNativeSensorBaseline({
   capabilities: supported,
-  samples: [sample1, sample2],
-  bridgeCallStates: ['OK', 'OK'],
+  samples: [sample1, sample2, failedBridgeSample],
+  bridgeCallStates: ['OK', 'OK', 'CALL_FAILED'],
   webMotionPermission: { hasSensors: true },
   generatedAt: at,
 });
-assert.equal(summary.captureCount, 2);
+assert.equal(summary.captureCount, 3);
+assert.equal(summary.latestBridgeCallState, 'CALL_FAILED');
+assert.equal(summary.nativeSensorManager.state, 'AVAILABLE', 'retain last known capability separately from latest failed bridge call');
+assert.equal(summary.platform.model, 'Moto G Play 2024');
+assert.equal(summary.lastKnownCapabilityCapturedAt, '2026-10-30T20:00:00.250Z');
 assert.equal(summary.sensors.accelerometer.capturedSampleCount, 2);
+assert.equal(summary.sensors.accelerometer.latestSampleArrivalState, 'UNKNOWN', 'latest bridge failure is not reported as a fresh sample');
+assert.equal(summary.sensors.accelerometer.firstEventReceivedAt, at);
+assert.equal(summary.sensors.accelerometer.lastEventReceivedAt, '2026-10-30T20:00:00.250Z');
 assert.equal(summary.sensors.accelerometer.firstSequence, 42);
 assert.equal(summary.sensors.accelerometer.lastSequence, 58);
 assert.equal(summary.sensors.accelerometer.observedSequenceSpan, 16);
