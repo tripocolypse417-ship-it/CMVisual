@@ -2,8 +2,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import useDeviceSensors from '@/hooks/useDeviceSensors';
 import { getStableDeviceId, getDeviceIdentityStatus } from '@/lib/deviceIdentity';
 import { base44 } from '@/api/base44Client';
-import { getNativeSensorSnapshot, getNativeSensorCapabilities } from '@/lib/nativeSensors';
+import { getNativeSensorSnapshotResult, getNativeSensorCapabilitiesResult } from '@/lib/nativeSensors';
 import { buildPhysicalValidationSample } from '@/lib/physicalValidationEvidence';
+import {
+  NATIVE_SENSOR_NAMES,
+  buildNativeSensorBaseline,
+  summarizeNativeSensorBaseline,
+} from '@/lib/nativeSensorBaseline';
 import {
   enqueuePhysicalValidationRecord,
   getPhysicalValidationQueueStatus,
@@ -45,6 +50,13 @@ export default function PhysicalValidation() {
   const [queueStatus, setQueueStatus] = useState(() => getPhysicalValidationQueueStatus());
   const [nativeSnapshot, setNativeSnapshot] = useState(null);
   const [nativeCapabilities, setNativeCapabilities] = useState(null);
+  const [nativeBridgeState, setNativeBridgeState] = useState('UNKNOWN');
+  const [nativeBaselineSummary, setNativeBaselineSummary] = useState(() =>
+    summarizeNativeSensorBaseline({ samples: [], spatialPose: { state: 'NOT_INSTRUMENTED' } })
+  );
+  const nativeCapabilitiesRef = useRef(null);
+  const bridgeCallStatesRef = useRef([]);
+  const sessionIdRef = useRef(null);
   const start = useRef(0);
   const timer = useRef(null);
   const sampler = useRef(null);
@@ -83,15 +95,38 @@ export default function PhysicalValidation() {
 
   const sampleInFlight = useRef(false);
 
+  const buildBaselineSummary = () => summarizeNativeSensorBaseline({
+    capabilities: nativeCapabilitiesRef.current,
+    samples: data.current,
+    bridgeCallStates: bridgeCallStatesRef.current,
+    webMotionPermission: {
+      hasSensors: latestSensors.current.hasSensors,
+      needsPermission: latestSensors.current.needsPermission,
+      denied: latestSensors.current.denied,
+    },
+    spatialPose: {
+      state: 'NOT_INSTRUMENTED',
+      source: null,
+      note: 'No spatial-pose provider is queried by this Android native sensor baseline.',
+    },
+  });
+
   const takeSample = async () => {
     // Native bridge calls can take longer than the 250 ms sample interval.
     // Never allow overlapping reads to reorder or inflate the capture.
     if (sampleInFlight.current) return;
     sampleInFlight.current = true;
     try {
-      const native = await getNativeSensorSnapshot();
+      const nativeResult = await getNativeSensorSnapshotResult();
+      const native = nativeResult.value;
       const now = Date.now();
-      if (native) setNativeSnapshot(native);
+      bridgeCallStatesRef.current = [...bridgeCallStatesRef.current, nativeResult.state];
+      setNativeBridgeState(nativeResult.state);
+      setNativeSnapshot(native);
+      if (native) {
+        nativeCapabilitiesRef.current = native;
+        setNativeCapabilities(native);
+      }
       const sample = buildPhysicalValidationSample({
         elapsedMs: now - start.current,
         capturedAt: new Date(now).toISOString(),
@@ -101,8 +136,28 @@ export default function PhysicalValidation() {
         motion: latestSensors.current.motion,
         nativeSnapshot: native,
       });
+      sample.nativeSensorBridgeCallState = nativeResult.state;
+      sample.nativeSensorBaseline = buildNativeSensorBaseline({
+        capabilities: native,
+        snapshot: native,
+        bridgeCallState: nativeResult.state,
+        capturedAt: sample.capturedAt,
+        sessionId: sessionIdRef.current,
+        sampleIndex: data.current.length,
+        webMotionPermission: {
+          hasSensors: latestSensors.current.hasSensors,
+          needsPermission: latestSensors.current.needsPermission,
+          denied: latestSensors.current.denied,
+        },
+        spatialPose: {
+          state: 'NOT_INSTRUMENTED',
+          source: null,
+          note: 'No spatial-pose provider is queried by this Android native sensor baseline.',
+        },
+      });
       data.current = [...data.current, sample];
       setSamples([...data.current]);
+      setNativeBaselineSummary(buildBaselineSummary());
     } catch (error) {
       console.warn('[WaveRadar] sensor sample skipped', error);
     } finally {
@@ -121,6 +176,8 @@ export default function PhysicalValidation() {
 
   const begin = () => {
     data.current = [];
+    sessionIdRef.current = makeId('android-native-baseline');
+    bridgeCallStatesRef.current = [];
     pendingValidationRecord.current = null;
     savedCapture.current = false;
     setSamples([]);
@@ -202,7 +259,7 @@ export default function PhysicalValidation() {
         );
 
         const sessionPayload = {
-          session_id: makeId('validation'),
+          session_id: sessionIdRef.current || makeId('validation'),
           started_at: new Date(start.current).toISOString(),
           ended_at: new Date(start.current + elapsed).toISOString(),
           status: elapsed >= DURATION_MS ? 'COMPLETE' : 'STOPPED',
@@ -230,7 +287,10 @@ export default function PhysicalValidation() {
             cameraState,
             groundTruthMarkers: marks.length,
             knownPointChecks,
-            evidencePolicy: 'Per-field evidenceByField classifications are authoritative; mixed sample envelope is UNKNOWN.',
+            groundTruthEvidenceStatus: 'OPERATOR_RECORDED_NOT_INDEPENDENTLY_VERIFIED',
+            independentReferenceEvidence: 'NOT_ATTACHED',
+            nativeSensorBaseline: buildBaselineSummary(),
+            evidencePolicy: 'Per-field evidenceByField classifications are authoritative; native capability, registration, sample arrival, permission, timestamps, and spatial-pose status are separate.',
           }),
           limitations_json: JSON.stringify([
             'Phone/browser sensors are device-dependent.',
@@ -362,8 +422,11 @@ export default function PhysicalValidation() {
 
   const exportData = () => {
     const payload = {
-      schema: 'cmvisual-physical-validation-v2',
+      schema: 'cmvisual-physical-validation-v3',
       deviceId,
+      sessionId: sessionIdRef.current,
+      nativeBridgeState,
+      nativeSensorBaseline: buildBaselineSummary(),
       identity,
       durationMs: elapsed,
       completed60s: elapsed >= DURATION_MS,
@@ -377,6 +440,8 @@ export default function PhysicalValidation() {
       samples: data.current,
       groundTruthMarkers: marks,
       knownPointChecks,
+      groundTruthEvidenceStatus: 'OPERATOR_RECORDED_NOT_INDEPENDENTLY_VERIFIED',
+      independentReferenceEvidence: 'NOT_ATTACHED',
     };
     const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
     const a = document.createElement('a');
@@ -388,7 +453,11 @@ export default function PhysicalValidation() {
 
   useEffect(() => {
     void checkCamera();
-    void getNativeSensorCapabilities().then(setNativeCapabilities);
+    void getNativeSensorCapabilitiesResult().then(result => {
+      nativeCapabilitiesRef.current = result.value;
+      setNativeCapabilities(result.value);
+      setNativeBridgeState(result.state);
+    });
 
   return () => {
       clearInterval(timer.current);
@@ -422,9 +491,22 @@ export default function PhysicalValidation() {
 
           <div className="rounded-xl border border-white/10 bg-slate-900 p-4">
             <b className="text-xs">CAPABILITIES</b>
-            <div className="font-mono text-xs mt-2">MOTION: {sensors.hasSensors || nativeCapabilities?.androidSensorManager ? 'AVAILABLE' : 'NOT DETECTED'}</div>
-            <div className="font-mono text-xs mt-1">NATIVE: {nativeCapabilities?.nativeBridgeVersion || 'WEB FALLBACK'}</div>
-            {nativeCapabilities && <div className="font-mono text-[10px] text-slate-500 mt-1">SENSORS: {nativeCapabilities.sensorCount ?? 0} · WIFI RTT: {nativeCapabilities.androidWifiRtt ? 'YES' : 'NO'} · UWB: {nativeCapabilities.uwb ? 'YES' : 'NO'}</div>}
+            <div className="font-mono text-xs mt-2">WEB MOTION EVENTS: {sensors.hasSensors ? 'OBSERVED' : 'NOT OBSERVED'}</div>
+            <div className="font-mono text-[10px] mt-1">WEB MOTION PERMISSION: {sensors.denied ? 'DENIED' : sensors.needsPermission ? 'PROMPT REQUIRED' : 'UNKNOWN'}</div>
+            <div className="font-mono text-xs mt-1">NATIVE BRIDGE: {nativeBridgeState}</div>
+            <div className="font-mono text-xs mt-1">NATIVE SENSOR MANAGER: {nativeCapabilities?.androidSensorManager === true ? 'AVAILABLE' : nativeCapabilities?.androidSensorManager === false ? 'UNAVAILABLE' : 'UNKNOWN'}</div>
+            <div className="font-mono text-[10px] text-slate-500 mt-1">NATIVE: {nativeCapabilities?.nativeBridgeVersion || 'UNKNOWN'} · SENSORS: {nativeCapabilities?.sensorCount ?? 'UNKNOWN'} · WIFI RTT: {nativeCapabilities?.androidWifiRtt ? 'YES' : 'NO'} · UWB: {nativeCapabilities?.uwb ? 'YES' : 'NO'}</div>
+            <div className="font-mono text-[10px] text-slate-500 mt-1">ANDROID SENSOR PERMISSION: {nativeCapabilities?.nativeSensorRuntimePermission || 'UNKNOWN'} (standard SensorManager sensors)</div>
+            {nativeCapabilities?.sensorRegistration && <div className="mt-2 space-y-1">
+              <div className="text-[10px] text-slate-400">PER-SENSOR SUPPORT / REGISTRATION / HISTORY (not freshness)</div>
+              {NATIVE_SENSOR_NAMES.map(name => {
+                const item = nativeCapabilities.sensorRegistration[name];
+                if (!item) return null;
+                const capability = item.capabilityState || (item.supported === true ? 'SUPPORTED' : item.supported === false ? 'UNSUPPORTED' : 'UNKNOWN');
+                const registration = item.registrationState || (item.registered === true ? 'REGISTERED' : item.registered === false ? 'NOT_REGISTERED' : 'UNKNOWN');
+                return <div key={name} className="font-mono text-[10px] text-slate-400">{name}: {capability} · {registration} · HISTORY {item.hasSampleHistory === true ? 'YES' : item.hasSampleHistory === false ? 'NO' : 'UNKNOWN'}</div>;
+              })}
+            </div>}
             <div className="font-mono text-xs mt-1">CAMERA: {cameraState}</div>
             {sensors.denied && <div className="font-mono text-xs text-red-300 mt-1">SENSOR PERMISSION DENIED</div>}
             <div className="flex flex-wrap gap-2 mt-2">
@@ -439,7 +521,7 @@ export default function PhysicalValidation() {
         <section className="rounded-xl border border-amber-400/25 bg-slate-900 p-4 space-y-3">
           <div>
             <b className="text-xs text-amber-200">KNOWN-POINT ACCURACY CHECK</b>
-            <p className="text-[11px] text-slate-400 mt-1">Use a physical landmark with a known distance and bearing. Enter the reference and observed values; WaveRadar calculates the difference and saves the evidence. This does not pass calibration automatically.</p>
+            <p className="text-[11px] text-slate-400 mt-1">Use a physical landmark with independently measured distance and bearing. The values entered here are operator-recorded; they are not independently verified by the app. WaveRadar calculates the difference but does not pass calibration automatically. Attach a reference photo / measurement record and independent reviewer before treating this as ground truth.</p>
           </div>
           <div className="grid sm:grid-cols-2 gap-2">
             <label className="text-[11px] text-slate-300">Reference / landmark name
@@ -490,10 +572,19 @@ export default function PhysicalValidation() {
 
           <div className="font-mono text-xs mt-3">
             {samples.length} sensor samples · {marks.length} operator markers · HEADING {sensors.heading ?? '—'}° · {sensors.isMoving ? 'MOVING' : 'STILL'}
-            {nativeSnapshot?.lastSensorAt && <span> · NATIVE SENSOR LIVE</span>}
+            {Object.values(nativeSnapshot?.measurements ?? {}).some(item => Number.isFinite(item?.sampleSequence) && item.sampleSequence > 0) && <span> · NATIVE SENSOR EVENTS OBSERVED</span>}
           </div>
           <div className="font-mono text-[10px] text-slate-500 mt-2">
             Operator markers are timestamped annotations, not measured coordinates. Record reference distances/orientations separately.
+          </div>
+          <div className="rounded border border-white/10 p-2 mt-2 space-y-1">
+            <div className="text-[10px] text-emerald-200">NATIVE BASELINE · {nativeBaselineSummary.captureCount} polling capture(s)</div>
+            <div className="text-[10px] text-slate-400">SPATIAL POSE: {nativeBaselineSummary.spatialPose.state} · no pose provider queried</div>
+            {NATIVE_SENSOR_NAMES.map(name => {
+              const item = nativeBaselineSummary.sensors[name];
+              return <div key={name} className="font-mono text-[10px] text-slate-400">{name}: {item.capabilityState} · {item.registrationState} · {item.capturedSampleCount} valid capture(s) · {item.latestFreshness}</div>;
+            })}
+            <div className="text-[10px] text-slate-500">Capture count is polling records with valid numeric values; it is not the native event rate. Baseline is not calibration.</div>
           </div>
           <div className="font-mono text-[10px] text-slate-500 mt-2">
             CAPTURE: {captureState} · STORAGE: {saveState}
