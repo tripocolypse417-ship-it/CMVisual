@@ -18,6 +18,13 @@ export default async function(req) {
     const body = await req.json().catch(() => ({}));
     const { action, channel, event } = body;
 
+    // This endpoint uses a service-role Slack credential. Restrict both channel
+    // discovery and message posting to authenticated administrators.
+    const user = await base44.auth.me();
+    if (!user || user.role !== 'admin') {
+      return Response.json({ error: 'Admin only' }, { status: 403 });
+    }
+
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("slackbot");
 
     if (action === 'list') {

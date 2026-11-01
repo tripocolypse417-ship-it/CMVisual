@@ -10,8 +10,18 @@ export default async function (req) {
     // Public: an investor expresses interest via the pitch page.
     if (action === 'submit') {
       const { name, email, firm, role, check_size, message } = body;
-      if (!name || !email) {
+      if (typeof name !== 'string' || typeof email !== 'string' || !name.trim() || !email.trim()) {
         return Response.json({ error: 'Name and email are required' }, { status: 400 });
+      }
+      if (name.length > 160 || email.length > 254 ||
+          (typeof firm === 'string' && firm.length > 200) ||
+          (typeof role === 'string' && role.length > 120) ||
+          (typeof check_size === 'string' && check_size.length > 120) ||
+          (typeof message === 'string' && message.length > 4000)) {
+        return Response.json({ error: 'One or more fields exceed the allowed length' }, { status: 400 });
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+        return Response.json({ error: 'A valid email address is required' }, { status: 400 });
       }
       const lead = await base44.asServiceRole.entities.InvestorLead.create({
         name,
@@ -26,7 +36,7 @@ export default async function (req) {
       // Notify the first admin (a registered user, so SendEmail delivers).
       try {
         const users = await base44.asServiceRole.entities.User.list();
-        const admin = users.find((u) => u.role === 'admin') || users[0];
+        const admin = users.find((u) => u.role === 'admin');
         if (admin?.email) {
           await base44.asServiceRole.integrations.Core.SendEmail({
             to: admin.email,
