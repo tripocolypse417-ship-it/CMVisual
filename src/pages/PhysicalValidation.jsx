@@ -339,7 +339,7 @@ export default function PhysicalValidation() {
             knownPointChecks,
             groundTruthEvidenceStatus: 'OPERATOR_RECORDED_NOT_INDEPENDENTLY_VERIFIED',
             independentReferenceEvidence: independentGroundTruthRecords.length > 0
-              ? 'REFERENCE_RECORDS_ATTACHED_PENDING_INDEPENDENT_REVIEW'
+              ? 'REFERENCE_RECORDS_RECORDED_UNVERIFIED'
               : 'NOT_ATTACHED',
             independentReferenceRecords: independentGroundTruthRecords,
             independentReferenceCustody: 'LOCAL_STORAGE_NOT_TAMPER_EVIDENT',
@@ -496,7 +496,7 @@ export default function PhysicalValidation() {
       knownPointChecks,
       independentReferenceRecords: independentGroundTruthRecords,
       independentReferenceEvidence: independentGroundTruthRecords.length > 0
-        ? 'REFERENCE_RECORDS_ATTACHED_PENDING_INDEPENDENT_REVIEW'
+        ? 'REFERENCE_RECORDS_RECORDED_UNVERIFIED'
         : 'NOT_ATTACHED',
       independentReferenceCustody: 'LOCAL_STORAGE_NOT_TAMPER_EVIDENT',
       groundTruthEvidenceStatus: 'OPERATOR_RECORDED_NOT_INDEPENDENTLY_VERIFIED',
@@ -600,7 +600,7 @@ export default function PhysicalValidation() {
           </div>
           <div className="rounded border border-white/10 p-3 space-y-2">
             <b className="text-[11px] text-amber-100">INDEPENDENT REFERENCE EVIDENCE (OPTIONAL · NEVER AUTO-VERIFIED)</b>
-            <p className="text-[10px] text-slate-400">When you click CALCULATE & RECORD CHECK, any reference fields you provide are preserved as a separate record. A complete record is only eligible for independent review; this app cannot verify the witness, calibration certificate, artifact, or measurement truth. Use pseudonymous IDs, not personal contact details.</p>
+            <p className="text-[10px] text-slate-400">When you click CALCULATE & RECORD CHECK, any reference fields you provide are preserved as a separate record. Enter them before SAVE VALIDATION if they must be included in the server-side validation snapshot; the JSON export also includes the local reference log. A complete record is only eligible for independent review; this app cannot verify the witness, calibration certificate, artifact, or measurement truth. Use pseudonymous IDs, not personal contact details.</p>
             <div className="grid sm:grid-cols-2 gap-2">
               <label className="text-[10px] text-slate-300">Reference method
                 <input value={referenceMethod} onChange={e => setReferenceMethod(e.target.value)} placeholder="e.g. laser meter + survey compass" className="block w-full mt-1 rounded border border-white/15 bg-slate-950 px-3 py-2 text-xs text-white" />
