@@ -145,6 +145,7 @@ assert.match(page, /independentReferenceRecords/);
 assert.match(page, /parseIndependentGroundTruthLog/);
 assert.match(page, /currentRaw !== referenceLogStorage\.rawValue/);
 assert.match(page, /independentReferenceLogRecoveryPayload/);
+assert.match(page, /referenceLogWriteState\.startsWith\('WRITE_FAILED'\)/);
 assert.doesNotMatch(page, /saved\.filter\(item => item && item\.schema === 'waveradar-independent-ground-truth-v1'\)/);
 assert.match(page, /LOCAL_STORAGE_NOT_TAMPER_EVIDENT/);
 assert.match(page, /independent witness/i);
