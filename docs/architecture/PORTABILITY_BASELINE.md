@@ -94,4 +94,4 @@ Remove Base44 SDK/plugin and Hatchable runtime dependencies only after complete 
 
 ## Next engineering deliverable
 
-A path-by-path dependency inventory and a tested minimal independent backend vertical slice. This document is the architecture baseline, not evidence that the migration has already been completed.
+The first targeted source-level dependency audit is recorded in [`BASE44_HOSTED_RUNTIME_DEPENDENCY_AUDIT_2026-11-02.md`](./BASE44_HOSTED_RUNTIME_DEPENDENCY_AUDIT_2026-11-02.md). It confirms the central SDK/auth path, key UI callers, seven Base44 server-function entrypoints, and the Hatchable-hosted Android build setting. It remains explicitly partial: exhaustive source scanning, entity call-site reconciliation, and a tested independent backend vertical slice are still required. This document is the architecture baseline, not evidence that the migration has already been completed.
