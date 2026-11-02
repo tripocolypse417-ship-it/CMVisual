@@ -7,7 +7,8 @@ function cleanText(value) {
 }
 
 function finiteNumber(value) {
-  if (value == null || (typeof value === 'string' && value.trim() === '')) return null;
+  if (typeof value !== 'number' && typeof value !== 'string') return null;
+  if (typeof value === 'string' && value.trim() === '') return null;
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
 }
@@ -46,6 +47,11 @@ function bearingError(reference, observed) {
 export function buildIndependentGroundTruthRecord(input = {}) {
   const source = input && typeof input === 'object' ? input : {};
   const metadataValues = [
+    // Measurement-only input is still evidence to preserve as INCOMPLETE.
+    source.referenceDistanceMeters,
+    source.observedDistanceMeters,
+    source.referenceBearingDegrees,
+    source.observedBearingDegrees,
     source.referenceMethod,
     source.instrumentMakeModel,
     source.instrumentAssetId,
