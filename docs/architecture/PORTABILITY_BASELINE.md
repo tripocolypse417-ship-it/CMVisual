@@ -121,3 +121,8 @@ npm run test:incident-evidence-repository
 ```
 
 These are deterministic software contract tests; they do not validate physical sensors, data accuracy, or field readiness.
+
+
+## PostgreSQL reference schema (not deployed)
+
+`infra/postgres/migrations/001_incident_evidence.sql` is a reference migration for an isolated PostgreSQL target. It defines tenant-scoped incident/evidence keys, event-time indexes, envelope identity checks, row-level tenant policies, and a trigger that rejects UPDATE/DELETE on accepted evidence. It is not wired to an application API, has not been applied to any database, and has not been exercised against a live PostgreSQL instance. Before use, the database owner must review role ownership, connection-pool tenant context, privileged-role bypass, backup/restore, retention/legal hold, and object-storage transaction boundaries. The API must set tenant context only after authenticating and authorizing the caller; clients must never set it directly.
