@@ -34,6 +34,9 @@ jobs:
       - name: Verify native Android sensor baseline separation
         run: npm run test:native-sensor-baseline
 
+      - name: Verify independent ground-truth evidence contract
+        run: npm run test:independent-ground-truth
+
       - name: Check JavaScript and JSX lint
         run: npm run lint
 
