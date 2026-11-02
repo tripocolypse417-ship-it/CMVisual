@@ -56,6 +56,22 @@ assert.equal(partial.record.verificationState, 'UNVERIFIED');
 assert.equal(partial.record.reviewState, 'NOT_REVIEWED');
 assert.ok(partial.errors.length > 0);
 
+// Measurements entered before instrument metadata must not disappear as NOT_ATTACHED.
+const measurementsOnly = buildIndependentGroundTruthRecord({
+  referenceDistanceMeters: '2.5',
+  observedDistanceMeters: '2.6',
+  referenceBearingDegrees: '359',
+  observedBearingDegrees: '1',
+});
+assert.ok(measurementsOnly.record, 'measurement-only input must be retained');
+assert.equal(measurementsOnly.record.completenessState, 'INCOMPLETE');
+assert.equal(measurementsOnly.record.eligibilityState, 'INELIGIBLE_INCOMPLETE');
+assert.equal(measurementsOnly.record.reference.distanceMeters, 2.5);
+assert.equal(measurementsOnly.record.waveRadarEstimate.distanceMeters, 2.6);
+assert.equal(measurementsOnly.record.reference.bearingDegrees, 359);
+assert.equal(measurementsOnly.record.waveRadarEstimate.bearingDegrees, 1);
+assert.ok(measurementsOnly.errors.length > 0);
+
 const completeInput = {
   recordId: 'gt-complete',
   checkId: 'check-2',
@@ -91,6 +107,15 @@ assert.equal(complete.record.comparison.absoluteBearingErrorDegrees, 2);
 assert.equal(complete.record.reference.bearingDegrees, 359);
 assert.equal(complete.record.waveRadarEstimate.bearingDegrees, 1);
 assert.equal(complete.record.custodyState, 'LOCAL_STORAGE_NOT_TAMPER_EVIDENT');
+
+const booleanMeasurement = buildIndependentGroundTruthRecord({
+  ...completeInput,
+  recordId: 'gt-boolean-measurement',
+  referenceDistanceMeters: true,
+});
+assert.ok(booleanMeasurement.errors.some(error => error.includes('referenceDistanceMeters')));
+assert.equal(booleanMeasurement.record.reference.distanceMeters, null);
+assert.equal(booleanMeasurement.record.verificationState, 'UNVERIFIED');
 
 const samePerson = buildIndependentGroundTruthRecord({
   ...completeInput,
