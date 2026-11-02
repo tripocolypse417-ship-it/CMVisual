@@ -9,6 +9,7 @@ import {
   buildNativeSensorBaseline,
   summarizeNativeSensorBaseline,
 } from '@/lib/nativeSensorBaseline';
+import { buildIndependentGroundTruthRecord } from '@/lib/independentGroundTruth';
 import {
   enqueuePhysicalValidationRecord,
   getPhysicalValidationQueueStatus,
@@ -40,6 +41,23 @@ export default function PhysicalValidation() {
     try {
       const saved = JSON.parse(globalThis.localStorage?.getItem('waveradar:known-point-checks:v1') || '[]');
       return Array.isArray(saved) ? saved.filter(item => item && typeof item.checkId === 'string') : [];
+    } catch { return []; }
+  });
+  const [referenceMethod, setReferenceMethod] = useState('');
+  const [referenceInstrument, setReferenceInstrument] = useState('');
+  const [referenceInstrumentId, setReferenceInstrumentId] = useState('');
+  const [referenceCalibrationStatus, setReferenceCalibrationStatus] = useState('');
+  const [referenceCalibrationRef, setReferenceCalibrationRef] = useState('');
+  const [distanceUncertainty, setDistanceUncertainty] = useState('');
+  const [bearingUncertainty, setBearingUncertainty] = useState('');
+  const [referenceOperatorId, setReferenceOperatorId] = useState('');
+  const [independentWitnessId, setIndependentWitnessId] = useState('');
+  const [referenceMeasuredAt, setReferenceMeasuredAt] = useState('');
+  const [referenceArtifactRef, setReferenceArtifactRef] = useState('');
+  const [independentGroundTruthRecords, setIndependentGroundTruthRecords] = useState(() => {
+    try {
+      const saved = JSON.parse(globalThis.localStorage?.getItem('waveradar:independent-ground-truth:v1') || '[]');
+      return Array.isArray(saved) ? saved.filter(item => item && item.schema === 'waveradar-independent-ground-truth-v1') : [];
     } catch { return []; }
   });
   const latestSensors = useRef(sensors);
@@ -231,6 +249,40 @@ export default function PhysicalValidation() {
       calibrationStatus: 'UNVERIFIED_REVIEW_REQUIRED',
       note: 'Errors compare operator-entered reference and observed values; they do not independently prove sensor accuracy.',
     };
+    const referenceResult = buildIndependentGroundTruthRecord({
+      recordId: makeId('independent-reference'),
+      checkId: check.checkId,
+      referenceName: check.referenceName,
+      referenceDistanceMeters: refDistance,
+      observedDistanceMeters: obsDistance,
+      referenceBearingDegrees: refBearing,
+      observedBearingDegrees: obsBearing,
+      referenceMethod,
+      instrumentMakeModel: referenceInstrument,
+      instrumentAssetId: referenceInstrumentId,
+      calibrationStatus: referenceCalibrationStatus,
+      calibrationEvidenceRef: referenceCalibrationRef,
+      operatorId: referenceOperatorId,
+      independentWitnessId,
+      referenceMeasuredAt,
+      referenceEvidenceRef: referenceArtifactRef,
+      distanceUncertaintyMeters: distanceUncertainty,
+      bearingUncertaintyDegrees: bearingUncertainty,
+      sourceInstallationId: deviceId,
+      recordedAt: check.recordedAt,
+    });
+    if (referenceResult.record) {
+      check.independentGroundTruthRecordId = referenceResult.record.recordId;
+      check.independentGroundTruthEligibility = referenceResult.record.eligibilityState;
+      check.independentGroundTruthErrors = referenceResult.errors;
+      const nextReferenceRecords = [...independentGroundTruthRecords, referenceResult.record];
+      setIndependentGroundTruthRecords(nextReferenceRecords);
+      try {
+        localStorage.setItem('waveradar:independent-ground-truth:v1', JSON.stringify(nextReferenceRecords));
+      } catch (error) {
+        console.warn('[WaveRadar] independent reference local save failed; export this session before leaving', error);
+      }
+    }
     setKnownPointChecks(previous => {
       const next = [...previous, check].slice(-100);
       try { localStorage.setItem('waveradar:known-point-checks:v1', JSON.stringify(next)); } catch (error) { console.warn('[WaveRadar] known-point local save failed', error); }
@@ -286,7 +338,11 @@ export default function PhysicalValidation() {
             groundTruthMarkers: marks.length,
             knownPointChecks,
             groundTruthEvidenceStatus: 'OPERATOR_RECORDED_NOT_INDEPENDENTLY_VERIFIED',
-            independentReferenceEvidence: 'NOT_ATTACHED',
+            independentReferenceEvidence: independentGroundTruthRecords.length > 0
+              ? 'REFERENCE_RECORDS_RECORDED_UNVERIFIED'
+              : 'NOT_ATTACHED',
+            independentReferenceRecords: independentGroundTruthRecords,
+            independentReferenceCustody: 'LOCAL_STORAGE_NOT_TAMPER_EVIDENT',
             nativeSensorBaseline: buildBaselineSummary(),
             evidencePolicy: 'Per-field evidenceByField classifications are authoritative; native capability, registration, sample arrival, permission, timestamps, and spatial-pose status are separate.',
           }),
@@ -296,7 +352,7 @@ export default function PhysicalValidation() {
             'Calibration and physical accuracy remain unverified until ground-truth comparison is performed.',
             'Computed motion magnitude and jerk are DERIVED; moving/still is INFERRED.',
           ]),
-          method_version: 'waveradar-physical-validation-v3',
+          method_version: 'waveradar-physical-validation-v4',
         };
 
         pendingValidationRecord.current = {
@@ -420,7 +476,7 @@ export default function PhysicalValidation() {
 
   const exportData = () => {
     const payload = {
-      schema: 'cmvisual-physical-validation-v3',
+      schema: 'cmvisual-physical-validation-v4',
       deviceId,
       sessionId: sessionIdRef.current,
       nativeBridgeState,
@@ -438,8 +494,12 @@ export default function PhysicalValidation() {
       samples: data.current,
       groundTruthMarkers: marks,
       knownPointChecks,
+      independentReferenceRecords: independentGroundTruthRecords,
+      independentReferenceEvidence: independentGroundTruthRecords.length > 0
+        ? 'REFERENCE_RECORDS_RECORDED_UNVERIFIED'
+        : 'NOT_ATTACHED',
+      independentReferenceCustody: 'LOCAL_STORAGE_NOT_TAMPER_EVIDENT',
       groundTruthEvidenceStatus: 'OPERATOR_RECORDED_NOT_INDEPENDENTLY_VERIFIED',
-      independentReferenceEvidence: 'NOT_ATTACHED',
     };
     const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
     const a = document.createElement('a');
@@ -537,6 +597,55 @@ export default function PhysicalValidation() {
             <label className="text-[11px] text-slate-300">Observed bearing (degrees)
               <input type="number" min="0" max="360" step="0.1" value={observedBearing} onChange={e => setObservedBearing(e.target.value)} placeholder="0–360" className="block w-full mt-1 rounded border border-white/15 bg-slate-950 px-3 py-2 text-sm text-white" />
             </label>
+          </div>
+          <div className="rounded border border-white/10 p-3 space-y-2">
+            <b className="text-[11px] text-amber-100">INDEPENDENT REFERENCE EVIDENCE (OPTIONAL · NEVER AUTO-VERIFIED)</b>
+            <p className="text-[10px] text-slate-400">When you click CALCULATE & RECORD CHECK, any reference fields you provide are preserved as a separate record. Enter them before SAVE VALIDATION if they must be included in the server-side validation snapshot; the JSON export also includes the local reference log. A complete record is only eligible for independent review; this app cannot verify the witness, calibration certificate, artifact, or measurement truth. Use pseudonymous IDs, not personal contact details.</p>
+            <div className="grid sm:grid-cols-2 gap-2">
+              <label className="text-[10px] text-slate-300">Reference method
+                <input value={referenceMethod} onChange={e => setReferenceMethod(e.target.value)} placeholder="e.g. laser meter + survey compass" className="block w-full mt-1 rounded border border-white/15 bg-slate-950 px-3 py-2 text-xs text-white" />
+              </label>
+              <label className="text-[10px] text-slate-300">Reference instrument make / model
+                <input value={referenceInstrument} onChange={e => setReferenceInstrument(e.target.value)} placeholder="Instrument make and model" className="block w-full mt-1 rounded border border-white/15 bg-slate-950 px-3 py-2 text-xs text-white" />
+              </label>
+              <label className="text-[10px] text-slate-300">Instrument asset ID
+                <input value={referenceInstrumentId} onChange={e => setReferenceInstrumentId(e.target.value)} placeholder="Asset tag / pseudonymous ID" className="block w-full mt-1 rounded border border-white/15 bg-slate-950 px-3 py-2 text-xs text-white" />
+              </label>
+              <label className="text-[10px] text-slate-300">Calibration status
+                <select value={referenceCalibrationStatus} onChange={e => setReferenceCalibrationStatus(e.target.value)} className="block w-full mt-1 rounded border border-white/15 bg-slate-950 px-3 py-2 text-xs text-white">
+                  <option value="">Not recorded</option>
+                  <option value="CALIBRATED">Calibrated · certificate available</option>
+                  <option value="NOT_CALIBRATED">Not calibrated</option>
+                  <option value="UNKNOWN">Unknown</option>
+                </select>
+              </label>
+              <label className="text-[10px] text-slate-300">Calibration certificate / record ID
+                <input value={referenceCalibrationRef} onChange={e => setReferenceCalibrationRef(e.target.value)} placeholder="Required when calibrated" className="block w-full mt-1 rounded border border-white/15 bg-slate-950 px-3 py-2 text-xs text-white" />
+              </label>
+              <label className="text-[10px] text-slate-300">Distance uncertainty (meters)
+                <input type="number" min="0" step="0.001" value={distanceUncertainty} onChange={e => setDistanceUncertainty(e.target.value)} placeholder="Reference instrument uncertainty" className="block w-full mt-1 rounded border border-white/15 bg-slate-950 px-3 py-2 text-xs text-white" />
+              </label>
+              <label className="text-[10px] text-slate-300">Bearing uncertainty (degrees)
+                <input type="number" min="0" max="180" step="0.1" value={bearingUncertainty} onChange={e => setBearingUncertainty(e.target.value)} placeholder="Reference method uncertainty" className="block w-full mt-1 rounded border border-white/15 bg-slate-950 px-3 py-2 text-xs text-white" />
+              </label>
+              <label className="text-[10px] text-slate-300">Tester / operator pseudonymous ID
+                <input value={referenceOperatorId} onChange={e => setReferenceOperatorId(e.target.value)} placeholder="e.g. operator-01" className="block w-full mt-1 rounded border border-white/15 bg-slate-950 px-3 py-2 text-xs text-white" />
+              </label>
+              <label className="text-[10px] text-slate-300">Independent witness pseudonymous ID
+                <input value={independentWitnessId} onChange={e => setIndependentWitnessId(e.target.value)} placeholder="Must differ from operator ID" className="block w-full mt-1 rounded border border-white/15 bg-slate-950 px-3 py-2 text-xs text-white" />
+              </label>
+              <label className="text-[10px] text-slate-300">Reference measured at
+                <input type="datetime-local" value={referenceMeasuredAt} onChange={e => setReferenceMeasuredAt(e.target.value)} className="block w-full mt-1 rounded border border-white/15 bg-slate-950 px-3 py-2 text-xs text-white" />
+              </label>
+              <label className="text-[10px] text-slate-300">Reference evidence artifact ID
+                <input value={referenceArtifactRef} onChange={e => setReferenceArtifactRef(e.target.value)} placeholder="Photo / raw log / measurement record ID" className="block w-full mt-1 rounded border border-white/15 bg-slate-950 px-3 py-2 text-xs text-white" />
+              </label>
+            </div>
+            <div className="text-[10px] text-slate-500">{independentGroundTruthRecords.length} independent-reference record(s) in this device's local export log. Local storage is not tamper-evident; export and preserve the original evidence package.</div>
+            {independentGroundTruthRecords.slice(-3).reverse().map(record => <div key={record.recordId} className="rounded border border-white/10 p-2 text-[10px]">
+              <div className="font-mono text-amber-200">{record.recordId} · {record.eligibilityState}</div>
+              <div className="text-slate-400">{record.referenceName} · {record.completenessState} · {record.verificationState} · {record.reviewState}</div>
+            </div>)}
           </div>
           <button onClick={recordKnownPointCheck} disabled={!knownPointName.trim() || [referenceDistance, observedDistance, referenceBearing, observedBearing].some(value => value === '') || ![Number(referenceDistance), Number(observedDistance), Number(referenceBearing), Number(observedBearing)].every(Number.isFinite) || Number(referenceDistance) < 0 || Number(observedDistance) < 0} className="border border-amber-300/40 px-3 py-2 text-xs disabled:opacity-30">CALCULATE & RECORD CHECK</button>
           {knownPointChecks.length > 0 && <div className="space-y-2">
