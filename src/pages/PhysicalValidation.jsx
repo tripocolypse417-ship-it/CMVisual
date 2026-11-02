@@ -10,6 +10,11 @@ import {
   readPhysicalValidationQueue,
   syncPhysicalValidationQueue,
 } from '@/lib/physicalValidationQueue';
+import {
+  createValidationQueueArchive,
+  previewValidationQueueRestore,
+  restoreValidationQueueArchive,
+} from '@/lib/validationQueueArchive';
 
 const DURATION_MS = 60000;
 const SAMPLE_MS = 250;
@@ -43,6 +48,9 @@ export default function PhysicalValidation() {
   const [captureState, setCaptureState] = useState('READY');
   const [saveState, setSaveState] = useState('NOT SAVED');
   const [queueStatus, setQueueStatus] = useState(() => getPhysicalValidationQueueStatus());
+  const [archiveFileText, setArchiveFileText] = useState('');
+  const [archivePreview, setArchivePreview] = useState(null);
+  const [archiveBusy, setArchiveBusy] = useState(false);
   const [nativeSnapshot, setNativeSnapshot] = useState(null);
   const [nativeCapabilities, setNativeCapabilities] = useState(null);
   const start = useRef(0);
@@ -340,24 +348,80 @@ export default function PhysicalValidation() {
     };
   }, []);
 
-  const exportPendingQueue = () => {
-    const loaded = readPhysicalValidationQueue();
-    setQueueStatus(loaded.ok ? getPhysicalValidationQueueStatus() : loaded);
-    if (!loaded.ok) {
-      setSaveState('QUEUE EXPORT FAILED · STORAGE UNAVAILABLE');
+  const exportPendingQueue = async () => {
+    setArchiveBusy(true);
+    try {
+      const result = await createValidationQueueArchive();
+      if (!result.ok) {
+        setSaveState('QUEUE ARCHIVE FAILED · ' + result.error);
+        return;
+      }
+      const url = URL.createObjectURL(new Blob([result.json], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'waveradar-validation-queue-archive.json';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setSaveState('HASHED QUEUE ARCHIVE EXPORTED · ' + result.archive.recordCount + ' RECORDS');
+    } catch (error) {
+      console.error('[WaveRadar] queue archive export failed', error);
+      setSaveState('QUEUE ARCHIVE FAILED');
+    } finally {
+      setArchiveBusy(false);
+    }
+  };
+
+  const previewQueueArchiveFile = async (file) => {
+    setArchivePreview(null);
+    setArchiveFileText('');
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) {
+      setSaveState('ARCHIVE REJECTED · FILE TOO LARGE');
       return;
     }
-    const url = URL.createObjectURL(new Blob([JSON.stringify({
-      schema: 'waveradar-physical-validation-queue-v2',
-      exportedAt: new Date().toISOString(),
-      records: loaded.queue,
-      note: 'Ambiguous records are intentionally not retried automatically; reconcile against server records before any manual retry.',
-    }, null, 2)], { type: 'application/json' }));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'waveradar-pending-validation-queue.json';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setArchiveBusy(true);
+    try {
+      const text = await file.text();
+      const preview = await previewValidationQueueRestore(text);
+      if (!preview.ok) {
+        setArchivePreview(preview);
+        setSaveState('ARCHIVE REJECTED · ' + preview.error);
+        return;
+      }
+      setArchiveFileText(text);
+      setArchivePreview(preview);
+      setSaveState(preview.canRestore
+        ? 'ARCHIVE VERIFIED · RESTORE PREVIEW READY'
+        : 'ARCHIVE VERIFIED · CONFLICTS REQUIRE REVIEW');
+    } catch (error) {
+      console.error('[WaveRadar] queue archive preview failed', error);
+      setArchivePreview({ ok: false, error: 'ARCHIVE_PREVIEW_FAILED' });
+      setSaveState('ARCHIVE PREVIEW FAILED');
+    } finally {
+      setArchiveBusy(false);
+    }
+  };
+
+  const restoreQueueArchive = async () => {
+    if (!archivePreview?.ok || !archivePreview.canRestore || !archiveFileText || archiveBusy) return;
+    setArchiveBusy(true);
+    try {
+      const result = await restoreValidationQueueArchive(archiveFileText);
+      if (!result.ok || !result.restored) {
+        setSaveState('ARCHIVE RESTORE BLOCKED · ' + (result.error || 'REVIEW REQUIRED'));
+        setArchivePreview(result);
+        return;
+      }
+      setQueueStatus(getPhysicalValidationQueueStatus());
+      setArchivePreview(null);
+      setArchiveFileText('');
+      setSaveState('ARCHIVE RESTORED · ' + result.quarantinedCount + ' RECORDS QUARANTINED FOR REVIEW');
+    } catch (error) {
+      console.error('[WaveRadar] queue archive restore failed', error);
+      setSaveState('ARCHIVE RESTORE FAILED');
+    } finally {
+      setArchiveBusy(false);
+    }
   };
 
   const exportData = () => {
@@ -501,10 +565,26 @@ export default function PhysicalValidation() {
           <div className="font-mono text-[10px] text-slate-400 mt-2">
             OFFLINE QUEUE: {queueStatus.ok ? `${queueStatus.pendingCount} pending · ${queueStatus.ambiguousCount} require review` : `UNAVAILABLE · ${queueStatus.error}`}
           </div>
-          {queueStatus.ok && queueStatus.pendingCount > 0 && (
-            <div className="mt-2 space-y-2">
+          {queueStatus.ok && (
+            <div className="mt-3 space-y-2 rounded border border-amber-300/20 bg-black/10 p-3">
               {queueStatus.ambiguousCount > 0 && <div className="text-[10px] text-amber-200">Some remote write outcomes are ambiguous. They are retained and will not be retried automatically to avoid duplicate evidence.</div>}
-              <button onClick={exportPendingQueue} className="border border-amber-300/30 px-3 py-2 text-xs">EXPORT PENDING QUEUE</button>
+              <div className="text-[10px] text-slate-400">LOCAL QUEUE ARCHIVE ONLY · Plain JSON, not encrypted; store privately. SHA-256 checks file integrity, not archive origin or authenticity. Restored entries are quarantined and will not sync automatically. Does not back up Base44 records, known-point checks, or complete phone/app data.</div>
+              <button disabled={archiveBusy} onClick={exportPendingQueue} className="border border-amber-300/30 px-3 py-2 text-xs disabled:opacity-40">{archiveBusy ? 'WORKING…' : 'EXPORT HASHED QUEUE ARCHIVE'}</button>
+              <label className="block text-[10px] text-slate-300">Preview an archive before restoring
+                <input type="file" accept="application/json,.json" disabled={archiveBusy} onChange={e => previewQueueArchiveFile(e.target.files?.[0])} className="block w-full mt-1 text-xs text-slate-400 file:mr-2 file:border file:border-white/20 file:bg-slate-800 file:px-2 file:py-1 file:text-slate-200" />
+              </label>
+              {archivePreview && (
+                <div className="rounded border border-white/10 p-2 text-[10px] space-y-1">
+                  {archivePreview.ok ? (
+                    <>
+                      <div className="text-emerald-200">ARCHIVE HASH VERIFIED · {archivePreview.archiveRecordCount} RECORDS</div>
+                      <div>Existing records: {archivePreview.existingRecordCount} · New records: {archivePreview.additions} · Identical duplicates: {archivePreview.identicalDuplicates.length}</div>
+                      {archivePreview.conflicts.length > 0 && <div className="text-amber-200">Conflicting record IDs: {archivePreview.conflicts.join(', ')}</div>}
+                      <button disabled={archiveBusy || !archivePreview.canRestore || !archiveFileText} onClick={restoreQueueArchive} className="mt-1 border border-emerald-300/30 px-3 py-2 text-xs disabled:opacity-30">RESTORE TO LOCAL REVIEW QUARANTINE</button>
+                    </>
+                  ) : <div className="text-red-200">ARCHIVE NOT VERIFIED · {archivePreview.error}</div>}
+                </div>
+              )}
             </div>
           )}
         </section>

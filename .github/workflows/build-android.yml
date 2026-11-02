@@ -37,6 +37,15 @@ jobs:
       - name: Audit canonical data contract
         run: npm run audit:data
 
+      - name: Inventory provider dependencies
+        run: npm run audit:providers
+
+      - name: Test World Model contract and provenance gates
+        run: npm run test:world-model-contract
+
+      - name: Test validation queue archive and restore
+        run: npm run test:validation-queue-archive
+
       - name: Test malformed array boundaries
         run: npm run test:array-boundaries
 
