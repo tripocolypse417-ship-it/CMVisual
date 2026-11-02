@@ -111,5 +111,8 @@ assert.match(page, /independentReferenceRecords/);
 assert.match(page, /LOCAL_STORAGE_NOT_TAMPER_EVIDENT/);
 assert.match(page, /independent witness/i);
 assert.match(page, /reference evidence artifact/i);
+assert.match(page, /cmvisual-physical-validation-v4/);
+assert.match(page, /REFERENCE_RECORDS_ATTACHED_PENDING_INDEPENDENT_REVIEW/);
+assert.match(page, /groundTruthEvidenceStatus: 'OPERATOR_RECORDED_NOT_INDEPENDENTLY_VERIFIED'/);
 
 console.log('Independent ground-truth record completeness, provenance, uncertainty, and non-promotion tests: PASS');
