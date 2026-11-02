@@ -99,3 +99,25 @@ Remove Base44 SDK/plugin and Hatchable runtime dependencies only after complete 
 ## Next engineering deliverable
 
 The first targeted source-level dependency audit is recorded in [`BASE44_HOSTED_RUNTIME_DEPENDENCY_AUDIT_2026-11-02.md`](./BASE44_HOSTED_RUNTIME_DEPENDENCY_AUDIT_2026-11-02.md). It confirms the central SDK/auth path, key UI callers, seven Base44 server-function entrypoints, and the Hatchable-hosted Android build setting. It remains explicitly partial: exhaustive source scanning, entity call-site reconciliation, and a tested independent backend vertical slice are still required. This document is the architecture baseline, not evidence that the migration has already been completed.
+
+
+## Provider-neutral evidence repository boundary
+
+A first implementation boundary now exists in `src/lib/incidentEvidenceRepository.js`:
+
+- validates the canonical v1 evidence envelope before persistence;
+- requires stable incident and observation identifiers, event and receipt timestamps, evidence class, payload, source identity, and capture provenance;
+- exposes incident-scoped `append`, `get`, and `list` operations without importing Base44;
+- returns defensive JSON copies and deterministic event-time ordering;
+- rejects adapter responses that leak records from another incident.
+
+The adapter contract requires an atomic insert with a unique observation ID, no in-place overwrite, incident-scoped reads, and server-side authorization. The contract tests use an in-memory test double only. **No production database, object store, remote API, authentication boundary, or durable persistence adapter has been connected yet.** The next implementation step is a separately deployable service and database migration, followed by isolated export/import and restore tests before any live cutover.
+
+Run the contract checks with:
+
+```sh
+npm run test:incident-replay-policy
+npm run test:incident-evidence-repository
+```
+
+These are deterministic software contract tests; they do not validate physical sensors, data accuracy, or field readiness.
