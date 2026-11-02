@@ -4,10 +4,44 @@ import {
   INDEPENDENT_GROUND_TRUTH_SCHEMA,
   buildIndependentGroundTruthRecord,
 } from '../src/lib/independentGroundTruth.js';
+import {
+  INDEPENDENT_GROUND_TRUTH_LOG_KEY,
+  parseIndependentGroundTruthLog,
+  isIndependentGroundTruthLogWritable,
+} from '../src/lib/independentGroundTruthLog.js';
 
 const empty = buildIndependentGroundTruthRecord({});
 assert.equal(empty.status, 'NOT_ATTACHED');
 assert.equal(empty.record, null);
+
+assert.equal(INDEPENDENT_GROUND_TRUTH_LOG_KEY, 'waveradar:independent-ground-truth:v1');
+const priorEntries = [
+  { schema: 'waveradar-independent-ground-truth-v1', recordId: 'prior-1', verificationState: 'UNVERIFIED' },
+  { schema: 'legacy-unknown-v0', recordId: 'legacy-2', rawField: 'preserve-me' },
+  null,
+  'unclassified-prior-entry',
+];
+const parsedPrior = parseIndependentGroundTruthLog(JSON.stringify(priorEntries));
+assert.equal(parsedPrior.state, 'READABLE');
+assert.deepEqual(parsedPrior.records, priorEntries, 'unknown-schema and malformed entries remain preserved verbatim');
+assert.equal(isIndependentGroundTruthLogWritable(parsedPrior.state), true);
+assert.equal(isIndependentGroundTruthLogWritable('EMPTY'), true);
+
+const malformedRaw = '{not valid json';
+const malformedLog = parseIndependentGroundTruthLog(malformedRaw);
+assert.equal(malformedLog.state, 'UNPARSEABLE');
+assert.deepEqual(malformedLog.records, []);
+assert.equal(malformedLog.rawValue, malformedRaw);
+assert.equal(malformedLog.recoveryPayload, malformedRaw);
+assert.equal(isIndependentGroundTruthLogWritable(malformedLog.state), false);
+
+const wrongShapeRaw = JSON.stringify({ records: [{ recordId: 'nested-1' }] });
+const wrongShapeLog = parseIndependentGroundTruthLog(wrongShapeRaw);
+assert.equal(wrongShapeLog.state, 'INVALID_SHAPE');
+assert.equal(wrongShapeLog.recoveryPayload, wrongShapeRaw);
+assert.equal(isIndependentGroundTruthLogWritable(wrongShapeLog.state), false);
+assert.equal(isIndependentGroundTruthLogWritable('CONFLICT'), false);
+assert.equal(isIndependentGroundTruthLogWritable('READ_FAILED'), false);
 
 const partial = buildIndependentGroundTruthRecord({
   recordId: 'gt-partial',
@@ -108,10 +142,15 @@ const page = await readFile(new URL('../src/pages/PhysicalValidation.jsx', impor
 assert.match(page, /buildIndependentGroundTruthRecord/);
 assert.match(page, /independentGroundTruthRecords/);
 assert.match(page, /independentReferenceRecords/);
+assert.match(page, /parseIndependentGroundTruthLog/);
+assert.match(page, /currentRaw !== referenceLogStorage\.rawValue/);
+assert.match(page, /independentReferenceLogRecoveryPayload/);
+assert.match(page, /referenceLogWriteState\.startsWith\('WRITE_FAILED'\)/);
+assert.doesNotMatch(page, /saved\.filter\(item => item && item\.schema === 'waveradar-independent-ground-truth-v1'\)/);
 assert.match(page, /LOCAL_STORAGE_NOT_TAMPER_EVIDENT/);
 assert.match(page, /independent witness/i);
 assert.match(page, /reference evidence artifact/i);
-assert.match(page, /cmvisual-physical-validation-v4/);
+assert.match(page, /cmvisual-physical-validation-v5/);
 assert.match(page, /REFERENCE_RECORDS_RECORDED_UNVERIFIED/);
 assert.match(page, /groundTruthEvidenceStatus: 'OPERATOR_RECORDED_NOT_INDEPENDENTLY_VERIFIED'/);
 
