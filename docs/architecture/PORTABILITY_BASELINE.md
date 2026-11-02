@@ -45,6 +45,10 @@ Code-search queries for several Base44 symbols returned no indexed matches. This
 - Every derived record identifies its inputs, algorithm/model version, transformations, uncertainty, and exclusions.
 - Exports include schema version, records, referenced media, audit events, and a digest manifest.
 
+## Incident replay and 3D reconstruction
+
+The WIS incident replay and 3D reconstruction requirements are specified in [WIS Incident Replay and 3D Reconstruction](WIS_INCIDENT_REPLAY_AND_3D_RECONSTRUCTION_2026-11-02.md). This defines as-known-then versus best-evidence-now replay, immutable evidence lineage, authorized source adapters, time synchronization, 3D provenance/uncertainty, fire-analysis safeguards, and acceptance tests. It is a design specification; implementation and field validation remain outstanding.
+
 ## Migration work order
 
 ### P0 — Complete the dependency and data inventory
