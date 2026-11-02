@@ -275,15 +275,13 @@ export default function PhysicalValidation() {
       check.independentGroundTruthRecordId = referenceResult.record.recordId;
       check.independentGroundTruthEligibility = referenceResult.record.eligibilityState;
       check.independentGroundTruthErrors = referenceResult.errors;
-      setIndependentGroundTruthRecords(previous => {
-        const next = [...previous, referenceResult.record];
-        try {
-          localStorage.setItem('waveradar:independent-ground-truth:v1', JSON.stringify(next));
-        } catch (error) {
-          console.warn('[WaveRadar] independent reference local save failed; export this session before leaving', error);
-        }
-        return next;
-      });
+      const nextReferenceRecords = [...independentGroundTruthRecords, referenceResult.record];
+      setIndependentGroundTruthRecords(nextReferenceRecords);
+      try {
+        localStorage.setItem('waveradar:independent-ground-truth:v1', JSON.stringify(nextReferenceRecords));
+      } catch (error) {
+        console.warn('[WaveRadar] independent reference local save failed; export this session before leaving', error);
+      }
     }
     setKnownPointChecks(previous => {
       const next = [...previous, check].slice(-100);
@@ -602,7 +600,7 @@ export default function PhysicalValidation() {
           </div>
           <div className="rounded border border-white/10 p-3 space-y-2">
             <b className="text-[11px] text-amber-100">INDEPENDENT REFERENCE EVIDENCE (OPTIONAL · NEVER AUTO-VERIFIED)</b>
-            <p className="text-[10px] text-slate-400">If you provide any fields below, WaveRadar preserves a separate reference record. A complete record is only eligible for independent review; this app cannot verify the witness, calibration certificate, artifact, or measurement truth. Use pseudonymous IDs, not personal contact details.</p>
+            <p className="text-[10px] text-slate-400">When you click CALCULATE & RECORD CHECK, any reference fields you provide are preserved as a separate record. A complete record is only eligible for independent review; this app cannot verify the witness, calibration certificate, artifact, or measurement truth. Use pseudonymous IDs, not personal contact details.</p>
             <div className="grid sm:grid-cols-2 gap-2">
               <label className="text-[10px] text-slate-300">Reference method
                 <input value={referenceMethod} onChange={e => setReferenceMethod(e.target.value)} placeholder="e.g. laser meter + survey compass" className="block w-full mt-1 rounded border border-white/15 bg-slate-950 px-3 py-2 text-xs text-white" />
