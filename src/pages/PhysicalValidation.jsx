@@ -11,6 +11,11 @@ import {
 } from '@/lib/nativeSensorBaseline';
 import { buildIndependentGroundTruthRecord } from '@/lib/independentGroundTruth';
 import {
+  INDEPENDENT_GROUND_TRUTH_LOG_KEY,
+  parseIndependentGroundTruthLog,
+  isIndependentGroundTruthLogWritable,
+} from '@/lib/independentGroundTruthLog';
+import {
   enqueuePhysicalValidationRecord,
   getPhysicalValidationQueueStatus,
   readPhysicalValidationQueue,
@@ -54,12 +59,27 @@ export default function PhysicalValidation() {
   const [independentWitnessId, setIndependentWitnessId] = useState('');
   const [referenceMeasuredAt, setReferenceMeasuredAt] = useState('');
   const [referenceArtifactRef, setReferenceArtifactRef] = useState('');
-  const [independentGroundTruthRecords, setIndependentGroundTruthRecords] = useState(() => {
+  const [referenceLogStorage, setReferenceLogStorage] = useState(() => {
     try {
-      const saved = JSON.parse(globalThis.localStorage?.getItem('waveradar:independent-ground-truth:v1') || '[]');
-      return Array.isArray(saved) ? saved.filter(item => item && item.schema === 'waveradar-independent-ground-truth-v1') : [];
-    } catch { return []; }
+      if (!globalThis.localStorage) {
+        return { state: 'UNAVAILABLE', records: [], rawValue: null, recoveryPayload: null };
+      }
+      return parseIndependentGroundTruthLog(
+        globalThis.localStorage.getItem(INDEPENDENT_GROUND_TRUTH_LOG_KEY)
+      );
+    } catch {
+      return { state: 'READ_FAILED', records: [], rawValue: null, recoveryPayload: null };
+    }
   });
+  const [independentGroundTruthRecords, setIndependentGroundTruthRecords] = useState(
+    () => referenceLogStorage.records
+  );
+  const [referenceLogWriteState, setReferenceLogWriteState] = useState(
+    () => isIndependentGroundTruthLogWritable(referenceLogStorage.state) ? 'READY' : 'BLOCKED'
+  );
+  const independentReferenceRecordCount = independentGroundTruthRecords.filter(record =>
+    record && record.schema === 'waveradar-independent-ground-truth-v1'
+  ).length;
   const latestSensors = useRef(sensors);
   latestSensors.current = sensors;
   const [cameraState, setCameraState] = useState('NOT CHECKED');
@@ -277,10 +297,36 @@ export default function PhysicalValidation() {
       check.independentGroundTruthErrors = referenceResult.errors;
       const nextReferenceRecords = [...independentGroundTruthRecords, referenceResult.record];
       setIndependentGroundTruthRecords(nextReferenceRecords);
-      try {
-        localStorage.setItem('waveradar:independent-ground-truth:v1', JSON.stringify(nextReferenceRecords));
-      } catch (error) {
-        console.warn('[WaveRadar] independent reference local save failed; export this session before leaving', error);
+      if (isIndependentGroundTruthLogWritable(referenceLogStorage.state)) {
+        try {
+          const currentRaw = globalThis.localStorage?.getItem(INDEPENDENT_GROUND_TRUTH_LOG_KEY) ?? null;
+          if (currentRaw !== referenceLogStorage.rawValue) {
+            // Another tab/session changed the log after it was read. Preserve both
+            // versions in the export and do not overwrite the newer stored value.
+            setReferenceLogStorage({
+              ...referenceLogStorage,
+              state: 'CONFLICT',
+              recoveryPayload: currentRaw,
+            });
+            setReferenceLogWriteState('CONFLICT · ORIGINAL STORAGE PRESERVED');
+          } else {
+            const serialized = JSON.stringify(nextReferenceRecords);
+            globalThis.localStorage.setItem(INDEPENDENT_GROUND_TRUTH_LOG_KEY, serialized);
+            setReferenceLogStorage({
+              state: 'READABLE',
+              records: nextReferenceRecords,
+              rawValue: serialized,
+              recoveryPayload: null,
+            });
+            setReferenceLogWriteState('SAVED');
+          }
+        } catch (error) {
+          setReferenceLogWriteState('WRITE_FAILED · EXPORT BEFORE LEAVING');
+          console.warn('[WaveRadar] independent reference local save failed; export this session before leaving', error);
+        }
+      } else {
+        // Never replace an unreadable, unavailable, or conflicting evidence log.
+        setReferenceLogWriteState('BLOCKED · EXPORT RECOVERY PAYLOAD');
       }
     }
     setKnownPointChecks(previous => {
@@ -338,10 +384,14 @@ export default function PhysicalValidation() {
             groundTruthMarkers: marks.length,
             knownPointChecks,
             groundTruthEvidenceStatus: 'OPERATOR_RECORDED_NOT_INDEPENDENTLY_VERIFIED',
-            independentReferenceEvidence: independentGroundTruthRecords.length > 0
+            independentReferenceEvidence: independentReferenceRecordCount > 0
               ? 'REFERENCE_RECORDS_RECORDED_UNVERIFIED'
               : 'NOT_ATTACHED',
+            independentReferenceRecordCount,
             independentReferenceRecords: independentGroundTruthRecords,
+            independentReferenceLogState: referenceLogStorage.state,
+            independentReferenceLogWriteState: referenceLogWriteState,
+            independentReferenceLogRecoveryRequired: !isIndependentGroundTruthLogWritable(referenceLogStorage.state),
             independentReferenceCustody: 'LOCAL_STORAGE_NOT_TAMPER_EVIDENT',
             nativeSensorBaseline: buildBaselineSummary(),
             evidencePolicy: 'Per-field evidenceByField classifications are authoritative; native capability, registration, sample arrival, permission, timestamps, and spatial-pose status are separate.',
@@ -476,7 +526,7 @@ export default function PhysicalValidation() {
 
   const exportData = () => {
     const payload = {
-      schema: 'cmvisual-physical-validation-v4',
+      schema: 'cmvisual-physical-validation-v5',
       deviceId,
       sessionId: sessionIdRef.current,
       nativeBridgeState,
@@ -495,9 +545,15 @@ export default function PhysicalValidation() {
       groundTruthMarkers: marks,
       knownPointChecks,
       independentReferenceRecords: independentGroundTruthRecords,
-      independentReferenceEvidence: independentGroundTruthRecords.length > 0
+      independentReferenceEvidence: independentReferenceRecordCount > 0
         ? 'REFERENCE_RECORDS_RECORDED_UNVERIFIED'
         : 'NOT_ATTACHED',
+      independentReferenceRecordCount,
+      independentReferenceLogState: referenceLogStorage.state,
+      independentReferenceLogWriteState: referenceLogWriteState,
+      independentReferenceLogOriginalRawSnapshot: referenceLogStorage.rawValue,
+      independentReferenceLogRecoveryPayload: referenceLogStorage.recoveryPayload,
+      independentReferenceLogPolicy: 'All parsed entries are preserved. Unreadable or concurrently changed storage is exported for recovery and never overwritten by this client.',
       independentReferenceCustody: 'LOCAL_STORAGE_NOT_TAMPER_EVIDENT',
       groundTruthEvidenceStatus: 'OPERATOR_RECORDED_NOT_INDEPENDENTLY_VERIFIED',
     };
@@ -641,8 +697,16 @@ export default function PhysicalValidation() {
                 <input value={referenceArtifactRef} onChange={e => setReferenceArtifactRef(e.target.value)} placeholder="Photo / raw log / measurement record ID" className="block w-full mt-1 rounded border border-white/15 bg-slate-950 px-3 py-2 text-xs text-white" />
               </label>
             </div>
-            <div className="text-[10px] text-slate-500">{independentGroundTruthRecords.length} independent-reference record(s) in this device's local export log. Local storage is not tamper-evident; export and preserve the original evidence package.</div>
-            {independentGroundTruthRecords.slice(-3).reverse().map(record => <div key={record.recordId} className="rounded border border-white/10 p-2 text-[10px]">
+            <div className="text-[10px] text-slate-500">
+              {independentReferenceRecordCount} recognized reference record(s) · {independentGroundTruthRecords.length} total preserved log entry/entries · LOG {referenceLogStorage.state} · WRITE {referenceLogWriteState}
+              Local storage is not tamper-evident; export and preserve the original evidence package.
+            </div>
+            {!isIndependentGroundTruthLogWritable(referenceLogStorage.state) && <div className="rounded border border-amber-400/30 p-2 text-[10px] text-amber-100">
+              The reference log is not safe to overwrite. Its original or conflicting raw content is preserved in the JSON export when readable. Export before leaving this page; new entries remain in this session only.
+            </div>}
+            {independentGroundTruthRecords.filter(record =>
+              record && record.schema === 'waveradar-independent-ground-truth-v1'
+            ).slice(-3).reverse().map(record => <div key={record.recordId} className="rounded border border-white/10 p-2 text-[10px]">
               <div className="font-mono text-amber-200">{record.recordId} · {record.eligibilityState}</div>
               <div className="text-slate-400">{record.referenceName} · {record.completenessState} · {record.verificationState} · {record.reviewState}</div>
             </div>)}
