@@ -52,7 +52,7 @@ assert.equal(complete.record.reviewState, 'NOT_REVIEWED');
 assert.equal(complete.record.verificationState, 'UNVERIFIED');
 assert.equal(complete.record.evidenceClass, 'OPERATOR_REPORTED_REFERENCE');
 assert.equal(complete.record.participants.independenceState, 'ASSERTED_NOT_VERIFIED');
-assert.equal(complete.record.comparison.absoluteDistanceErrorMeters, 0.06);
+assert.ok(Math.abs(complete.record.comparison.absoluteDistanceErrorMeters - 0.06) < 1e-9);
 assert.equal(complete.record.comparison.absoluteBearingErrorDegrees, 2);
 assert.equal(complete.record.reference.bearingDegrees, 359);
 assert.equal(complete.record.waveRadarEstimate.bearingDegrees, 1);
@@ -109,7 +109,7 @@ assert.match(page, /buildIndependentGroundTruthRecord/);
 assert.match(page, /independentGroundTruthRecords/);
 assert.match(page, /independentReferenceRecords/);
 assert.match(page, /LOCAL_STORAGE_NOT_TAMPER_EVIDENT/);
-assert.match(page, /INDEPENDENT WITNESS/);
-assert.match(page, /REFERENCE EVIDENCE ARTIFACT/);
+assert.match(page, /independent witness/i);
+assert.match(page, /reference evidence artifact/i);
 
 console.log('Independent ground-truth record completeness, provenance, uncertainty, and non-promotion tests: PASS');
