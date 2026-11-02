@@ -50,7 +50,14 @@ export function buildIncidentReplay(records, { mode, asOf, eventThrough = asOf }
       });
       continue;
     }
-    included.push({
+    included.push(item);
+  }
+
+  return {
+    mode,
+    asOf: new Date(asOfMs).toISOString(),
+    eventThrough: new Date(eventThroughMs).toISOString(),
+    records: sortTimeline(included).map((item) => ({
       ...item.record,
       replay: {
         evidenceId: item.id,
@@ -59,14 +66,7 @@ export function buildIncidentReplay(records, { mode, asOf, eventThrough = asOf }
         arrivedAfterAsKnownCutoff: item.receivedAt > asOfMs,
         hindsightOnly: mode === 'BEST_EVIDENCE_NOW' && item.receivedAt > asOfMs,
       },
-    });
-  }
-
-  return {
-    mode,
-    asOf: new Date(asOfMs).toISOString(),
-    eventThrough: new Date(eventThroughMs).toISOString(),
-    records: sortTimeline(included),
+    })),
     excluded,
     policyVersion: '1.0.0',
   };
