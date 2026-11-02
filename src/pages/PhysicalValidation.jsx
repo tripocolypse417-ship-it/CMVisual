@@ -391,7 +391,7 @@ export default function PhysicalValidation() {
             independentReferenceRecords: independentGroundTruthRecords,
             independentReferenceLogState: referenceLogStorage.state,
             independentReferenceLogWriteState: referenceLogWriteState,
-            independentReferenceLogRecoveryRequired: !isIndependentGroundTruthLogWritable(referenceLogStorage.state),
+            independentReferenceLogRecoveryRequired: !isIndependentGroundTruthLogWritable(referenceLogStorage.state) || referenceLogWriteState.startsWith('WRITE_FAILED'),
             independentReferenceCustody: 'LOCAL_STORAGE_NOT_TAMPER_EVIDENT',
             nativeSensorBaseline: buildBaselineSummary(),
             evidencePolicy: 'Per-field evidenceByField classifications are authoritative; native capability, registration, sample arrival, permission, timestamps, and spatial-pose status are separate.',
@@ -701,7 +701,7 @@ export default function PhysicalValidation() {
               {independentReferenceRecordCount} recognized reference record(s) · {independentGroundTruthRecords.length} total preserved log entry/entries · LOG {referenceLogStorage.state} · WRITE {referenceLogWriteState}
               Local storage is not tamper-evident; export and preserve the original evidence package.
             </div>
-            {!isIndependentGroundTruthLogWritable(referenceLogStorage.state) && <div className="rounded border border-amber-400/30 p-2 text-[10px] text-amber-100">
+            {(!isIndependentGroundTruthLogWritable(referenceLogStorage.state) || referenceLogWriteState.startsWith('WRITE_FAILED')) && <div className="rounded border border-amber-400/30 p-2 text-[10px] text-amber-100">
               The reference log is not safe to overwrite. Its original or conflicting raw content is preserved in the JSON export when readable. Export before leaving this page; new entries remain in this session only.
             </div>}
             {independentGroundTruthRecords.filter(record =>
