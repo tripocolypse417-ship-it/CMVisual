@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
+import { parseVoiceNavigationCommand } from '../lib/voiceNavigationCommands';
 import {
   Camera, Wifi, Radio, Activity, MapPin, Navigation, Crosshair,
   UserRound, Mic, Gauge, Sun, Compass, Smartphone, Eye, Battery,
@@ -141,25 +142,18 @@ export default function DaredevilVisionHUD({
     recognition.onresult = (event) => {
       const transcript = event.results?.[0]?.[0]?.transcript?.trim() || '';
       const normalized = transcript.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
-      const commands = [
-        [/^(start|begin|resume) navigation$/, 'START_NAVIGATION'],
-        [/^(stop|cancel|end) navigation$/, 'STOP_NAVIGATION'],
-        [/^(repeat|say) (the )?(directions|instruction|instructions)$/, 'REPEAT_DIRECTIONS'],
-        [/^(next turn|next direction|continue route)$/, 'NEXT_TURN'],
-        [/^(previous turn|back one turn)$/, 'PREVIOUS_TURN'],
-        [/^(where am i|read my location|current location)$/, 'READ_LOCATION'],
-        [/^(read|list|announce) (the )?hazards$/, 'READ_HAZARDS'],
-        [/^(show|display) (the )?route$/, 'SHOW_ROUTE'],
-        [/^(hide|clear) (the )?route$/, 'HIDE_ROUTE'],
-        [/^(help|what can i say)$/, 'VOICE_HELP'],
-      ];
+      const intent = parseVoiceNavigationCommand(transcript);
       const match = commands.find(([pattern]) => pattern.test(normalized));
       if (!match) {
         setVoiceState('READY');
         setVoiceMessage(transcript ? `NOT RECOGNIZED · ${transcript}` : 'NO SPEECH DETECTED');
         return;
       }
-      const intent = match[1];
+      if (!intent) {
+        setVoiceState('READY');
+        setVoiceMessage(transcript ? `NOT RECOGNIZED · ${transcript}` : 'NO SPEECH DETECTED');
+        return;
+      }
       setVoiceState('RECEIVED');
       setVoiceMessage(`COMMAND · ${intent.replaceAll('_', ' ')}`);
       if (typeof onVoiceNavigationCommand === 'function') onVoiceNavigationCommand({ intent, transcript, mode });
