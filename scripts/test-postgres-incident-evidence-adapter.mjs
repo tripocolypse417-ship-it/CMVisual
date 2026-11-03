@@ -25,7 +25,7 @@ const client = {
     if (sql.includes('SELECT envelope')) {
       if (sql.includes('observation_id=$3')) {
         const row = rows.get(values[1] + ':' + values[2]);
-        return { rows: row ? [row] : [] };
+        return { rows: row ? [{ ...row, same_payload: JSON.stringify(row.envelope) === JSON.stringify(JSON.parse(values[3])) }] : [] };
       }
       return { rows: [...rows.entries()].filter(([key]) => key.startsWith(values[1] + ':')).map(([, row]) => row) };
     }
