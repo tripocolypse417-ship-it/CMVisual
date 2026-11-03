@@ -13,13 +13,13 @@ export default function IncidentReplayControls({ session, viewLabel = 'COMMAND' 
   const subscribe = session?.subscribe ?? emptySubscribe;
   const getSnapshot = session?.getSnapshot ?? getEmptySnapshot;
   const snapshot = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-  if (!session) return null;
-  const events = session.eventsAtPosition();
+  const events = session ? session.eventsAtPosition() : [];
   useEffect(() => {
     if (!session || !snapshot.playing) return undefined;
     const timer = setInterval(() => session.advance(100), 100);
     return () => clearInterval(timer);
   }, [session, snapshot.playing, snapshot.speed]);
+  if (!session) return null;
   const duration = Math.max(0, snapshot.endMs - snapshot.startMs);
   const offset = Math.max(0, snapshot.positionMs - snapshot.startMs);
   const speeds = [0.25, 0.5, 1, 2, 4, 8];
