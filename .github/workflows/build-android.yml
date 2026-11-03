@@ -61,6 +61,9 @@ jobs:
       - name: Test PostgreSQL evidence adapter contract
         run: npm run test:postgres-incident-evidence-adapter
 
+      - name: Test helmet voice navigation commands
+        run: npm run test:voice-navigation-commands
+
       - name: Build web application
         run: npm run build
 
