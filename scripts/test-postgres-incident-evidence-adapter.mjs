@@ -16,7 +16,7 @@ const calls = [];
 const client = {
   async query(sql, values = []) {
     calls.push({ sql, values });
-    if (sql.startsWith('INSERT INTO')) {
+    if (sql.trimStart().startsWith('INSERT INTO')) {
       const key = values[1] + ':' + values[2];
       if (rows.has(key)) return { rows: [] };
       rows.set(key, { envelope: JSON.parse(values[9]) });
