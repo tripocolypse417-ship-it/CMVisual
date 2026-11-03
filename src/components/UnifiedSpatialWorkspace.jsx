@@ -61,6 +61,7 @@ export default function UnifiedSpatialWorkspace({
   cellular,
   incidentReplaySession = null,
   replayViewLabel = 'COMMAND',
+  onVoiceNavigationCommand,
 }) {
   const [layers, setLayers] = useState({ camera: true, spatial: true, map: true, floorplan: true, tracks: true, coverage: false });
   // PDF visual baseline: the scene is unobstructed at launch; detail rails open on demand.
@@ -181,6 +182,7 @@ export default function UnifiedSpatialWorkspace({
         sensorReliability={sensorReliability}
         wallOpacity={wallOpacity}
         workspaceMode={workspaceMode}
+        onVoiceNavigationCommand={onVoiceNavigationCommand}
       />
       {/* PRIMARY LAYER — live camera */}
       {layers.camera && <div className="absolute inset-0 z-0">
