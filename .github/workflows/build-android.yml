@@ -49,6 +49,21 @@ jobs:
       - name: Test native sensor registration lifecycle
         run: npm run test:native-sensor-lifecycle
 
+      - name: Test incident replay policy
+        run: npm run test:incident-replay-policy
+
+      - name: Test evidence repository boundary
+        run: npm run test:incident-evidence-repository
+
+      - name: Test synchronized replay session
+        run: npm run test:incident-replay-session
+
+      - name: Test PostgreSQL evidence adapter contract
+        run: npm run test:postgres-incident-evidence-adapter
+
+      - name: Test helmet voice navigation commands
+        run: npm run test:voice-navigation-commands
+
       - name: Build web application
         run: npm run build
 

@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
+import { parseVoiceNavigationCommand } from '../lib/voiceNavigationCommands';
 import {
   Camera, Wifi, Radio, Activity, MapPin, Navigation, Crosshair,
   UserRound, Mic, Gauge, Sun, Compass, Smartphone, Eye, Battery,
@@ -95,6 +96,7 @@ export default function DaredevilVisionHUD({
   sensorReliability,
   wallOpacity = 35,
   workspaceMode = 'live',
+  onVoiceNavigationCommand,
 }) {
   const target = selectedDetection || null;
   const isLocked = lockedTrackId != null && target && String(lockedTrackId) === String(target.trackId ?? target.id);
@@ -113,6 +115,46 @@ export default function DaredevilVisionHUD({
   const movement = target?.moving == null ? 'UNKNOWN' : target.moving ? 'MOVING' : 'STATIONARY';
   const sourceLabel = cameraActive ? 'CAMERA / VISUAL' : sensorConnected ? 'SENSOR BRIDGE' : 'DEVICE SENSORS';
   const mode = workspaceMode === 'review' ? 'REVIEW' : 'LIVE';
+  const [voiceState, setVoiceState] = useState('READY');
+  const [voiceMessage, setVoiceMessage] = useState('TAP TO SPEAK');
+  const recognitionRef = useRef(null);
+  const startVoiceNavigation = () => {
+    const SpeechRecognition = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
+    if (!SpeechRecognition) {
+      setVoiceState('UNAVAILABLE');
+      setVoiceMessage('VOICE INPUT NOT SUPPORTED ON THIS DEVICE');
+      return;
+    }
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+      setVoiceState('READY');
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onstart = () => { setVoiceState('LISTENING'); setVoiceMessage('LISTENING · SPEAK A COMMAND'); };
+    recognition.onerror = (event) => { setVoiceState('ERROR'); setVoiceMessage(event.error === 'not-allowed' ? 'MICROPHONE PERMISSION REQUIRED' : `VOICE ERROR · ${event.error}`); recognitionRef.current = null; };
+    recognition.onend = () => { recognitionRef.current = null; setVoiceState((current) => current === 'LISTENING' ? 'READY' : current); };
+    recognition.onresult = (event) => {
+      const transcript = event.results?.[0]?.[0]?.transcript?.trim() || '';
+      const intent = parseVoiceNavigationCommand(transcript);
+      if (!intent) {
+        setVoiceState('READY');
+        setVoiceMessage(transcript ? `NOT RECOGNIZED · ${transcript}` : 'NO SPEECH DETECTED');
+        return;
+      }
+      setVoiceState('RECEIVED');
+      setVoiceMessage(`COMMAND · ${intent.replaceAll('_', ' ')}`);
+      if (typeof onVoiceNavigationCommand === 'function') onVoiceNavigationCommand({ intent, transcript, mode });
+      else setVoiceMessage(`RECOGNIZED · ${intent.replaceAll('_', ' ')} · NAV CONTROLLER NOT CONNECTED`);
+    };
+    recognitionRef.current = recognition;
+    try { recognition.start(); } catch { recognitionRef.current = null; setVoiceState('ERROR'); setVoiceMessage('VOICE INPUT COULD NOT START'); }
+  };
 
   const movementTrail = useMemo(() => {
     const t = target?.derivedTrack?.trail;
@@ -205,6 +247,13 @@ export default function DaredevilVisionHUD({
           <small>{target ? `${evidence} · ${distance == null ? 'RANGE —' : distance.toFixed(1) + ' m EST.'}` : 'NO VALID LOCK'}</small>
         </div>
         <div className="wv-route-arrow"><Navigation size={22}/><span>{target ? 'ROUTE UNVERIFIED' : 'ORIENTATION ONLY'}</span></div>
+      </div>
+
+      <div className="absolute bottom-24 left-1/2 z-[80] flex -translate-x-1/2 flex-col items-center gap-1 pointer-events-auto">
+        <button type="button" onClick={startVoiceNavigation} aria-label={voiceState === 'LISTENING' ? 'Stop voice command listening' : 'Start voice navigation command'} className={`flex min-h-12 items-center gap-2 rounded-full border px-5 font-mono text-[10px] tracking-wider shadow-xl backdrop-blur ${voiceState === 'LISTENING' ? 'border-amber-300 bg-amber-300/20 text-amber-100' : 'border-cyan-200/40 bg-slate-950/90 text-cyan-100'}`}>
+          <Mic size={18}/>{voiceState === 'LISTENING' ? 'LISTENING · TAP TO STOP' : 'VOICE NAVIGATION'}
+        </button>
+        <span role="status" aria-live="polite" className="max-w-[min(90vw,360px)] rounded bg-slate-950/85 px-2 py-1 text-center font-mono text-[8px] text-white/70">{voiceMessage}</span>
       </div>
 
       <div className="wv-bottom-left">
