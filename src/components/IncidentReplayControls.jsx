@@ -1,4 +1,4 @@
-import React, { useSyncExternalStore } from 'react';
+import React, { useEffect, useSyncExternalStore } from 'react';
 
 const EMPTY_SNAPSHOT = Object.freeze({ mode: 'AS_KNOWN_THEN', speed: 1, startMs: 0, endMs: 0, positionMs: 0, playing: false, revision: 0 });
 const emptySubscribe = () => () => {};
@@ -15,6 +15,11 @@ export default function IncidentReplayControls({ session, viewLabel = 'COMMAND' 
   const snapshot = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   if (!session) return null;
   const events = session.eventsAtPosition();
+  useEffect(() => {
+    if (!session || !snapshot.playing) return undefined;
+    const timer = setInterval(() => session.advance(100), 100);
+    return () => clearInterval(timer);
+  }, [session, snapshot.playing, snapshot.speed]);
   const duration = Math.max(0, snapshot.endMs - snapshot.startMs);
   const offset = Math.max(0, snapshot.positionMs - snapshot.startMs);
   const speeds = [0.25, 0.5, 1, 2, 4, 8];
