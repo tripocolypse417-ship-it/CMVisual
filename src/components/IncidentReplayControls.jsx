@@ -1,13 +1,19 @@
 import React, { useSyncExternalStore } from 'react';
 
+const EMPTY_SNAPSHOT = Object.freeze({ mode: 'AS_KNOWN_THEN', speed: 1, startMs: 0, endMs: 0, positionMs: 0, playing: false, revision: 0 });
+const emptySubscribe = () => () => {};
+const getEmptySnapshot = () => EMPTY_SNAPSHOT;
+
 const formatClock = (milliseconds) => {
   if (!Number.isFinite(milliseconds)) return '--:--:--';
   return new Date(milliseconds).toISOString().slice(11, 19);
 };
 
 export default function IncidentReplayControls({ session, viewLabel = 'COMMAND' }) {
+  const subscribe = session?.subscribe ?? emptySubscribe;
+  const getSnapshot = session?.getSnapshot ?? getEmptySnapshot;
+  const snapshot = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   if (!session) return null;
-  const snapshot = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot);
   const events = session.eventsAtPosition();
   const duration = Math.max(0, snapshot.endMs - snapshot.startMs);
   const offset = Math.max(0, snapshot.positionMs - snapshot.startMs);
