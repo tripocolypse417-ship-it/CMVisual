@@ -38,5 +38,17 @@ jobs:
         run: npm run typecheck
         continue-on-error: true
 
+      - name: Test incident replay policy
+        run: npm run test:incident-replay-policy
+
+      - name: Test evidence repository boundary
+        run: npm run test:incident-evidence-repository
+
+      - name: Test synchronized replay session
+        run: npm run test:incident-replay-session
+
+      - name: Test PostgreSQL evidence adapter contract
+        run: npm run test:postgres-incident-evidence-adapter
+
       - name: Build web application
         run: npm run build
