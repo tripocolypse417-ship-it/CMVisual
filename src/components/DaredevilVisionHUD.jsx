@@ -141,14 +141,7 @@ export default function DaredevilVisionHUD({
     recognition.onend = () => { recognitionRef.current = null; setVoiceState((current) => current === 'LISTENING' ? 'READY' : current); };
     recognition.onresult = (event) => {
       const transcript = event.results?.[0]?.[0]?.transcript?.trim() || '';
-      const normalized = transcript.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
       const intent = parseVoiceNavigationCommand(transcript);
-      const match = commands.find(([pattern]) => pattern.test(normalized));
-      if (!match) {
-        setVoiceState('READY');
-        setVoiceMessage(transcript ? `NOT RECOGNIZED · ${transcript}` : 'NO SPEECH DETECTED');
-        return;
-      }
       if (!intent) {
         setVoiceState('READY');
         setVoiceMessage(transcript ? `NOT RECOGNIZED · ${transcript}` : 'NO SPEECH DETECTED');
