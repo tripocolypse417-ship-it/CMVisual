@@ -6,6 +6,7 @@ import CameraARView from './CameraARView';
 import { Camera, Cuboid, Map, ScanLine, Layers3, Eye, EyeOff, Activity, Crosshair, Settings2 } from 'lucide-react';
 import useTargetLockStyle from '../hooks/useTargetLockStyle';
 import DaredevilVisionHUD from './DaredevilVisionHUD';
+import IncidentReplayControls from './IncidentReplayControls';
 
 /**
  * CMVisual's single-screen spatial workspace.
@@ -58,6 +59,8 @@ export default function UnifiedSpatialWorkspace({
   sensorReliability = null,
   sensorConflicts = null,
   cellular,
+  incidentReplaySession = null,
+  replayViewLabel = 'COMMAND',
 }) {
   const [layers, setLayers] = useState({ camera: true, spatial: true, map: true, floorplan: true, tracks: true, coverage: false });
   // PDF visual baseline: the scene is unobstructed at launch; detail rails open on demand.
@@ -417,6 +420,12 @@ export default function UnifiedSpatialWorkspace({
         <button type="button" onClick={() => setInspectorOpen(true)} className="absolute left-3 top-1/2 -translate-y-1/2 max-md:top-auto max-md:bottom-[185px] max-md:translate-y-0 z-35 min-h-[44px] rounded-xl border border-white/10 bg-black/85 px-3 font-mono text-[8px] tracking-wider text-white/75 backdrop-blur-md pointer-events-auto shadow-xl">
           <Crosshair className="inline w-3 h-3 mr-1" /> INSPECT
         </button>
+      )}
+
+      {incidentReplaySession && (
+        <div className="absolute bottom-3 left-3 right-3 z-50 pointer-events-auto">
+          <IncidentReplayControls session={incidentReplaySession} viewLabel={replayViewLabel} />
+        </div>
       )}
 
       {/* Minimal integrity marker — detail stays out of the operator sightline. */}
