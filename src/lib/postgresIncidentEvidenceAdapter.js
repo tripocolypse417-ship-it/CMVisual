@@ -67,14 +67,14 @@ export function createPostgresIncidentEvidenceAdapter({ pool, tenantId, authoriz
         );
         if (inserted.rows[0]) return fromDbRow(inserted.rows[0]);
         const existing = await client.query(
-          `SELECT envelope FROM waveradar_evidence_records
+          `SELECT envelope, envelope = $4::jsonb AS same_payload
+           FROM waveradar_evidence_records
            WHERE tenant_id=$1 AND incident_id=$2 AND observation_id=$3`,
-          [tenantId, row.incidentId, row.observationId],
+          [tenantId, row.incidentId, row.observationId, JSON.stringify(record)],
         );
         if (!existing.rows[0]) throw new Error('EVIDENCE_INSERT_CONFLICT');
-        const prior = fromDbRow(existing.rows[0]);
-        if (JSON.stringify(prior) !== JSON.stringify(record)) throw new Error('OBSERVATION_ID_COLLISION');
-        return prior;
+        if (existing.rows[0].same_payload !== true) throw new Error('OBSERVATION_ID_COLLISION');
+        return fromDbRow(existing.rows[0]);
       });
     },
 
