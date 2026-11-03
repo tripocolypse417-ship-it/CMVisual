@@ -18,7 +18,8 @@
     "test:incident-replay-policy": "node scripts/test-incident-replay-policy.mjs",
     "test:incident-evidence-repository": "node scripts/test-incident-evidence-repository.mjs",
     "test:incident-replay-session": "node scripts/test-incident-replay-session.mjs",
-    "test:postgres-incident-evidence-adapter": "node scripts/test-postgres-incident-evidence-adapter.mjs"
+    "test:postgres-incident-evidence-adapter": "node scripts/test-postgres-incident-evidence-adapter.mjs",
+    "test:voice-navigation-commands": "node scripts/test-voice-navigation-commands.mjs"
   },
   "dependencies": {
     "@base44/sdk": "^0.8.52",
