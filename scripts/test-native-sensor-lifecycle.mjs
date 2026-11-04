@@ -27,7 +27,8 @@ assert.match(source, /status\.put\("sampleSequence", sensorSequences\.getOrDefau
 
 // Event arrival is independently counted and timestamped; sensor event time
 // retains its elapsed-realtime clock basis.
-assert.match(source, /sensorReceivedElapsedRealtimeNs\.put\(type, SystemClock\.elapsedRealtimeNanos\(\)\)/);
+assert.match(source, /long callbackElapsedRealtimeNs = SystemClock\.elapsedRealtimeNanos\(\)/);
+assert.match(source, /sensorReceivedElapsedRealtimeNs\.put\(type, callbackElapsedRealtimeNs\)/);
 assert.match(source, /sensorReceivedAt\.put\(type, System\.currentTimeMillis\(\)\)/);
 assert.match(source, /sensorSequences\.put\(type, sensorSequences\.getOrDefault\(type, 0L\) \+ 1L\)/);
 assert.match(source, /item\.put\("timestampClock", "WALL_CLOCK_ESTIMATE_FROM_ELAPSED_REALTIME"\)/);
