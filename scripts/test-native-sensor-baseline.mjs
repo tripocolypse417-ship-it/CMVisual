@@ -39,7 +39,8 @@ const snapshot = {
       values: [0.1, 0.2, 9.7],
       timestamp: at,
       timestampClock: 'WALL_CLOCK_ESTIMATE_FROM_ELAPSED_REALTIME',
-      timestampElapsedRealtimeNanos: 1234567890000,
+      timestampElapsedRealtimeNanos: '1000000000000',
+      receivedElapsedRealtimeNanos: '1000000250000',
       receivedAt: at,
       ageMs: 12,
       sampleSequence: 42,
@@ -69,7 +70,10 @@ assert.equal(baseline.sensors.accelerometer.registration.state, 'REGISTERED');
 assert.equal(baseline.sensors.accelerometer.sampleArrival.state, 'ARRIVED');
 assert.equal(baseline.sensors.accelerometer.sampleArrival.evidenceClass, 'MEASURED');
 assert.equal(baseline.sensors.accelerometer.sampleArrival.sampleSequence, 42);
-assert.equal(baseline.sensors.accelerometer.sampleArrival.timestampElapsedRealtimeNanos, '1234567890000');
+assert.equal(baseline.sensors.accelerometer.sampleArrival.timestampElapsedRealtimeNanos, '1000000000000');
+assert.equal(baseline.sensors.accelerometer.sampleArrival.receivedElapsedRealtimeNanos, '1000000250000');
+assert.equal(baseline.sensors.accelerometer.sampleArrival.callbackDeliveryLatencyState, 'AVAILABLE');
+assert.equal(baseline.sensors.accelerometer.sampleArrival.callbackDeliveryLatencyMs, 0.25);
 assert.equal(baseline.sensors.gyroscope.capability.state, 'SUPPORTED');
 assert.equal(baseline.sensors.gyroscope.registration.state, 'REGISTRATION_FAILED');
 assert.equal(baseline.sensors.gyroscope.sampleArrival.state, 'UNKNOWN', 'registration failure does not prove sample non-arrival');
@@ -78,6 +82,42 @@ assert.equal(baseline.sensors.magnetometer.registration.state, 'UNSUPPORTED');
 assert.equal(baseline.sensors.rotationVector.registration.state, 'NOT_REGISTERED');
 assert.equal(baseline.sensors.rotationVector.sampleArrival.state, 'UNKNOWN', 'not registered does not prove no sample history');
 assert.equal(baseline.platform.model, 'Moto G Play 2024');
+
+const largeMonotonicTimestamp = buildNativeSensorBaseline({
+  capabilities: supported,
+  snapshot: {
+    measurements: {
+      accelerometer: {
+        values: [0, 0, 9.8],
+        timestampElapsedRealtimeNanos: '9007199254740993123',
+        receivedElapsedRealtimeNanos: '9007199254740994123',
+      },
+    },
+  },
+  bridgeCallState: 'OK',
+  capturedAt: at,
+  sessionId: 'large-timestamp-session',
+});
+assert.equal(largeMonotonicTimestamp.sensors.accelerometer.sampleArrival.timestampElapsedRealtimeNanos, '9007199254740993123', 'string nanosecond timestamps preserve 64-bit precision');
+assert.equal(largeMonotonicTimestamp.sensors.accelerometer.sampleArrival.callbackDeliveryLatencyMs, 0.001);
+
+const invalidTiming = buildNativeSensorBaseline({
+  capabilities: supported,
+  snapshot: {
+    measurements: {
+      accelerometer: {
+        values: [0, 0, 9.8],
+        timestampElapsedRealtimeNanos: '2000',
+        receivedElapsedRealtimeNanos: '1000',
+      },
+    },
+  },
+  bridgeCallState: 'OK',
+  capturedAt: at,
+  sessionId: 'invalid-timestamp-order',
+});
+assert.equal(invalidTiming.sensors.accelerometer.sampleArrival.callbackDeliveryLatencyState, 'INVALID_ORDER');
+assert.equal(invalidTiming.sensors.accelerometer.sampleArrival.callbackDeliveryLatencyMs, null);
 
 const noBridge = buildNativeSensorBaseline({
   capabilities: null,
@@ -116,6 +156,8 @@ const sample2 = { nativeSensorBaseline: buildNativeSensorBaseline({
       accelerometer: {
         values: [0.2, 0.3, 9.6],
         timestamp: '2026-10-30T20:00:00.250Z',
+        timestampElapsedRealtimeNanos: '1000250000000',
+        receivedElapsedRealtimeNanos: '1000250500000',
         receivedAt: '2026-10-30T20:00:00.250Z',
         ageMs: 4,
         sampleSequence: 58,
@@ -126,6 +168,7 @@ const sample2 = { nativeSensorBaseline: buildNativeSensorBaseline({
   },
   bridgeCallState: 'OK',
   capturedAt: '2026-10-30T20:00:00.250Z',
+  sessionId: 'baseline-test-session',
   sampleIndex: 1,
 }) };
 const failedBridgeSample = { nativeSensorBaseline: noBridge };
@@ -148,9 +191,70 @@ assert.equal(summary.sensors.accelerometer.lastEventReceivedAt, '2026-10-30T20:0
 assert.equal(summary.sensors.accelerometer.firstSequence, 42);
 assert.equal(summary.sensors.accelerometer.lastSequence, 58);
 assert.equal(summary.sensors.accelerometer.observedSequenceSpan, 16);
+assert.equal(summary.sensors.accelerometer.uniqueSequenceCount, 2);
+assert.equal(summary.sensors.accelerometer.sequenceComparisonCount, 1);
+assert.equal(summary.sensors.accelerometer.sequenceRegressionCount, 0);
+assert.equal(summary.sensors.accelerometer.interveningNativeEventsNotIndividuallyCapturedByPolling, 15, 'polling snapshots do not individually retain intervening native callbacks');
+assert.equal(summary.sensors.accelerometer.sequenceMonotonicityState, 'MONOTONIC_IN_OBSERVED_SNAPSHOTS');
+assert.equal(summary.sensors.accelerometer.eventTimestampComparisonCount, 1);
+assert.equal(summary.sensors.accelerometer.eventTimestampRegressionCount, 0);
+assert.equal(summary.sensors.accelerometer.observedEventTimestampDeltaMs.medianMs, 250);
+assert.equal(summary.sensors.accelerometer.callbackDeliveryLatencyMs.medianMs, 0.375);
+assert.equal(summary.sensors.accelerometer.pollingCaptureIntervalMs.medianMs, 250);
+assert.equal(summary.sensors.accelerometer.timestampBasisCounts.WALL_CLOCK_ESTIMATE_FROM_ELAPSED_REALTIME, 2);
 assert.equal(summary.sensors.gyroscope.capturedSampleCount, 0);
 assert.equal(summary.sensors.gyroscope.registrationState, 'REGISTRATION_FAILED');
 assert.equal(summary.spatialPose.state, 'NOT_INSTRUMENTED');
-assert.match(summary.evidenceLimit, /polling records/);
+assert.match(summary.evidenceLimit, /polling snapshots/);
+assert.match(summary.evidenceLimit, /not proven dropped callbacks/);
+
+const repeatedSnapshot = { nativeSensorBaseline: buildNativeSensorBaseline({
+  capabilities: supported,
+  snapshot: {
+    measurements: {
+      accelerometer: {
+        values: [0.2, 0.3, 9.6],
+        timestampElapsedRealtimeNanos: '1000250000000',
+        receivedElapsedRealtimeNanos: '1000250500000',
+        receivedAt: '2026-10-30T20:00:00.500Z',
+        ageMs: 254,
+        sampleSequence: 58,
+      },
+    },
+  },
+  bridgeCallState: 'OK',
+  capturedAt: '2026-10-30T20:00:00.500Z',
+  sessionId: 'baseline-test-session',
+  sampleIndex: 2,
+}) };
+const regressedSnapshot = { nativeSensorBaseline: buildNativeSensorBaseline({
+  capabilities: supported,
+  snapshot: {
+    measurements: {
+      accelerometer: {
+        values: [0.2, 0.3, 9.6],
+        timestampElapsedRealtimeNanos: '1000249000000',
+        receivedElapsedRealtimeNanos: '1000249500000',
+        receivedAt: '2026-10-30T20:00:00.750Z',
+        ageMs: 1,
+        sampleSequence: 57,
+      },
+    },
+  },
+  bridgeCallState: 'OK',
+  capturedAt: '2026-10-30T20:00:00.750Z',
+  sessionId: 'baseline-test-session',
+  sampleIndex: 3,
+}) };
+const anomalySummary = summarizeNativeSensorBaseline({
+  samples: [sample1, sample2, repeatedSnapshot, regressedSnapshot],
+  generatedAt: at,
+});
+assert.equal(anomalySummary.sensors.accelerometer.repeatedSequenceSnapshotCount, 1);
+assert.equal(anomalySummary.sensors.accelerometer.sequenceRegressionCount, 1);
+assert.equal(anomalySummary.sensors.accelerometer.sequenceMonotonicityState, 'NON_MONOTONIC');
+assert.equal(anomalySummary.sensors.accelerometer.repeatedEventTimestampSnapshotCount, 1);
+assert.equal(anomalySummary.sensors.accelerometer.eventTimestampRegressionCount, 1);
+assert.equal(anomalySummary.sensors.accelerometer.eventTimestampMonotonicityState, 'NON_MONOTONIC');
 
 console.log('Native Android baseline classification, separation, timestamp, and summary tests: PASS');
