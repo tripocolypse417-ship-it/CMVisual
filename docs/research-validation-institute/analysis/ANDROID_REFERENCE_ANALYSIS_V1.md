@@ -83,7 +83,7 @@ The numbers above are format examples only. They are not prescribed clock offset
 ### Required field meaning
 
 - `referenceTimestampNs`: monotonic nanoseconds from the reference logger's documented clock.
-- `androidElapsedRealtimeNanos`: the paired Android `SensorEvent.timestamp` clock value, not wall-clock milliseconds.
+- `androidElapsedRealtimeNanos`: the paired Android `SensorEvent.timestamp` clock value, not wall-clock milliseconds. Align WaveRadar samples using `sampleArrival.timestampElapsedRealtimeNanos`; do not substitute `measurementTimestamp` or its `timestampBasis` label.
 - `uncertaintyNs`: measured uncertainty for that synchronization pair.
 - `referenceToWaveRadarRotationMatrix`: right-handed orthonormal transform from reference IMU axes into the WaveRadar phone sensor frame.
 - `maxInterpolationGapNs`: preregistered maximum bracketing interval. The analyzer does not extrapolate.
@@ -109,7 +109,7 @@ The report records SHA-256 digests of the exact two input files. The two input f
 1. Fit an affine mapping from reference monotonic time to Android elapsed-realtime using at least three strictly increasing synchronization pairs.
 2. Report clock drift, fit residuals, declared synchronization uncertainty, and invalid pair counts. A good mathematical fit does not prove that the physical synchronization procedure was correct.
 3. Require a right-handed orthonormal 3×3 coordinate transform. A valid matrix does not prove that the fixture was physically aligned correctly.
-4. Extract only `ARRIVED`, `MEASURED` samples with a declared `ANDROID_ELAPSED_REALTIME_NANOS` basis, finite 3-axis values, and a valid native sample sequence.
+4. Extract only `ARRIVED`, `MEASURED` samples with a raw `timestampElapsedRealtimeNanos` value from Android `SensorEvent.timestamp`, finite 3-axis values, and a valid native sample sequence. Preserve `timestampBasis` separately: the current baseline may label the display measurement timestamp `WALL_CLOCK_ESTIMATE_FROM_ELAPSED_REALTIME`, while the raw monotonic event timestamp remains in `timestampElapsedRealtimeNanos`.
 5. Deduplicate repeated UI polling records by native `sampleSequence`; exclude conflicting duplicate sequences. Report sequence gaps and non-monotonic event timestamps.
 6. Linearly interpolate reference values only between bracketing reference samples whose gap is at or below the preregistered limit. No extrapolation is performed.
 7. Report per-axis bias, sample standard deviation of error, RMSE, 95th-percentile absolute error, maximum absolute error, and vector RMSE for accelerometer and gyroscope separately.
