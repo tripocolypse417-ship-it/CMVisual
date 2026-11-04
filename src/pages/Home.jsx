@@ -77,6 +77,7 @@ import useOpportunisticFusion from '../hooks/useOpportunisticFusion';
 import useRuntimeCapacityMonitor from '../hooks/useRuntimeCapacityMonitor';
 import useEvidenceBundle from '../hooks/useEvidenceBundle';
 import useSituationPicture from '../hooks/useSituationPicture';
+import WorldInformationFeedsPanel from '../components/WorldInformationFeedsPanel';
 
 const CMVISUAL_SAFE_MODE = false;
 
@@ -746,6 +747,7 @@ export default function Home() {
         </div>
 
         <WorldTimelinePanel timeline={worldTimeline.timeline} cursor={worldTimeline.cursor} setCursor={worldTimeline.setCursor} reset={worldTimeline.reset} color={color} />
+        <WorldInformationFeedsPanel color={color} />
         <FederatedWorldPanel federation={federatedWorld} color={color} />
         <EvaluationReadinessPanel evaluation={evaluation} color={color} runtimeCapacity={runtimeCapacity} />
 
