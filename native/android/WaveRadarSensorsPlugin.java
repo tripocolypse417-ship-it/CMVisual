@@ -24,6 +24,7 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
   private final Map<Integer, float[]> latest = new HashMap<>();
   private final Map<Integer, Long> sensorTimestamps = new HashMap<>();
   private final Map<Integer, Long> sensorReceivedAt = new HashMap<>();
+  private final Map<Integer, Long> sensorReceivedElapsedRealtimeNs = new HashMap<>();
   private final Map<Integer, Long> sensorSequences = new HashMap<>();
   private final Map<Integer, Integer> sensorAccuracies = new HashMap<>();
   private final Map<Integer, String> registrationStates = new HashMap<>();
@@ -106,6 +107,9 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
     int type = event.sensor.getType();
     latest.put(type, event.values.clone());
     sensorTimestamps.put(type, event.timestamp);
+    // Event and callback times share Android's monotonic elapsed-realtime clock.
+    // Keep wall-clock receive time separately for human-readable correlation.
+    sensorReceivedElapsedRealtimeNs.put(type, SystemClock.elapsedRealtimeNanos());
     sensorReceivedAt.put(type, System.currentTimeMillis());
     sensorSequences.put(type, sensorSequences.getOrDefault(type, 0L) + 1L);
     sensorAccuracies.put(type, event.accuracy);
@@ -170,12 +174,15 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
       ? Math.max(0L, (SystemClock.elapsedRealtimeNanos() - sensorElapsedNs) / 1000000L)
       : -1L;
     long receivedAt = sensorReceivedAt.getOrDefault(type, 0L);
+    long receivedElapsedNs = sensorReceivedElapsedRealtimeNs.getOrDefault(type, 0L);
     long sequence = sensorSequences.getOrDefault(type, 0L);
 
     item.put("values", toArray(values));
     item.put("timestamp", ageMs >= 0L ? Math.max(0L, System.currentTimeMillis() - ageMs) : null);
     item.put("timestampClock", "WALL_CLOCK_ESTIMATE_FROM_ELAPSED_REALTIME");
-    item.put("timestampElapsedRealtimeNanos", sensorElapsedNs > 0L ? sensorElapsedNs : null);
+    // String encoding preserves the full signed 64-bit nanosecond value in JavaScript.
+    item.put("timestampElapsedRealtimeNanos", sensorElapsedNs > 0L ? String.valueOf(sensorElapsedNs) : null);
+    item.put("receivedElapsedRealtimeNanos", receivedElapsedNs > 0L ? String.valueOf(receivedElapsedNs) : null);
     item.put("receivedAt", receivedAt > 0L ? receivedAt : null);
     item.put("ageMs", ageMs >= 0L ? ageMs : null);
     item.put("freshness", ageMs < 0L ? "UNKNOWN" : ageMs <= 5000L ? "FRESH" : "STALE");
