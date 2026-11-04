@@ -37,6 +37,9 @@ jobs:
       - name: Verify independent ground-truth evidence contract
         run: npm run test:independent-ground-truth
 
+      - name: Verify independent Android reference comparison analysis
+        run: npm run test:android-reference-analysis
+
       - name: Check JavaScript and JSX lint
         run: npm run lint
 
