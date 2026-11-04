@@ -17,7 +17,7 @@ const waveRadarExport = {
               evidenceClass: 'MEASURED',
               sampleSequence: sequence,
               timestampElapsedRealtimeNanos: String(timestamp),
-              timestampBasis: 'ANDROID_ELAPSED_REALTIME_NANOS',
+              timestampBasis: 'WALL_CLOCK_ESTIMATE_FROM_ELAPSED_REALTIME',
               value: values,
             },
           },
@@ -93,6 +93,7 @@ assert.ok(Math.abs(report.clockSynchronization.slope - 1) < 1e-12);
 assert.equal(report.clockSynchronization.driftPpm, 0);
 assert.equal(report.sensors.accelerometer.matchedSampleCount, 3);
 assert.equal(report.sensors.accelerometer.waveRadar.repeatedPollRecords, 1);
+assert.equal(report.sensors.accelerometer.waveRadar.timestampBasisCounts.WALL_CLOCK_ESTIMATE_FROM_ELAPSED_REALTIME, 4);
 assert.ok(Math.abs(report.sensors.accelerometer.perAxisError.x.bias - 0.1) < 1e-12);
 assert.ok(Math.abs(report.sensors.accelerometer.perAxisError.x.rmse - 0.1) < 1e-12);
 assert.equal(report.sensors.accelerometer.perAxisError.y.bias, 0);
