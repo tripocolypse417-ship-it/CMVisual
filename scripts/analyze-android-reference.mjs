@@ -226,6 +226,7 @@ function extractWaveRadarEvents(samples, sensor) {
   let rawArrivedCount = 0;
   let previousObservedSequence = null;
   let outOfOrderSequenceCount = 0;
+  const timestampBasisCounts = {};
 
   for (let pollIndex = 0; pollIndex < (Array.isArray(samples) ? samples.length : 0); pollIndex += 1) {
     const arrival = samples[pollIndex]?.nativeSensorBaseline?.sensors?.[sensor]?.sampleArrival;
@@ -238,10 +239,9 @@ function extractWaveRadarEvents(samples, sensor) {
       count('NON_MEASURED_EVIDENCE_CLASS');
       continue;
     }
-    if (arrival.timestampBasis !== 'ANDROID_ELAPSED_REALTIME_NANOS') {
-      count('UNDECLARED_OR_NON_ANDROID_ELAPSED_REALTIME_CLOCK_BASIS');
-      continue;
-    }
+    const timestampBasis = typeof arrival.timestampBasis === 'string' && arrival.timestampBasis.trim()
+      ? arrival.timestampBasis : 'NOT_REPORTED';
+    timestampBasisCounts[timestampBasis] = (timestampBasisCounts[timestampBasis] || 0) + 1;
     if (!Number.isSafeInteger(arrival.sampleSequence) || arrival.sampleSequence < 1) {
       count('MISSING_OR_INVALID_SAMPLE_SEQUENCE');
       continue;
@@ -291,6 +291,7 @@ function extractWaveRadarEvents(samples, sensor) {
       outOfOrderSequenceCount,
       missingSequenceCount,
       nonMonotonicEventTimestampCount,
+      timestampBasisCounts,
       excludedByReason: exclusions,
     },
   };
@@ -485,7 +486,7 @@ export function analyzeAndroidReference({ waveRadarExport, referenceArtifact, in
       interpolation: 'LINEAR_BETWEEN_BRACKETING_REFERENCE_SAMPLES_ONLY; NO_EXTRAPOLATION',
       maxInterpolationGapNs: maxInterpolationGapNs.toString(),
       waveRadarRepeatedPollPolicy: 'Deduplicate identical repeated polling records by native sampleSequence; exclude conflicting duplicate sequences.',
-      requiredWaveRadarTimestampBasis: 'ANDROID_ELAPSED_REALTIME_NANOS',
+      alignmentTimestampField: 'timestampElapsedRealtimeNanos (raw Android SensorEvent.timestamp); timestampBasis is retained as measurement-timestamp context, not used as the alignment clock.',
       sequenceGapPolicy: 'Report missing sequence counts; do not synthesize samples.',
       metrics: ['per-axis bias', 'sample standard deviation of error', 'RMSE', '95th percentile absolute error', 'maximum absolute error', 'vector RMSE'],
       automaticPassFail: false,
