@@ -105,11 +105,12 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
   @Override
   public void onSensorChanged(SensorEvent event) {
     int type = event.sensor.getType();
+    long callbackElapsedRealtimeNs = SystemClock.elapsedRealtimeNanos();
     latest.put(type, event.values.clone());
     sensorTimestamps.put(type, event.timestamp);
     // Event and callback times share Android's monotonic elapsed-realtime clock.
     // Keep wall-clock receive time separately for human-readable correlation.
-    sensorReceivedElapsedRealtimeNs.put(type, SystemClock.elapsedRealtimeNanos());
+    sensorReceivedElapsedRealtimeNs.put(type, callbackElapsedRealtimeNs);
     sensorReceivedAt.put(type, System.currentTimeMillis());
     sensorSequences.put(type, sensorSequences.getOrDefault(type, 0L) + 1L);
     sensorAccuracies.put(type, event.accuracy);
