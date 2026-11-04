@@ -156,6 +156,7 @@ const sample2 = { nativeSensorBaseline: buildNativeSensorBaseline({
       accelerometer: {
         values: [0.2, 0.3, 9.6],
         timestamp: '2026-10-30T20:00:00.250Z',
+        timestampClock: 'WALL_CLOCK_ESTIMATE_FROM_ELAPSED_REALTIME',
         timestampElapsedRealtimeNanos: '1000250000000',
         receivedElapsedRealtimeNanos: '1000250500000',
         receivedAt: '2026-10-30T20:00:00.250Z',
