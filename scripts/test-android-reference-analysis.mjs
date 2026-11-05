@@ -4,6 +4,7 @@ import { analyzeAndroidReference, ANALYSIS_SCHEMA } from './analyze-android-refe
 const waveTimes = [2_000_000_000, 3_000_000_000, 4_000_000_000];
 const waveRadarExport = {
   schema: 'cmvisual-physical-validation-v5',
+  qaFixture: true,
   sessionId: 'synthetic-analysis-test',
   samples: waveTimes.flatMap((timestamp, index) => {
     const sequence = index + 1;
@@ -40,6 +41,7 @@ const waveRadarExport = {
 
 const referenceArtifact = {
   schema: 'waveradar.independent-reference-imu.v1',
+  qaFixture: true,
   preregistration: {
     protocolId: 'WR-ANDROID-NATIVE-BASELINE-001',
     protocolVersion: '1',
@@ -86,7 +88,12 @@ const referenceArtifact = {
 const report = analyzeAndroidReference({ waveRadarExport, referenceArtifact });
 assert.equal(report.schema, ANALYSIS_SCHEMA);
 assert.equal(report.analysisDisposition, 'COMPUTED_COMPARISON_PENDING_INDEPENDENT_REVIEW');
-assert.equal(report.accuracyEvidenceStatus, 'CANDIDATE_FOR_INDEPENDENT_REVIEW_NOT_VERIFIED');
+assert.equal(report.qaFixture.detected, true);
+assert.deepEqual(report.qaFixture.reasons, [
+  'WAVERADAR_EXPORT_QA_FIXTURE_FLAG',
+  'REFERENCE_ARTIFACT_QA_FIXTURE_FLAG',
+]);
+assert.equal(report.accuracyEvidenceStatus, 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY');
 assert.equal(report.clockSynchronization.status, 'FIT_COMPUTED_PENDING_REVIEW');
 assert.equal(report.clockSynchronization.declaredMethodComplete, true);
 assert.ok(Math.abs(report.clockSynchronization.slope - 1) < 1e-12);
@@ -155,6 +162,26 @@ for (const sample of shiftedWave.samples) {
 const gapReport = analyzeAndroidReference({ waveRadarExport: shiftedWave, referenceArtifact: noExtrapolation });
 assert.equal(gapReport.sensors.accelerometer.matchedSampleCount, 0);
 assert.ok(gapReport.sensors.accelerometer.unmatchedOrExcludedByReason.REFERENCE_BRACKET_GAP_EXCEEDS_PREREGISTERED_LIMIT > 0);
+
+const outsideSyncRange = structuredClone(waveRadarExport);
+for (const sample of outsideSyncRange.samples) {
+  for (const sensor of ['accelerometer', 'gyroscope']) {
+    const arrival = sample.nativeSensorBaseline?.sensors?.[sensor]?.sampleArrival;
+    if (arrival) arrival.timestampElapsedRealtimeNanos = '6000000000';
+  }
+}
+const syncRangeReport = analyzeAndroidReference({ waveRadarExport: outsideSyncRange, referenceArtifact });
+assert.equal(syncRangeReport.sensors.accelerometer.matchedSampleCount, 0);
+assert.ok(syncRangeReport.sensors.accelerometer.unmatchedOrExcludedByReason.CLOCK_MAPPING_OUTSIDE_SYNC_PAIR_RANGE > 0);
+assert.equal(syncRangeReport.accuracyEvidenceStatus, 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY');
+
+const sampleMarkedQa = structuredClone(waveRadarExport);
+delete sampleMarkedQa.qaFixture;
+sampleMarkedQa.samples[0].qaFixture = true;
+const sampleQaReport = analyzeAndroidReference({ waveRadarExport: sampleMarkedQa, referenceArtifact });
+assert.equal(sampleQaReport.qaFixture.detected, true);
+assert.ok(sampleQaReport.qaFixture.reasons.includes('WAVERADAR_SAMPLE_QA_FIXTURE_FLAG'));
+assert.equal(sampleQaReport.accuracyEvidenceStatus, 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY');
 
 assert.throws(() => analyzeAndroidReference({ waveRadarExport, referenceArtifact: { ...referenceArtifact, analysis: {} } }), /maxInterpolationGapNs/);
 assert.throws(() => analyzeAndroidReference({ waveRadarExport, referenceArtifact: { ...referenceArtifact, schema: 'wrong' } }), /schema/);
