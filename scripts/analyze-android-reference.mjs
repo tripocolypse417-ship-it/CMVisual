@@ -90,6 +90,8 @@ function fitClock(pairs = []) {
     driftPpm: null,
     referenceOriginNs: validPairs[0]?.referenceNs.toString() ?? null,
     androidOriginNs: validPairs[0]?.androidNs.toString() ?? null,
+    referenceEndNs: validPairs[validPairs.length - 1]?.referenceNs.toString() ?? null,
+    androidEndNs: validPairs[validPairs.length - 1]?.androidNs.toString() ?? null,
     interceptFromOriginNs: null,
     rmsResidualNs: null,
     maxAbsoluteResidualNs: null,
@@ -140,6 +142,10 @@ function fitClock(pairs = []) {
 function mapAndroidToReference(androidTimestampNs, clockFit) {
   const referenceOrigin = BigInt(clockFit.referenceOriginNs);
   const androidOrigin = BigInt(clockFit.androidOriginNs);
+  const androidEnd = BigInt(clockFit.androidEndNs);
+  // A fitted clock model is valid only inside the observed synchronization span.
+  // Do not extrapolate timestamps beyond the first/last paired sync observations.
+  if (androidTimestampNs < androidOrigin || androidTimestampNs > androidEnd) return null;
   const intercept = Number(clockFit.interceptFromOriginNs);
   const deltaAndroid = Number(androidTimestampNs - androidOrigin);
   if (!Number.isSafeInteger(deltaAndroid)) return null;
@@ -361,6 +367,19 @@ function calibrationMetadata(instrument = {}, measurementWindow = {}) {
   };
 }
 
+function detectQaFixture(waveRadarExport, referenceArtifact) {
+  const reasons = [];
+  if (waveRadarExport.qaFixture === true) reasons.push('WAVERADAR_EXPORT_QA_FIXTURE_FLAG');
+  if (referenceArtifact.qaFixture === true) reasons.push('REFERENCE_ARTIFACT_QA_FIXTURE_FLAG');
+  if (Array.isArray(waveRadarExport.samples) && waveRadarExport.samples.some(sample =>
+    sample?.qaFixture === true || sample?.evidenceClass === 'QA_FIXTURE'
+  )) reasons.push('WAVERADAR_SAMPLE_QA_FIXTURE_FLAG');
+  if (Array.isArray(referenceArtifact.referenceSamples) && referenceArtifact.referenceSamples.some(sample =>
+    sample?.qaFixture === true || sample?.evidenceClass === 'QA_FIXTURE'
+  )) reasons.push('REFERENCE_SAMPLE_QA_FIXTURE_FLAG');
+  return { detected: reasons.length > 0, reasons };
+}
+
 export function analyzeAndroidReference({ waveRadarExport, referenceArtifact, inputDigests = {} }) {
   if (!isObject(waveRadarExport) || !/^cmvisual-physical-validation-v\d+$/.test(String(waveRadarExport.schema || '')) || !Array.isArray(waveRadarExport.samples)) {
     throw new Error('WaveRadar export must use a cmvisual-physical-validation-vN schema and contain a samples array.');
@@ -378,6 +397,7 @@ export function analyzeAndroidReference({ waveRadarExport, referenceArtifact, in
   const clockFit = fitClock(referenceArtifact.clockSync?.pairs || []);
   const measurementWindow = referenceArtifact.measurementWindow || {};
   const calibration = calibrationMetadata(referenceArtifact.instrument || {}, measurementWindow);
+  const qaFixture = detectQaFixture(waveRadarExport, referenceArtifact);
   const preregistration = referenceArtifact.preregistration || {};
   const clockMethodComplete = typeof referenceArtifact.clockSync?.method === 'string' && referenceArtifact.clockSync.method.trim().length > 0;
   const preregistrationComplete = typeof preregistration.protocolId === 'string' && preregistration.protocolId.trim().length > 0
@@ -403,7 +423,11 @@ export function analyzeAndroidReference({ waveRadarExport, referenceArtifact, in
       for (const event of wave.events) {
         const referenceTime = mapAndroidToReference(event.timestampNs, clockFit);
         if (referenceTime == null) {
-          count('CLOCK_MAPPING_PRECISION_UNAVAILABLE');
+          const androidStart = BigInt(clockFit.androidOriginNs);
+          const androidEnd = BigInt(clockFit.androidEndNs);
+          count(event.timestampNs < androidStart || event.timestampNs > androidEnd
+            ? 'CLOCK_MAPPING_OUTSIDE_SYNC_PAIR_RANGE'
+            : 'CLOCK_MAPPING_PRECISION_UNAVAILABLE');
           continue;
         }
         const matched = interpolateReference(reference.rows, referenceTime, maxInterpolationGapNs);
@@ -443,7 +467,7 @@ export function analyzeAndroidReference({ waveRadarExport, referenceArtifact, in
     sensors[channel.sensor].waveRadar.outOfOrderSequenceCount === 0 &&
     sensors[channel.sensor].reference.conflictingTimestampCount === 0
   );
-  const accuracyEvidenceStatus = analysisCanCompare && allChannelsHaveMatches && preregistrationComplete && clockMethodComplete &&
+  const accuracyEvidenceStatus = !qaFixture.detected && analysisCanCompare && allChannelsHaveMatches && preregistrationComplete && clockMethodComplete &&
     clockFit.declaredUncertaintyComplete && clockFit.invalidPairCount === 0 &&
     calibration.state === 'METADATA_COMPLETE_PENDING_CUSTODIAN_VERIFICATION' &&
     allChannelsHaveReferenceUncertainty && sequenceIntegrityAcceptable
@@ -453,6 +477,7 @@ export function analyzeAndroidReference({ waveRadarExport, referenceArtifact, in
   return {
     schema: ANALYSIS_SCHEMA,
     generatedAt: new Date().toISOString(),
+    qaFixture,
     analysisDisposition: analysisCanCompare ? 'COMPUTED_COMPARISON_PENDING_INDEPENDENT_REVIEW' : 'NOT_COMPUTABLE_WITH_CURRENT_SYNC_OR_FRAME_METADATA',
     accuracyEvidenceStatus,
     inputs: {
