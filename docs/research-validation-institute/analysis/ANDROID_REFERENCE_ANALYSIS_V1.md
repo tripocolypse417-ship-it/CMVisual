@@ -108,6 +108,7 @@ The report records SHA-256 digests of the exact two input files. The two input f
 
 1. Fit an affine mapping from reference monotonic time to Android elapsed-realtime using at least three strictly increasing synchronization pairs.
 2. Report clock drift, fit residuals, declared synchronization uncertainty, and invalid pair counts. A good mathematical fit does not prove that the physical synchronization procedure was correct.
+3. **Do not extrapolate the clock mapping.** Android event timestamps outside the first-to-last observed synchronization-pair range are excluded as `CLOCK_MAPPING_OUTSIDE_SYNC_PAIR_RANGE`. Place documented synchronization events so the preregistered acquisition window is bracketed; if it is not, the affected samples remain unmatched.
 3. Require a right-handed orthonormal 3×3 coordinate transform. A valid matrix does not prove that the fixture was physically aligned correctly.
 4. Extract only `ARRIVED`, `MEASURED` samples with a raw `timestampElapsedRealtimeNanos` value from Android `SensorEvent.timestamp`, finite 3-axis values, and a valid native sample sequence. Preserve `timestampBasis` separately: the current baseline may label the display measurement timestamp `WALL_CLOCK_ESTIMATE_FROM_ELAPSED_REALTIME`, while the raw monotonic event timestamp remains in `timestampElapsedRealtimeNanos`.
 5. Deduplicate repeated UI polling records by native `sampleSequence`; exclude conflicting duplicate sequences. Report sequence gaps and non-monotonic event timestamps.
@@ -122,6 +123,10 @@ No automatic pass/fail threshold is embedded. A reviewer must interpret denomina
 - `NOT_COMPUTABLE_WITH_CURRENT_SYNC_OR_FRAME_METADATA`: required clock mapping or coordinate transform was unavailable or invalid.
 - `CANDIDATE_FOR_INDEPENDENT_REVIEW_NOT_VERIFIED`: all required metadata gates were present. The independent custodian and reviewer still must authenticate source artifacts and method.
 - `INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY`: one or more preregistration, calibration, uncertainty, synchronization, sequence-integrity, or matched-sample conditions were not established.
+
+## QA fixture guard
+
+The input envelope may carry `qaFixture: true` at the artifact level or on an individual sample (or `evidenceClass: "QA_FIXTURE"`). When any explicit QA-fixture marker is present, numerical comparisons may still be computed for software testing, but `accuracyEvidenceStatus` is forced to `INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY`. The report lists the marker locations. This is a guardrail, not a cryptographic authenticity check: unmarked synthetic or mislabeled inputs cannot be identified reliably by this analyzer alone.
 
 ## Explicit exclusions
 
