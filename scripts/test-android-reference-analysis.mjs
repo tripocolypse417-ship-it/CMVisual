@@ -134,8 +134,34 @@ assert.equal(report.sensors.accelerometer.waveRadar.captureStateCounts.nativeBri
 assert.equal(report.sensors.accelerometer.waveRadar.captureStateCounts.nativeAndroidSensorRuntimePermission.NOT_REQUIRED, 4);
 assert.equal(report.sensors.accelerometer.waveRadar.captureStateCounts.webMotionPermission.DENIED, 4);
 assert.equal(report.sensors.accelerometer.waveRadar.captureStateCounts.spatialPose.NOT_INSTRUMENTED, 4);
+assert.equal(report.sensors.accelerometer.nativeAndroidSensorPermissionPolicyConfirmed, true);
+assert.equal(report.sensors.accelerometer.browserMotionPermissionStateCounts.DENIED, 4);
+assert.equal(report.sensors.accelerometer.spatialPoseStateCounts.NOT_INSTRUMENTED, 4);
+assert.equal(report.sensors.accelerometer.channelEvidenceStatus, 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY');
 assert.equal(report.sensors.accelerometer.matchedSampleCount, 3, 'Browser motion permission and spatial-pose status must not substitute for or block valid native IMU capture.');
 assert.equal(report.analysisMethod.automaticPassFail, false);
+
+// Software-only synthetic fixture: an unsupported gyroscope must not erase
+// a separately computable accelerometer channel result. The global run stays
+// exploratory because not every requested channel was assessed.
+const unmarkedSyntheticWave = structuredClone(waveRadarExport);
+delete unmarkedSyntheticWave.qaFixture;
+const unmarkedSyntheticReference = structuredClone(referenceArtifact);
+delete unmarkedSyntheticReference.qaFixture;
+for (const sample of unmarkedSyntheticWave.samples) {
+  sample.nativeSensorBaseline.sensors.gyroscope.capability.state = 'UNSUPPORTED';
+  sample.nativeSensorBaseline.sensors.gyroscope.registration.state = 'UNSUPPORTED';
+}
+const channelReport = analyzeAndroidReference({
+  waveRadarExport: unmarkedSyntheticWave,
+  referenceArtifact: unmarkedSyntheticReference,
+});
+assert.equal(channelReport.sensors.accelerometer.channelEvidenceStatus, 'CANDIDATE_FOR_INDEPENDENT_REVIEW_NOT_VERIFIED');
+assert.equal(channelReport.sensors.gyroscope.channelEvidenceStatus, 'NOT_ASSESSED_SENSOR_UNSUPPORTED');
+assert.equal(channelReport.accuracyEvidenceStatus, 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY');
+assert.equal(channelReport.sensors.accelerometer.browserMotionPermissionStateCounts.DENIED, 4);
+assert.equal(channelReport.sensors.accelerometer.spatialPoseStateCounts.NOT_INSTRUMENTED, 4);
+
 assert.equal(report.instrumentCalibration.measurementWindowCoveredByCalibration, true);
 
 const unsupportedNativeSensor = structuredClone(waveRadarExport);
