@@ -118,7 +118,9 @@ The report records SHA-256 digests of the exact two input files. The two input f
 7. Linearly interpolate reference values only between bracketing reference samples whose gap is at or below the preregistered limit. No extrapolation is performed.
 8. Report per-axis bias, sample standard deviation of error, RMSE, 95th-percentile absolute error, maximum absolute error, and vector RMSE for accelerometer and gyroscope separately.
 
-Browser/web motion permission is reported separately from Android SensorManager's native runtime-permission policy; a browser permission denial is not treated as proof that native SensorManager access is denied. Spatial-pose availability is also reported independently and is not inferred from accelerometer/gyroscope readings. Neither browser permission state nor spatial-pose status substitutes for native support or registration.
+Browser/web motion permission is reported separately from Android SensorManager's native runtime-permission policy; a browser permission denial is not treated as proof that native SensorManager access is denied. The analyzer requires the per-capture native Android permission policy to be explicitly `NOT_REQUIRED` for candidate-review eligibility. Spatial-pose availability is also reported independently and is not inferred from accelerometer/gyroscope readings. Neither browser permission state nor spatial-pose status substitutes for native support or registration.
+
+Each sensor channel has its own `channelEvidenceStatus`. A hardware-unsupported channel is reported as `NOT_ASSESSED_SENSOR_UNSUPPORTED`; it is not treated as a failed accuracy result. A supported channel may be a candidate for independent review even when another channel is unsupported, but the overall `accuracyEvidenceStatus` remains exploratory unless every analyzed channel independently meets its gates. A per-channel candidate is still unverified and is not a validation pass.
 
 No automatic pass/fail threshold is embedded. A reviewer must interpret denominators, gaps, uncertainty, clock residuals, alignment, lifecycle exclusions, and protocol deviations against thresholds fixed before confirmatory data collection.
 
