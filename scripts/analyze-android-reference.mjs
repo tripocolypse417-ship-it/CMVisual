@@ -428,12 +428,16 @@ function summarizeDeviceContext(samples = []) {
     }
   }
 
+  const managerStates = Object.entries(nativeSensorManagerStateCounts);
+  const nativeSensorManagerAvailabilityComplete = managerStates.length > 0 &&
+    managerStates.every(([state]) => state === 'AVAILABLE');
   const permissionStates = Object.entries(nativeAndroidSensorRuntimePermissionStateCounts);
   const nativeSensorRuntimePermissionPolicyComplete = permissionStates.length > 0 &&
     permissionStates.every(([state]) => state === 'NOT_REQUIRED' || state === 'GRANTED');
 
   return {
     nativeSensorManagerStateCounts,
+    nativeSensorManagerAvailabilityComplete,
     nativeAndroidSensorRuntimePermissionStateCounts,
     webMotionPermissionStateCounts,
     spatialPoseStateCounts,
@@ -555,6 +559,7 @@ export function analyzeAndroidReference({ waveRadarExport, referenceArtifact, in
       calibration.perChannelStandardUncertaintyPresent[channel.sensor] === true &&
       sequenceIntegrityAcceptable &&
       wave.lifecycleEvidenceComplete &&
+      deviceContext.nativeSensorManagerAvailabilityComplete &&
       deviceContext.nativeSensorRuntimePermissionPolicyComplete;
 
     sensorReport.requiredForAnalysis = channelInRequiredScope;
