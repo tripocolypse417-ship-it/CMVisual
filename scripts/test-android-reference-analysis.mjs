@@ -122,6 +122,7 @@ assert.equal(report.sensors.gyroscope.matchedSampleCount, 3);
 assert.equal(report.sensors.gyroscope.vectorRmse, 0);
 assert.equal(report.analysisMethod.automaticPassFail, false);
 assert.equal(report.instrumentCalibration.measurementWindowCoveredByCalibration, true);
+assert.equal(report.deviceContext.nativeSensorManagerAvailabilityComplete, true);
 assert.equal(report.deviceContext.nativeSensorRuntimePermissionPolicyComplete, true);
 assert.equal(report.deviceContext.nativeSensorManagerStateCounts.AVAILABLE, 4);
 assert.equal(report.deviceContext.nativeAndroidSensorRuntimePermissionStateCounts.NOT_REQUIRED, 4);
