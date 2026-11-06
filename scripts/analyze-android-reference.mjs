@@ -229,18 +229,68 @@ function extractWaveRadarEvents(samples, sensor) {
   const conflicts = new Set();
   const exclusions = {};
   const count = reason => { exclusions[reason] = (exclusions[reason] || 0) + 1; };
+  const captureStateCounts = {
+    nativeSensorManager: {},
+    nativeBridge: {},
+    capability: {},
+    registration: {},
+    nativeAndroidSensorRuntimePermission: {},
+    webMotionPermission: {},
+    spatialPose: {},
+  };
+  const recordState = (group, value) => {
+    const state = typeof value === 'string' && value.trim() ? value : 'UNKNOWN';
+    captureStateCounts[group][state] = (captureStateCounts[group][state] || 0) + 1;
+    return state;
+  };
   let rawArrivedCount = 0;
+  let lifecycleEligiblePollingRecords = 0;
+  let nativeLifecycleStateMismatchCount = 0;
   let previousObservedSequence = null;
   let outOfOrderSequenceCount = 0;
   const timestampBasisCounts = {};
 
   for (let pollIndex = 0; pollIndex < (Array.isArray(samples) ? samples.length : 0); pollIndex += 1) {
-    const arrival = samples[pollIndex]?.nativeSensorBaseline?.sensors?.[sensor]?.sampleArrival;
+    const sample = samples[pollIndex];
+    const baseline = sample?.nativeSensorBaseline;
+    const sensorRecord = baseline?.sensors?.[sensor];
+    const arrival = sensorRecord?.sampleArrival;
+    if (arrival?.state === 'ARRIVED') rawArrivedCount += 1;
+
+    const managerState = recordState('nativeSensorManager', baseline?.nativeSensorManager?.state);
+    const bridgeState = recordState('nativeBridge', baseline?.bridgeCallState ?? sample?.nativeSensorBridgeCallState);
+    const capabilityState = recordState('capability', sensorRecord?.capability?.state);
+    const registrationState = recordState('registration', sensorRecord?.registration?.state);
+    recordState('nativeAndroidSensorRuntimePermission', baseline?.permissions?.nativeAndroidSensorRuntime?.state);
+    recordState('webMotionPermission', baseline?.permissions?.webMotion?.permissionState);
+    recordState('spatialPose', baseline?.spatialPose?.state);
+
+    if (managerState !== 'AVAILABLE') {
+      count(`NATIVE_SENSOR_MANAGER_${managerState}_NOT_AVAILABLE`);
+      nativeLifecycleStateMismatchCount += 1;
+      continue;
+    }
+    if (capabilityState !== 'SUPPORTED') {
+      count(`CAPABILITY_${capabilityState}_NOT_CONFIRMED_SUPPORTED`);
+      nativeLifecycleStateMismatchCount += 1;
+      continue;
+    }
+    if (registrationState !== 'REGISTERED') {
+      count(`REGISTRATION_${registrationState}_NOT_CONFIRMED_REGISTERED`);
+      nativeLifecycleStateMismatchCount += 1;
+      continue;
+    }
+    if (bridgeState !== 'OK') {
+      count(`NATIVE_BRIDGE_${bridgeState}_NOT_OK`);
+      nativeLifecycleStateMismatchCount += 1;
+      continue;
+    }
+    lifecycleEligiblePollingRecords += 1;
+
     if (!arrival || arrival.state !== 'ARRIVED') {
       count(arrival?.state || 'MISSING_SENSOR_CAPTURE');
       continue;
     }
-    rawArrivedCount += 1;
     if (arrival.evidenceClass !== 'MEASURED') {
       count('NON_MEASURED_EVIDENCE_CLASS');
       continue;
@@ -291,6 +341,9 @@ function extractWaveRadarEvents(samples, sensor) {
     events,
     diagnostics: {
       rawArrivedPollingRecords: rawArrivedCount,
+      lifecycleEligiblePollingRecords,
+      nativeLifecycleStateMismatchCount,
+      captureStateCounts,
       uniqueNativeEvents: events.length,
       repeatedPollRecords: exclusions.REPEATED_POLL_OF_SAME_NATIVE_EVENT || 0,
       conflictingDuplicateSequenceCount: exclusions.CONFLICTING_DUPLICATE_SEQUENCE_EXCLUDED || 0,
@@ -467,9 +520,79 @@ export function analyzeAndroidReference({ waveRadarExport, referenceArtifact, in
     sensors[channel.sensor].waveRadar.outOfOrderSequenceCount === 0 &&
     sensors[channel.sensor].reference.conflictingTimestampCount === 0
   );
-  const accuracyEvidenceStatus = !qaFixture.detected && analysisCanCompare && allChannelsHaveMatches && preregistrationComplete && clockMethodComplete &&
-    clockFit.declaredUncertaintyComplete && clockFit.invalidPairCount === 0 &&
-    calibration.state === 'METADATA_COMPLETE_PENDING_CUSTODIAN_VERIFICATION' &&
+  const nativeLifecycleAcceptable = CHANNELS.every(channel =>
+    sensors[channel.sensor].waveRadar.nativeLifecycleStateMismatchCount === 0
+  );
+  const channelSequenceIntegrity = channel => {
+    const wave = sensors[channel.sensor].waveRadar;
+    const reference = sensors[channel.sensor].reference;
+    return wave.conflictingDuplicateSequenceCount === 0 &&
+      wave.nonMonotonicEventTimestampCount === 0 &&
+      wave.outOfOrderSequenceCount === 0 &&
+      reference.conflictingTimestampCount === 0;
+  };
+  const channelNativePermissionPolicyConfirmed = channel => {
+    const counts = sensors[channel.sensor].waveRadar.captureStateCounts.nativeAndroidSensorRuntimePermission || {};
+    const total = Object.values(counts).reduce((sum, value) => sum + value, 0);
+    return total > 0 && counts.NOT_REQUIRED === total;
+  };
+  for (const channel of CHANNELS) {
+    const sensor = sensors[channel.sensor];
+    const states = sensor.waveRadar.captureStateCounts;
+    const capability = states.capability || {};
+    const registration = states.registration || {};
+    const manager = states.nativeSensorManager || {};
+    const bridge = states.nativeBridge || {};
+    const reasons = [];
+    if (qaFixture.detected) reasons.push('QA_FIXTURE_MARKED');
+    if (!analysisCanCompare) reasons.push('CLOCK_OR_COORDINATE_FRAME_NOT_COMPUTABLE');
+    if ((capability.SUPPORTED || 0) === 0 && (capability.UNSUPPORTED || 0) > 0) {
+      sensor.channelEvidenceStatus = 'NOT_ASSESSED_SENSOR_UNSUPPORTED';
+      reasons.push('NATIVE_SENSOR_CAPABILITY_UNSUPPORTED');
+    } else if ((capability.SUPPORTED || 0) === 0) {
+      sensor.channelEvidenceStatus = 'NOT_ASSESSED_SENSOR_SUPPORT_UNKNOWN';
+      reasons.push('NATIVE_SENSOR_CAPABILITY_NOT_CONFIRMED');
+    } else if ((registration.REGISTERED || 0) === 0 && ((registration.REGISTRATION_FAILED || 0) > 0 || (registration.NOT_REGISTERED || 0) > 0)) {
+      sensor.channelEvidenceStatus = 'NOT_ASSESSED_LISTENER_REGISTRATION_INCOMPLETE';
+      reasons.push('NATIVE_LISTENER_NOT_REGISTERED');
+    } else if ((manager.AVAILABLE || 0) === 0) {
+      sensor.channelEvidenceStatus = 'NOT_ASSESSED_NATIVE_SENSOR_MANAGER_UNAVAILABLE';
+      reasons.push('NATIVE_SENSOR_MANAGER_NOT_AVAILABLE');
+    } else if ((bridge.OK || 0) === 0) {
+      sensor.channelEvidenceStatus = 'NOT_ASSESSED_NATIVE_BRIDGE_UNAVAILABLE';
+      reasons.push('NATIVE_BRIDGE_NOT_OK');
+    } else if (sensor.matchedSampleCount === 0) {
+      sensor.channelEvidenceStatus = 'NO_COMPARISON_COMPUTED';
+      reasons.push('NO_MATCHED_REFERENCE_SAMPLES');
+    } else {
+      const permissionPolicyConfirmed = channelNativePermissionPolicyConfirmed(channel);
+      const candidate = !qaFixture.detected && analysisCanCompare &&
+        sensor.matchedSampleCount > 0 &&
+        sensor.waveRadar.nativeLifecycleStateMismatchCount === 0 &&
+        channelSequenceIntegrity(channel) &&
+        permissionPolicyConfirmed &&
+        preregistrationComplete && clockMethodComplete &&
+        clockFit.declaredUncertaintyComplete && clockFit.invalidPairCount === 0 &&
+        calibration.state === 'METADATA_COMPLETE_PENDING_CUSTODIAN_VERIFICATION' &&
+        calibration.perChannelStandardUncertaintyPresent[channel.sensor];
+      if (candidate) sensor.channelEvidenceStatus = 'CANDIDATE_FOR_INDEPENDENT_REVIEW_NOT_VERIFIED';
+      else sensor.channelEvidenceStatus = 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY';
+      if (!permissionPolicyConfirmed) reasons.push('NATIVE_ANDROID_SENSOR_PERMISSION_POLICY_NOT_CONFIRMED');
+      if (sensor.waveRadar.nativeLifecycleStateMismatchCount > 0) reasons.push('NATIVE_SENSOR_LIFECYCLE_STATE_MISMATCH');
+      if (!channelSequenceIntegrity(channel)) reasons.push('SEQUENCE_OR_TIMESTAMP_INTEGRITY_ISSUE');
+      if (!preregistrationComplete) reasons.push('PREREGISTRATION_INCOMPLETE');
+      if (!clockMethodComplete || !clockFit.declaredUncertaintyComplete || clockFit.invalidPairCount > 0) reasons.push('CLOCK_SYNCHRONIZATION_METADATA_INCOMPLETE');
+      if (calibration.state !== 'METADATA_COMPLETE_PENDING_CUSTODIAN_VERIFICATION' || !calibration.perChannelStandardUncertaintyPresent[channel.sensor]) reasons.push('REFERENCE_CALIBRATION_METADATA_INCOMPLETE');
+    }
+    sensor.channelEvidenceReasons = [...new Set(reasons)];
+    sensor.nativeAndroidSensorPermissionPolicyConfirmed = channelNativePermissionPolicyConfirmed(channel);
+    sensor.browserMotionPermissionStateCounts = states.webMotionPermission || {};
+    sensor.spatialPoseStateCounts = states.spatialPose || {};
+  }
+  const allChannelsHaveChannelCandidates = CHANNELS.every(channel =>
+    sensors[channel.sensor].channelEvidenceStatus === 'CANDIDATE_FOR_INDEPENDENT_REVIEW_NOT_VERIFIED'
+  );
+  const accuracyEvidenceStatus = allChannelsHaveChannelCandidates && allChannelsHaveMatches && nativeLifecycleAcceptable &&
     allChannelsHaveReferenceUncertainty && sequenceIntegrityAcceptable
     ? 'CANDIDATE_FOR_INDEPENDENT_REVIEW_NOT_VERIFIED'
     : 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY';
@@ -511,6 +634,8 @@ export function analyzeAndroidReference({ waveRadarExport, referenceArtifact, in
       interpolation: 'LINEAR_BETWEEN_BRACKETING_REFERENCE_SAMPLES_ONLY; NO_EXTRAPOLATION',
       maxInterpolationGapNs: maxInterpolationGapNs.toString(),
       waveRadarRepeatedPollPolicy: 'Deduplicate identical repeated polling records by native sampleSequence; exclude conflicting duplicate sequences.',
+      nativeSampleEligibility: 'Require nativeSensorManager AVAILABLE, per-sensor capability SUPPORTED, registration REGISTERED, bridgeCallState OK, and sampleArrival ARRIVED / MEASURED. Report and gate each lifecycle state independently.',
+      permissionAndPoseSeparation: 'Report native Android sensor runtime permission, browser/web motion permission, and spatial-pose availability separately. Web permission and spatial-pose state are not substitutes for native sensor support or registration and do not gate native IMU comparison.',
       alignmentTimestampField: 'timestampElapsedRealtimeNanos (raw Android SensorEvent.timestamp); timestampBasis is retained as measurement-timestamp context, not used as the alignment clock.',
       sequenceGapPolicy: 'Report missing sequence counts; do not synthesize samples.',
       metrics: ['per-axis bias', 'sample standard deviation of error', 'RMSE', '95th percentile absolute error', 'maximum absolute error', 'vector RMSE'],

@@ -1,5 +1,14 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { analyzeAndroidReference, ANALYSIS_SCHEMA } from './analyze-android-reference.mjs';
+
+const protocolDoc = readFileSync(new URL('../docs/research-validation-institute/analysis/ANDROID_REFERENCE_ANALYSIS_V1.md', import.meta.url), 'utf8');
+const exampleBlock = protocolDoc.match(/```json\s*([\s\S]*?)\s*```/);
+assert.ok(exampleBlock, 'Protocol documentation must retain its machine-readable artifact example.');
+const documentedExample = JSON.parse(exampleBlock[1]);
+assert.equal(documentedExample.qaFixture, true, 'The documentation-only artifact must be explicitly marked QA-only.');
+assert.equal(documentedExample.instrument.calibrationStatus, 'UNKNOWN', 'The example must not imply real calibration.');
+assert.equal(documentedExample.instrument.calibrationCertificateSha256, 'NOT-A-REAL-DIGEST');
 
 const waveTimes = [2_000_000_000, 3_000_000_000, 4_000_000_000];
 const waveRadarExport = {
@@ -11,8 +20,17 @@ const waveRadarExport = {
     const values = [index + 1.1, index + 2, 9.0];
     const record = {
       nativeSensorBaseline: {
+        nativeSensorManager: { state: 'AVAILABLE' },
+        bridgeCallState: 'OK',
+        permissions: {
+          nativeAndroidSensorRuntime: { state: 'NOT_REQUIRED' },
+          webMotion: { permissionState: 'DENIED' },
+        },
+        spatialPose: { state: 'NOT_INSTRUMENTED' },
         sensors: {
           accelerometer: {
+            capability: { state: 'SUPPORTED' },
+            registration: { state: 'REGISTERED' },
             sampleArrival: {
               state: 'ARRIVED',
               evidenceClass: 'MEASURED',
@@ -23,6 +41,8 @@ const waveRadarExport = {
             },
           },
           gyroscope: {
+            capability: { state: 'SUPPORTED' },
+            registration: { state: 'REGISTERED' },
             sampleArrival: {
               state: 'ARRIVED',
               evidenceClass: 'MEASURED',
@@ -106,8 +126,65 @@ assert.ok(Math.abs(report.sensors.accelerometer.perAxisError.x.rmse - 0.1) < 1e-
 assert.equal(report.sensors.accelerometer.perAxisError.y.bias, 0);
 assert.equal(report.sensors.gyroscope.matchedSampleCount, 3);
 assert.equal(report.sensors.gyroscope.vectorRmse, 0);
+assert.equal(report.sensors.accelerometer.waveRadar.nativeLifecycleStateMismatchCount, 0);
+assert.equal(report.sensors.accelerometer.waveRadar.captureStateCounts.nativeSensorManager.AVAILABLE, 4);
+assert.equal(report.sensors.accelerometer.waveRadar.captureStateCounts.capability.SUPPORTED, 4);
+assert.equal(report.sensors.accelerometer.waveRadar.captureStateCounts.registration.REGISTERED, 4);
+assert.equal(report.sensors.accelerometer.waveRadar.captureStateCounts.nativeBridge.OK, 4);
+assert.equal(report.sensors.accelerometer.waveRadar.captureStateCounts.nativeAndroidSensorRuntimePermission.NOT_REQUIRED, 4);
+assert.equal(report.sensors.accelerometer.waveRadar.captureStateCounts.webMotionPermission.DENIED, 4);
+assert.equal(report.sensors.accelerometer.waveRadar.captureStateCounts.spatialPose.NOT_INSTRUMENTED, 4);
+assert.equal(report.sensors.accelerometer.nativeAndroidSensorPermissionPolicyConfirmed, true);
+assert.equal(report.sensors.accelerometer.browserMotionPermissionStateCounts.DENIED, 4);
+assert.equal(report.sensors.accelerometer.spatialPoseStateCounts.NOT_INSTRUMENTED, 4);
+assert.equal(report.sensors.accelerometer.channelEvidenceStatus, 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY');
+assert.equal(report.sensors.accelerometer.matchedSampleCount, 3, 'Browser motion permission and spatial-pose status must not substitute for or block valid native IMU capture.');
 assert.equal(report.analysisMethod.automaticPassFail, false);
+
+// Software-only synthetic fixture: an unsupported gyroscope must not erase
+// a separately computable accelerometer channel result. The global run stays
+// exploratory because not every requested channel was assessed.
+const unmarkedSyntheticWave = structuredClone(waveRadarExport);
+delete unmarkedSyntheticWave.qaFixture;
+const unmarkedSyntheticReference = structuredClone(referenceArtifact);
+delete unmarkedSyntheticReference.qaFixture;
+for (const sample of unmarkedSyntheticWave.samples) {
+  sample.nativeSensorBaseline.sensors.gyroscope.capability.state = 'UNSUPPORTED';
+  sample.nativeSensorBaseline.sensors.gyroscope.registration.state = 'UNSUPPORTED';
+}
+const channelReport = analyzeAndroidReference({
+  waveRadarExport: unmarkedSyntheticWave,
+  referenceArtifact: unmarkedSyntheticReference,
+});
+assert.equal(channelReport.sensors.accelerometer.channelEvidenceStatus, 'CANDIDATE_FOR_INDEPENDENT_REVIEW_NOT_VERIFIED');
+assert.equal(channelReport.sensors.gyroscope.channelEvidenceStatus, 'NOT_ASSESSED_SENSOR_UNSUPPORTED');
+assert.equal(channelReport.accuracyEvidenceStatus, 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY');
+assert.equal(channelReport.sensors.accelerometer.browserMotionPermissionStateCounts.DENIED, 4);
+assert.equal(channelReport.sensors.accelerometer.spatialPoseStateCounts.NOT_INSTRUMENTED, 4);
+
 assert.equal(report.instrumentCalibration.measurementWindowCoveredByCalibration, true);
+
+const unsupportedNativeSensor = structuredClone(waveRadarExport);
+unsupportedNativeSensor.samples[0].nativeSensorBaseline.sensors.accelerometer.capability.state = 'UNSUPPORTED';
+const unsupportedNativeReport = analyzeAndroidReference({ waveRadarExport: unsupportedNativeSensor, referenceArtifact });
+assert.equal(unsupportedNativeReport.sensors.accelerometer.matchedSampleCount, 2);
+assert.equal(unsupportedNativeReport.sensors.accelerometer.waveRadar.nativeLifecycleStateMismatchCount, 1);
+assert.ok(unsupportedNativeReport.sensors.accelerometer.waveRadar.excludedByReason.CAPABILITY_UNSUPPORTED_NOT_CONFIRMED_SUPPORTED > 0);
+assert.equal(unsupportedNativeReport.accuracyEvidenceStatus, 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY');
+
+const failedRegistration = structuredClone(waveRadarExport);
+failedRegistration.samples[0].nativeSensorBaseline.sensors.gyroscope.registration.state = 'REGISTRATION_FAILED';
+const failedRegistrationReport = analyzeAndroidReference({ waveRadarExport: failedRegistration, referenceArtifact });
+assert.equal(failedRegistrationReport.sensors.gyroscope.matchedSampleCount, 2);
+assert.equal(failedRegistrationReport.sensors.gyroscope.waveRadar.nativeLifecycleStateMismatchCount, 1);
+assert.ok(failedRegistrationReport.sensors.gyroscope.waveRadar.excludedByReason.REGISTRATION_REGISTRATION_FAILED_NOT_CONFIRMED_REGISTERED > 0);
+
+const failedBridge = structuredClone(waveRadarExport);
+failedBridge.samples[0].nativeSensorBaseline.bridgeCallState = 'CALL_FAILED';
+const failedBridgeReport = analyzeAndroidReference({ waveRadarExport: failedBridge, referenceArtifact });
+assert.equal(failedBridgeReport.sensors.accelerometer.matchedSampleCount, 2);
+assert.equal(failedBridgeReport.sensors.accelerometer.waveRadar.nativeLifecycleStateMismatchCount, 1);
+assert.ok(failedBridgeReport.sensors.accelerometer.waveRadar.excludedByReason.NATIVE_BRIDGE_CALL_FAILED_NOT_OK > 0);
 
 const noSync = structuredClone(referenceArtifact);
 noSync.clockSync.pairs = [];
