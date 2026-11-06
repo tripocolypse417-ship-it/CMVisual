@@ -380,6 +380,47 @@ function detectQaFixture(waveRadarExport, referenceArtifact) {
   return { detected: reasons.length > 0, reasons };
 }
 
+function incrementStateCount(counts, value) {
+  const state = typeof value === 'string' && value.trim() ? value : 'UNKNOWN';
+  counts[state] = (counts[state] || 0) + 1;
+}
+
+function summarizeDeviceContext(samples = []) {
+  const nativeSensorManagerStateCounts = {};
+  const nativeAndroidSensorRuntimePermissionStateCounts = {};
+  const webMotionPermissionStateCounts = {};
+  const spatialPoseStateCounts = {};
+  let platform = {};
+
+  for (const sample of Array.isArray(samples) ? samples : []) {
+    const baseline = sample?.nativeSensorBaseline;
+    incrementStateCount(nativeSensorManagerStateCounts, baseline?.nativeSensorManager?.state);
+    incrementStateCount(
+      nativeAndroidSensorRuntimePermissionStateCounts,
+      baseline?.permissions?.nativeAndroidSensorRuntime?.state
+    );
+    incrementStateCount(webMotionPermissionStateCounts, baseline?.permissions?.webMotion?.permissionState);
+    incrementStateCount(spatialPoseStateCounts, baseline?.spatialPose?.state);
+    if (isObject(baseline?.platform) && Object.values(baseline.platform).some(value => value != null && value !== '')) {
+      platform = baseline.platform;
+    }
+  }
+
+  const permissionStates = Object.entries(nativeAndroidSensorRuntimePermissionStateCounts);
+  const nativeSensorRuntimePermissionPolicyComplete = permissionStates.length > 0 &&
+    permissionStates.every(([state]) => state === 'NOT_REQUIRED' || state === 'GRANTED');
+
+  return {
+    nativeSensorManagerStateCounts,
+    nativeAndroidSensorRuntimePermissionStateCounts,
+    webMotionPermissionStateCounts,
+    spatialPoseStateCounts,
+    nativeSensorRuntimePermissionPolicyComplete,
+    platform,
+    limitation: 'Native Android SensorManager permission policy, browser motion permission, and spatial-pose availability are separate observations. None is inferred from another.',
+  };
+}
+
 export function analyzeAndroidReference({ waveRadarExport, referenceArtifact, inputDigests = {} }) {
   if (!isObject(waveRadarExport) || !/^cmvisual-physical-validation-v\d+$/.test(String(waveRadarExport.schema || '')) || !Array.isArray(waveRadarExport.samples)) {
     throw new Error('WaveRadar export must use a cmvisual-physical-validation-vN schema and contain a samples array.');
@@ -399,6 +440,16 @@ export function analyzeAndroidReference({ waveRadarExport, referenceArtifact, in
   const calibration = calibrationMetadata(referenceArtifact.instrument || {}, measurementWindow);
   const qaFixture = detectQaFixture(waveRadarExport, referenceArtifact);
   const preregistration = referenceArtifact.preregistration || {};
+  const configuredRequiredSensors = referenceArtifact.analysis?.requiredSensors;
+  const requiredSensorScopeDeclared = Array.isArray(configuredRequiredSensors) &&
+    configuredRequiredSensors.length > 0 &&
+    new Set(configuredRequiredSensors).size === configuredRequiredSensors.length &&
+    configuredRequiredSensors.every(sensor => CHANNELS.some(channel => channel.sensor === sensor));
+  if (configuredRequiredSensors != null && !requiredSensorScopeDeclared) {
+    throw new Error('analysis.requiredSensors must be a non-empty unique subset of the supported analyzer channels: accelerometer, gyroscope.');
+  }
+  const requiredSensors = requiredSensorScopeDeclared ? [...configuredRequiredSensors] : CHANNELS.map(channel => channel.sensor);
+  const deviceContext = summarizeDeviceContext(waveRadarExport.samples);
   const clockMethodComplete = typeof referenceArtifact.clockSync?.method === 'string' && referenceArtifact.clockSync.method.trim().length > 0;
   const preregistrationComplete = typeof preregistration.protocolId === 'string' && preregistration.protocolId.trim().length > 0
     && typeof preregistration.protocolVersion === 'string' && preregistration.protocolVersion.trim().length > 0
@@ -459,19 +510,40 @@ export function analyzeAndroidReference({ waveRadarExport, referenceArtifact, in
     };
   }
 
-  const allChannelsHaveMatches = CHANNELS.every(channel => sensors[channel.sensor].matchedSampleCount > 0);
-  const allChannelsHaveReferenceUncertainty = Object.values(calibration.perChannelStandardUncertaintyPresent).every(Boolean);
-  const sequenceIntegrityAcceptable = CHANNELS.every(channel =>
-    sensors[channel.sensor].waveRadar.conflictingDuplicateSequenceCount === 0 &&
-    sensors[channel.sensor].waveRadar.nonMonotonicEventTimestampCount === 0 &&
-    sensors[channel.sensor].waveRadar.outOfOrderSequenceCount === 0 &&
-    sensors[channel.sensor].reference.conflictingTimestampCount === 0
-  );
-  const accuracyEvidenceStatus = !qaFixture.detected && analysisCanCompare && allChannelsHaveMatches && preregistrationComplete && clockMethodComplete &&
-    clockFit.declaredUncertaintyComplete && clockFit.invalidPairCount === 0 &&
-    calibration.state === 'METADATA_COMPLETE_PENDING_CUSTODIAN_VERIFICATION' &&
-    allChannelsHaveReferenceUncertainty && sequenceIntegrityAcceptable
-    ? 'CANDIDATE_FOR_INDEPENDENT_REVIEW_NOT_VERIFIED'
+  const candidateStatus = 'CANDIDATE_FOR_INDEPENDENT_REVIEW_NOT_VERIFIED';
+  for (const channel of CHANNELS) {
+    const sensorReport = sensors[channel.sensor];
+    const wave = sensorReport.waveRadar;
+    const sequenceIntegrityAcceptable =
+      wave.conflictingDuplicateSequenceCount === 0 &&
+      wave.nonMonotonicEventTimestampCount === 0 &&
+      wave.outOfOrderSequenceCount === 0 &&
+      sensorReport.reference.conflictingTimestampCount === 0;
+    const channelInRequiredScope = requiredSensors.includes(channel.sensor);
+    const channelEligible = channelInRequiredScope &&
+      !qaFixture.detected &&
+      analysisCanCompare &&
+      sensorReport.matchedSampleCount > 0 &&
+      preregistrationComplete &&
+      requiredSensorScopeDeclared &&
+      clockMethodComplete &&
+      clockFit.declaredUncertaintyComplete &&
+      clockFit.invalidPairCount === 0 &&
+      calibration.state === 'METADATA_COMPLETE_PENDING_CUSTODIAN_VERIFICATION' &&
+      calibration.perChannelStandardUncertaintyPresent[channel.sensor] === true &&
+      sequenceIntegrityAcceptable &&
+      wave.lifecycleEvidenceComplete &&
+      deviceContext.nativeSensorRuntimePermissionPolicyComplete;
+
+    sensorReport.requiredForAnalysis = channelInRequiredScope;
+    sensorReport.accuracyEvidenceStatus = !channelInRequiredScope
+      ? 'NOT_IN_REQUIRED_ANALYSIS_SCOPE'
+      : channelEligible ? candidateStatus : 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY';
+  }
+  const requiredChannelsEligible = requiredSensors.length > 0 &&
+    requiredSensors.every(sensor => sensors[sensor]?.accuracyEvidenceStatus === candidateStatus);
+  const accuracyEvidenceStatus = requiredChannelsEligible
+    ? candidateStatus
     : 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY';
 
   return {
@@ -491,8 +563,11 @@ export function analyzeAndroidReference({ waveRadarExport, referenceArtifact, in
       protocolVersion: referenceArtifact.preregistration?.protocolVersion || null,
       preregisteredAt: preregistration.preregisteredAt || null,
       preregistrationComplete,
+      requiredSensors,
+      requiredSensorScopeDeclared,
       measurementWindow,
     },
+    deviceContext,
     clockSynchronization: {
       ...clockFit,
       pairs: undefined,
@@ -514,6 +589,9 @@ export function analyzeAndroidReference({ waveRadarExport, referenceArtifact, in
       alignmentTimestampField: 'timestampElapsedRealtimeNanos (raw Android SensorEvent.timestamp); timestampBasis is retained as measurement-timestamp context, not used as the alignment clock.',
       sequenceGapPolicy: 'Report missing sequence counts; do not synthesize samples.',
       metrics: ['per-axis bias', 'sample standard deviation of error', 'RMSE', '95th percentile absolute error', 'maximum absolute error', 'vector RMSE'],
+      requiredSensors,
+      requiredSensorScopeDeclared,
+      lifecycleEligibility: 'Each compared channel must report SUPPORTED capability and REGISTERED listener state for every ARRIVED polling record; native SensorManager permission policy must be explicitly NOT_REQUIRED or GRANTED. Browser motion permission and spatial pose remain separate diagnostics.',
       automaticPassFail: false,
     },
     sensors,
