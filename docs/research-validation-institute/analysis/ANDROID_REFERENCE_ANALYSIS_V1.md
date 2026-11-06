@@ -109,13 +109,27 @@ The report records SHA-256 digests of the exact two input files. The two input f
 1. Fit an affine mapping from reference monotonic time to Android elapsed-realtime using at least three strictly increasing synchronization pairs.
 2. Report clock drift, fit residuals, declared synchronization uncertainty, and invalid pair counts. A good mathematical fit does not prove that the physical synchronization procedure was correct.
 3. **Do not extrapolate the clock mapping.** Android event timestamps outside the first-to-last observed synchronization-pair range are excluded as `CLOCK_MAPPING_OUTSIDE_SYNC_PAIR_RANGE`. Place documented synchronization events so the preregistered acquisition window is bracketed; if it is not, the affected samples remain unmatched.
-3. Require a right-handed orthonormal 3×3 coordinate transform. A valid matrix does not prove that the fixture was physically aligned correctly.
-4. Extract only `ARRIVED`, `MEASURED` samples with a raw `timestampElapsedRealtimeNanos` value from Android `SensorEvent.timestamp`, finite 3-axis values, and a valid native sample sequence. Preserve `timestampBasis` separately: the current baseline may label the display measurement timestamp `WALL_CLOCK_ESTIMATE_FROM_ELAPSED_REALTIME`, while the raw monotonic event timestamp remains in `timestampElapsedRealtimeNanos`.
-5. Deduplicate repeated UI polling records by native `sampleSequence`; exclude conflicting duplicate sequences. Report sequence gaps and non-monotonic event timestamps.
+4. Require a right-handed orthonormal 3×3 coordinate transform. A valid matrix does not prove that the fixture was physically aligned correctly.
+5. Extract only `ARRIVED`, `MEASURED` samples with a raw `timestampElapsedRealtimeNanos` value from Android `SensorEvent.timestamp`, finite 3-axis values, and a valid native sample sequence. Preserve `timestampBasis` separately: the current baseline may label the display measurement timestamp `WALL_CLOCK_ESTIMATE_FROM_ELAPSED_REALTIME`, while the raw monotonic event timestamp remains in `timestampElapsedRealtimeNanos`.
+6. Deduplicate repeated UI polling records by native `sampleSequence`; exclude conflicting duplicate sequences. Report sequence gaps and non-monotonic event timestamps.
 6. Linearly interpolate reference values only between bracketing reference samples whose gap is at or below the preregistered limit. No extrapolation is performed.
-7. Report per-axis bias, sample standard deviation of error, RMSE, 95th-percentile absolute error, maximum absolute error, and vector RMSE for accelerometer and gyroscope separately.
+8. Report per-axis bias, sample standard deviation of error, RMSE, 95th-percentile absolute error, maximum absolute error, and vector RMSE for accelerometer and gyroscope separately.
 
 No automatic pass/fail threshold is embedded. A reviewer must interpret denominators, gaps, uncertainty, clock residuals, alignment, exclusions, and protocol deviations against thresholds fixed before confirmatory data collection.
+
+## Native lifecycle and eligibility gates
+
+The analyzer preserves native sensor lifecycle and access context separately from numerical sample comparison.
+
+- Every exported polling record must contain the versioned native-baseline envelope for a channel to be eligible for independent review. Missing baseline records or missing state fields are reported as incomplete/unknown.
+- Each channel is eligible only when its capability is consistently `SUPPORTED`, its listener registration is consistently `REGISTERED`, and at least one matched reference sample exists. A missing, mixed, unsupported, or failed registration state keeps that channel exploratory.
+- The native Android SensorManager runtime-permission policy is reported separately and must be explicitly `NOT_REQUIRED` for a candidate channel. This describes the native path's permission policy; it is not a claim that every other Android permission is granted.
+- Browser/Web motion permission is reported independently and is not substituted for native SensorManager permission or used to infer native sensor support.
+- Spatial-pose provider state is reported independently. `NOT_INSTRUMENTED` does not invalidate an accelerometer/gyroscope comparison and does not imply a pose, position, or localization result.
+- Accelerometer and gyroscope eligibility are evaluated independently. An unsupported or unregistered gyroscope does not erase a valid accelerometer comparison; the overall report becomes `PARTIAL_CHANNEL_CANDIDATE_NOT_VERIFIED` when only one channel reaches candidate-for-review status.
+- Explicit `qaFixture: true` or `evidenceClass: "QA_FIXTURE"` markers at the export, reference-artifact, or sample level force exploratory-only status. This marker check is not a substitute for provenance or independent custody.
+
+The analyzer does not infer support from sample arrival, registration from support, permission from browser events, or spatial pose from motion sensors.
 
 ## Output dispositions
 
