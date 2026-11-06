@@ -233,14 +233,30 @@ function extractWaveRadarEvents(samples, sensor) {
   let previousObservedSequence = null;
   let outOfOrderSequenceCount = 0;
   const timestampBasisCounts = {};
+  const capabilityStateCounts = {};
+  const registrationStateCounts = {};
+  const sampleArrivalStateCounts = {};
+  let arrivedPollingRecordsWithConfirmedLifecycle = 0;
+  let arrivedPollingRecordsWithUnconfirmedLifecycle = 0;
 
   for (let pollIndex = 0; pollIndex < (Array.isArray(samples) ? samples.length : 0); pollIndex += 1) {
-    const arrival = samples[pollIndex]?.nativeSensorBaseline?.sensors?.[sensor]?.sampleArrival;
+    const sensorRecord = samples[pollIndex]?.nativeSensorBaseline?.sensors?.[sensor];
+    const arrival = sensorRecord?.sampleArrival;
+    const capabilityState = sensorRecord?.capability?.state;
+    const registrationState = sensorRecord?.registration?.state;
+    incrementStateCount(capabilityStateCounts, capabilityState);
+    incrementStateCount(registrationStateCounts, registrationState);
+    incrementStateCount(sampleArrivalStateCounts, arrival?.state);
     if (!arrival || arrival.state !== 'ARRIVED') {
       count(arrival?.state || 'MISSING_SENSOR_CAPTURE');
       continue;
     }
     rawArrivedCount += 1;
+    if (capabilityState === 'SUPPORTED' && registrationState === 'REGISTERED') {
+      arrivedPollingRecordsWithConfirmedLifecycle += 1;
+    } else {
+      arrivedPollingRecordsWithUnconfirmedLifecycle += 1;
+    }
     if (arrival.evidenceClass !== 'MEASURED') {
       count('NON_MEASURED_EVIDENCE_CLASS');
       continue;
@@ -298,6 +314,12 @@ function extractWaveRadarEvents(samples, sensor) {
       missingSequenceCount,
       nonMonotonicEventTimestampCount,
       timestampBasisCounts,
+      capabilityStateCounts,
+      registrationStateCounts,
+      sampleArrivalStateCounts,
+      arrivedPollingRecordsWithConfirmedLifecycle,
+      arrivedPollingRecordsWithUnconfirmedLifecycle,
+      lifecycleEvidenceComplete: rawArrivedCount > 0 && arrivedPollingRecordsWithUnconfirmedLifecycle === 0,
       excludedByReason: exclusions,
     },
   };
