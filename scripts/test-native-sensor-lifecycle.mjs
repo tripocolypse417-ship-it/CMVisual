@@ -7,6 +7,7 @@ const source = await readFile(new URL('../native/android/WaveRadarSensorsPlugin.
 assert.match(source, /private final Set<Integer> registeredSensorTypes = new HashSet<>\(\);/);
 assert.match(source, /private final Map<Integer, String> registrationStates = new HashMap<>\(\);/);
 assert.match(source, /private final Map<Integer, Long> sensorReceivedAt = new HashMap<>\(\);/);
+assert.match(source, /private final Map<Integer, Long> sensorReceivedElapsedRealtimeNs = new HashMap<>\(\);/);
 assert.match(source, /private final Map<Integer, Long> sensorSequences = new HashMap<>\(\);/);
 assert.match(source, /registrationStates\.put\(type, "UNSUPPORTED"\)/);
 assert.match(source, /registrationStates\.put\(type, "REGISTRATION_FAILED"\)/);
@@ -26,10 +27,13 @@ assert.match(source, /status\.put\("sampleSequence", sensorSequences\.getOrDefau
 
 // Event arrival is independently counted and timestamped; sensor event time
 // retains its elapsed-realtime clock basis.
+assert.match(source, /long callbackElapsedRealtimeNs = SystemClock\.elapsedRealtimeNanos\(\)/);
+assert.match(source, /sensorReceivedElapsedRealtimeNs\.put\(type, callbackElapsedRealtimeNs\)/);
 assert.match(source, /sensorReceivedAt\.put\(type, System\.currentTimeMillis\(\)\)/);
 assert.match(source, /sensorSequences\.put\(type, sensorSequences\.getOrDefault\(type, 0L\) \+ 1L\)/);
 assert.match(source, /item\.put\("timestampClock", "WALL_CLOCK_ESTIMATE_FROM_ELAPSED_REALTIME"\)/);
-assert.match(source, /item\.put\("timestampElapsedRealtimeNanos", sensorElapsedNs > 0L \? sensorElapsedNs : null\)/);
+assert.match(source, /item\.put\("timestampElapsedRealtimeNanos", sensorElapsedNs > 0L \? String\.valueOf\(sensorElapsedNs\) : null\)/);
+assert.match(source, /item\.put\("receivedElapsedRealtimeNanos", receivedElapsedNs > 0L \? String\.valueOf\(receivedElapsedNs\) : null\)/);
 assert.match(source, /item\.put\("receivedAt", receivedAt > 0L \? receivedAt : null\)/);
 assert.match(source, /item\.put\("sampleSequence", sequence > 0L \? sequence : null\)/);
 assert.match(source, /item\.put\("evidenceClass", "MEASURED"\)/);
