@@ -20,8 +20,17 @@ const waveRadarExport = {
     const values = [index + 1.1, index + 2, 9.0];
     const record = {
       nativeSensorBaseline: {
+        nativeSensorManager: { state: 'AVAILABLE' },
+        bridgeCallState: 'OK',
+        permissions: {
+          nativeAndroidSensorRuntime: { state: 'NOT_REQUIRED' },
+          webMotion: { permissionState: 'DENIED' },
+        },
+        spatialPose: { state: 'NOT_INSTRUMENTED' },
         sensors: {
           accelerometer: {
+            capability: { state: 'SUPPORTED' },
+            registration: { state: 'REGISTERED' },
             sampleArrival: {
               state: 'ARRIVED',
               evidenceClass: 'MEASURED',
@@ -32,6 +41,8 @@ const waveRadarExport = {
             },
           },
           gyroscope: {
+            capability: { state: 'SUPPORTED' },
+            registration: { state: 'REGISTERED' },
             sampleArrival: {
               state: 'ARRIVED',
               evidenceClass: 'MEASURED',
@@ -115,8 +126,39 @@ assert.ok(Math.abs(report.sensors.accelerometer.perAxisError.x.rmse - 0.1) < 1e-
 assert.equal(report.sensors.accelerometer.perAxisError.y.bias, 0);
 assert.equal(report.sensors.gyroscope.matchedSampleCount, 3);
 assert.equal(report.sensors.gyroscope.vectorRmse, 0);
+assert.equal(report.sensors.accelerometer.waveRadar.nativeLifecycleStateMismatchCount, 0);
+assert.equal(report.sensors.accelerometer.waveRadar.captureStateCounts.nativeSensorManager.AVAILABLE, 4);
+assert.equal(report.sensors.accelerometer.waveRadar.captureStateCounts.capability.SUPPORTED, 4);
+assert.equal(report.sensors.accelerometer.waveRadar.captureStateCounts.registration.REGISTERED, 4);
+assert.equal(report.sensors.accelerometer.waveRadar.captureStateCounts.nativeBridge.OK, 4);
+assert.equal(report.sensors.accelerometer.waveRadar.captureStateCounts.nativeAndroidSensorRuntimePermission.NOT_REQUIRED, 4);
+assert.equal(report.sensors.accelerometer.waveRadar.captureStateCounts.webMotionPermission.DENIED, 4);
+assert.equal(report.sensors.accelerometer.waveRadar.captureStateCounts.spatialPose.NOT_INSTRUMENTED, 4);
+assert.equal(report.sensors.accelerometer.matchedSampleCount, 3, 'Browser motion permission and spatial-pose status must not substitute for or block valid native IMU capture.');
 assert.equal(report.analysisMethod.automaticPassFail, false);
 assert.equal(report.instrumentCalibration.measurementWindowCoveredByCalibration, true);
+
+const unsupportedNativeSensor = structuredClone(waveRadarExport);
+unsupportedNativeSensor.samples[0].nativeSensorBaseline.sensors.accelerometer.capability.state = 'UNSUPPORTED';
+const unsupportedNativeReport = analyzeAndroidReference({ waveRadarExport: unsupportedNativeSensor, referenceArtifact });
+assert.equal(unsupportedNativeReport.sensors.accelerometer.matchedSampleCount, 2);
+assert.equal(unsupportedNativeReport.sensors.accelerometer.waveRadar.nativeLifecycleStateMismatchCount, 1);
+assert.ok(unsupportedNativeReport.sensors.accelerometer.waveRadar.excludedByReason.CAPABILITY_UNSUPPORTED_NOT_CONFIRMED_SUPPORTED > 0);
+assert.equal(unsupportedNativeReport.accuracyEvidenceStatus, 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY');
+
+const failedRegistration = structuredClone(waveRadarExport);
+failedRegistration.samples[0].nativeSensorBaseline.sensors.gyroscope.registration.state = 'REGISTRATION_FAILED';
+const failedRegistrationReport = analyzeAndroidReference({ waveRadarExport: failedRegistration, referenceArtifact });
+assert.equal(failedRegistrationReport.sensors.gyroscope.matchedSampleCount, 2);
+assert.equal(failedRegistrationReport.sensors.gyroscope.waveRadar.nativeLifecycleStateMismatchCount, 1);
+assert.ok(failedRegistrationReport.sensors.gyroscope.waveRadar.excludedByReason.REGISTRATION_REGISTRATION_FAILED_NOT_CONFIRMED_REGISTERED > 0);
+
+const failedBridge = structuredClone(waveRadarExport);
+failedBridge.samples[0].nativeSensorBaseline.bridgeCallState = 'CALL_FAILED';
+const failedBridgeReport = analyzeAndroidReference({ waveRadarExport: failedBridge, referenceArtifact });
+assert.equal(failedBridgeReport.sensors.accelerometer.matchedSampleCount, 2);
+assert.equal(failedBridgeReport.sensors.accelerometer.waveRadar.nativeLifecycleStateMismatchCount, 1);
+assert.ok(failedBridgeReport.sensors.accelerometer.waveRadar.excludedByReason.NATIVE_BRIDGE_CALL_FAILED_NOT_OK > 0);
 
 const noSync = structuredClone(referenceArtifact);
 noSync.clockSync.pairs = [];
