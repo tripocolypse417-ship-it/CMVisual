@@ -20,6 +20,41 @@ function finiteNonNegative(value) {
   return finiteNumber(value) && value >= 0;
 }
 
+function normalizeElapsedRealtimeNanos(value) {
+  if (typeof value === 'string' && /^[0-9]+$/.test(value.trim())) {
+    try { return BigInt(value.trim()).toString(); } catch { return null; }
+  }
+  if (finiteNonNegative(value) && Number.isSafeInteger(value)) return String(value);
+  return null;
+}
+
+function elapsedRealtimeDeltaMs(earlier, later) {
+  if (earlier == null || later == null) return null;
+  try {
+    const delta = BigInt(later) - BigInt(earlier);
+    return delta < 0n ? null : Number(delta) / 1e6;
+  } catch {
+    return null;
+  }
+}
+
+function summarizeIntervals(values) {
+  const sorted = values.filter(value => finiteNonNegative(value)).sort((a, b) => a - b);
+  if (!sorted.length) return { count: 0, minMs: null, medianMs: null, p95Ms: null, maxMs: null };
+  const percentile = fraction => sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * fraction) - 1)];
+  const rounded = value => Number(value.toFixed(6));
+  const median = sorted.length % 2
+    ? sorted[Math.floor(sorted.length / 2)]
+    : (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2;
+  return {
+    count: sorted.length,
+    minMs: rounded(sorted[0]),
+    medianMs: rounded(median),
+    p95Ms: rounded(percentile(0.95)),
+    maxMs: rounded(sorted[sorted.length - 1]),
+  };
+}
+
 function normalizeIso(value) {
   if (value == null || value === '') return null;
   const parsed = typeof value === 'number'
@@ -104,9 +139,12 @@ function normalizeMeasurement(name, measurement, capability, registration) {
     ? Math.floor(measurement.sampleSequence)
     : null;
   const receivedAt = normalizeIso(measurement?.receivedAt);
-  const rawElapsedNs = finiteNonNegative(measurement?.timestampElapsedRealtimeNanos)
-    ? String(measurement.timestampElapsedRealtimeNanos)
-    : null;
+  const rawElapsedNs = normalizeElapsedRealtimeNanos(measurement?.timestampElapsedRealtimeNanos);
+  const receivedElapsedNs = normalizeElapsedRealtimeNanos(measurement?.receivedElapsedRealtimeNanos);
+  const callbackDeliveryLatencyMs = elapsedRealtimeDeltaMs(rawElapsedNs, receivedElapsedNs);
+  const callbackDeliveryLatencyState = rawElapsedNs == null || receivedElapsedNs == null
+    ? 'NOT_AVAILABLE'
+    : callbackDeliveryLatencyMs == null ? 'INVALID_ORDER' : 'AVAILABLE';
   const measurementTimestamp = normalizeIso(measurement?.timestamp);
   const ageMs = finiteNonNegative(measurement?.ageMs) ? measurement.ageMs : null;
   const freshness = ageMs == null
@@ -133,6 +171,9 @@ function normalizeMeasurement(name, measurement, capability, registration) {
           ? 'WALL_CLOCK_OR_ESTIMATE_UNDECLARED'
           : 'UNKNOWN',
     timestampElapsedRealtimeNanos: rawElapsedNs,
+    receivedElapsedRealtimeNanos: receivedElapsedNs,
+    callbackDeliveryLatencyState,
+    callbackDeliveryLatencyMs,
     ageMs,
     freshness,
     accuracy: finiteNumber(measurement?.accuracy) ? measurement.accuracy : null,
@@ -259,20 +300,111 @@ export function summarizeNativeSensorBaseline({
   const sensors = {};
 
   for (const name of NATIVE_SENSOR_NAMES) {
-    const captures = records.map(record => record.sensors?.[name]).filter(Boolean);
-    const arrived = captures.filter(record => record.sampleArrival?.state === 'ARRIVED');
-    const arrivalRecords = arrived.map(record => record.sampleArrival);
+    const captureEntries = records.map(record => ({
+      sessionId: record.sessionId,
+      capturedAt: record.capturedAt,
+      sensor: record.sensors?.[name],
+    })).filter(entry => entry.sensor);
+    const arrivedEntries = captureEntries.filter(entry => entry.sensor.sampleArrival?.state === 'ARRIVED');
+    const arrivalRecords = arrivedEntries.map(entry => entry.sensor.sampleArrival);
     const seq = sequenceRange(arrivalRecords);
-    const capability = newest(captures.filter(record => record.capability?.state !== 'UNKNOWN').map(record => record.capability));
-    const registration = newest(captures.filter(record => record.registration?.state !== 'UNKNOWN').map(record => record.registration));
-    const latestCapture = newest(captures);
+    const capability = newest(captureEntries.filter(entry => entry.sensor.capability?.state !== 'UNKNOWN').map(entry => entry.sensor.capability));
+    const registration = newest(captureEntries.filter(entry => entry.sensor.registration?.state !== 'UNKNOWN').map(entry => entry.sensor.registration));
+    const latestCapture = newest(captureEntries);
     const first = arrivalRecords.length ? arrivalRecords[0] : null;
     const last = newest(arrivalRecords);
+
+    const sequenceSeen = new Set();
+    const lastSequenceBySession = new Map();
+    const lastEventTimeBySession = new Map();
+    const lastCaptureTimeBySession = new Map();
+    const sequenceComparisons = { count: 0, regressions: 0, repeatedSnapshots: 0, interveningEventsNotCaptured: 0 };
+    const eventTimeComparisons = { count: 0, regressions: 0, repeatedSnapshots: 0 };
+    const observedEventTimestampDeltasMs = [];
+    const callbackDeliveryLatenciesMs = [];
+    const captureIntervalsMs = [];
+    const timestampBasisCounts = {};
+    const freshnessCounts = {};
+
+    for (const entry of arrivedEntries) {
+      const sample = entry.sensor.sampleArrival;
+      const session = typeof entry.sessionId === 'string' && entry.sessionId ? entry.sessionId : null;
+      const sequence = finiteNonNegative(sample.sampleSequence) ? sample.sampleSequence : null;
+      const eventNs = sample.timestampElapsedRealtimeNanos;
+
+      if (typeof sample.timestampBasis === 'string') {
+        timestampBasisCounts[sample.timestampBasis] = (timestampBasisCounts[sample.timestampBasis] ?? 0) + 1;
+      }
+      if (typeof sample.freshness === 'string') {
+        freshnessCounts[sample.freshness] = (freshnessCounts[sample.freshness] ?? 0) + 1;
+      }
+      if (sample.callbackDeliveryLatencyState === 'AVAILABLE' && finiteNonNegative(sample.callbackDeliveryLatencyMs)) {
+        callbackDeliveryLatenciesMs.push(sample.callbackDeliveryLatencyMs);
+      }
+
+      if (session && sequence != null) {
+        sequenceSeen.add(session + ':' + sequence);
+        const previous = lastSequenceBySession.get(session);
+        if (previous != null) {
+          sequenceComparisons.count += 1;
+          const delta = sequence - previous;
+          if (delta < 0) sequenceComparisons.regressions += 1;
+          else if (delta === 0) sequenceComparisons.repeatedSnapshots += 1;
+          else if (delta > 1) sequenceComparisons.interveningEventsNotCaptured += delta - 1;
+        }
+        lastSequenceBySession.set(session, sequence);
+      }
+
+      if (session && eventNs != null) {
+        const previous = lastEventTimeBySession.get(session);
+        if (previous != null) {
+          eventTimeComparisons.count += 1;
+          try {
+            const deltaNs = BigInt(eventNs) - BigInt(previous);
+            if (deltaNs < 0n) eventTimeComparisons.regressions += 1;
+            else if (deltaNs === 0n) eventTimeComparisons.repeatedSnapshots += 1;
+            else observedEventTimestampDeltasMs.push(Number(deltaNs) / 1e6);
+          } catch {
+            // An invalid timestamp remains visible through the missing comparison count.
+          }
+        }
+        lastEventTimeBySession.set(session, eventNs);
+      }
+
+      const captureTime = Date.parse(entry.capturedAt ?? '');
+      if (session && Number.isFinite(captureTime)) {
+        const previous = lastCaptureTimeBySession.get(session);
+        if (previous != null && captureTime > previous) captureIntervalsMs.push(captureTime - previous);
+        lastCaptureTimeBySession.set(session, captureTime);
+      }
+    }
+
+    const sequenceMonotonicityState = sequenceComparisons.count === 0
+      ? 'UNKNOWN'
+      : sequenceComparisons.regressions > 0 ? 'NON_MONOTONIC' : 'MONOTONIC_IN_OBSERVED_SNAPSHOTS';
+    const eventTimestampMonotonicityState = eventTimeComparisons.count === 0
+      ? 'UNKNOWN'
+      : eventTimeComparisons.regressions > 0 ? 'NON_MONOTONIC' : 'MONOTONIC_IN_OBSERVED_SNAPSHOTS';
     sensors[name] = {
       capabilityState: capability?.state ?? 'UNKNOWN',
       registrationState: registration?.state ?? 'UNKNOWN',
-      latestSampleArrivalState: latestCapture?.sampleArrival?.state ?? 'UNKNOWN',
-      capturedSampleCount: arrived.length,
+      latestSampleArrivalState: latestCapture?.sensor?.sampleArrival?.state ?? 'UNKNOWN',
+      capturedSampleCount: arrivedEntries.length,
+      uniqueSequenceCount: sequenceSeen.size,
+      sequenceComparisonCount: sequenceComparisons.count,
+      sequenceRegressionCount: sequenceComparisons.regressions,
+      repeatedSequenceSnapshotCount: sequenceComparisons.repeatedSnapshots,
+      interveningNativeEventsNotIndividuallyCapturedByPolling: sequenceComparisons.interveningEventsNotCaptured,
+      sequenceMonotonicityState,
+      eventTimestampComparisonCount: eventTimeComparisons.count,
+      eventTimestampRegressionCount: eventTimeComparisons.regressions,
+      repeatedEventTimestampSnapshotCount: eventTimeComparisons.repeatedSnapshots,
+      eventTimestampMonotonicityState,
+      observedEventTimestampDeltaMs: summarizeIntervals(observedEventTimestampDeltasMs),
+      callbackDeliveryLatencyMs: summarizeIntervals(callbackDeliveryLatenciesMs),
+      pollingCaptureIntervalMs: summarizeIntervals(captureIntervalsMs),
+      timestampBasisCounts,
+      freshnessCounts,
       firstEventReceivedAt: first?.receivedAt ?? null,
       lastEventReceivedAt: last?.receivedAt ?? null,
       firstMeasurementTimestamp: first?.measurementTimestamp ?? null,
@@ -310,6 +442,6 @@ export function summarizeNativeSensorBaseline({
     },
     spatialPose: normalizeSpatialPose(spatialPose ?? latestRecord?.spatialPose),
     sensors,
-    evidenceLimit: 'Capture counts mean saved polling records containing valid numeric readings, not the native event rate.',
+    evidenceLimit: 'Captured sample counts are polling snapshots, not native event counts. Repeated snapshots may contain the same latest event; sequence advances between snapshots indicate intervening native callbacks not individually retained by polling, not proven dropped callbacks. Event and callback elapsed-realtime timestamps share the Android monotonic clock. Wall-clock timestamps may be adjusted.',
   };
 }

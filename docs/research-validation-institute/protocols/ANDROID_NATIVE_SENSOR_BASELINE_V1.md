@@ -86,6 +86,11 @@ A consumer phone, uncalibrated compass, manually estimated movement, or the Wave
 2. Start a new session with no prior session data imported into the run.
 3. Query capabilities once and preserve the complete capability response.
 4. Record each sensor's support state, registration state, and sample-history state separately.
+
+**Target-device planning note:** Motorola's published moto g play (2024) specification lists an accelerometer, proximity sensor, ambient-light sensor, e-compass, and barometer, but does not list a gyroscope. This published list is not proof that the Android runtime lacks a gyroscope on every hardware/firmware variant. Query `SensorManager.getDefaultSensor(TYPE_GYROSCOPE)` on the actual test device and preserve the result as `SUPPORTED`, `UNSUPPORTED`, or `UNKNOWN`. If the fresh inventory confirms no gyroscope, preregister an accelerometer-only analysis scope (`analysis.requiredSensors: ["accelerometer"]`) before confirmatory capture; do not classify an unsupported gyro as a failed measurement.
+
+Manufacturer source: https://en-us.support.motorola.com/app/answers/detail/a_id/177738/~/moto-g-play-2024-%7C-specifications (accessed 2026-11-05).
+
 5. Capture for at least 60 seconds while the phone remains stationary on the fixture.
 6. Pause and resume the app once; capture the lifecycle transition and whether listeners are re-registered.
 7. Stop and export the complete session.
@@ -115,16 +120,20 @@ Analyze axis mapping, bias, noise, scale, cross-axis response, and repeatability
 
 For each sensor, retain:
 
-- Android sensor event elapsedRealtimeNanos.
-- Callback receive time.
-- Wall-clock estimate and its derivation.
-- Per-sensor sequence counter.
+- Android SensorEvent.timestamp in elapsed-realtime nanoseconds.
+- Callback-entry SystemClock.elapsedRealtimeNanos() captured by the native listener.
+- Wall-clock callback receive time and the derivation of any wall-clock estimate.
+- Per-sensor sequence counter incremented on each native callback.
 - Poll/capture time and sample index.
 - Reference logger timestamp and measured synchronization uncertainty.
 
-Calculate clock offset, drift, timestamp skew, inter-sample intervals, gaps, duplicate sequence values, and monotonicity. Do not compare wall-clock timestamps as though they share the same clock basis without a measured synchronization transformation.
+The event timestamp and callback-entry timestamp use the same Android monotonic clock. Where both are present and callback time is not earlier than event time, calculate callback delivery latency as (callbackElapsedRealtimeNanos - eventElapsedRealtimeNanos) / 1,000,000. Preserve missing or negative-order cases as unavailable/invalid; do not substitute wall-clock subtraction.
 
-The current UI's polling capture count is **not** the native sensor event rate. Report event sequence span and actual native event counters separately from polling records.
+Compare sequence and event-timestamp order only within the same capture session. Report sequence regressions, repeated polling snapshots, event-timestamp regressions, and observed event-time deltas. A sequence increase between two polling snapshots means native callbacks occurred between the snapshots but were not individually retained by the polling export; it is **not** evidence that Android dropped those callbacks.
+
+Calculate clock offset, drift, timestamp skew, inter-sample intervals, gaps, duplicate sequence values, and monotonicity only where the captured clocks and raw records support the calculation. Do not compare wall-clock timestamps as though they share the same clock basis without a measured synchronization transformation.
+
+The current UI's polling capture count is **not** the native sensor event rate. Report polling snapshots, per-sensor sequence counters, and observed event-time deltas separately; do not infer an event rate from the polling interval.
 
 ### E. Permission and spatial-pose separation
 
@@ -163,6 +172,7 @@ The export must include:
 - Fixture geometry, coordinate frames, alignment transform, and uncertainty.
 - Clock synchronization method and offset/uncertainty.
 - Per-sensor support, registration, sample-arrival, timestamp, and permission states.
+- Raw event and callback elapsed-realtime nanosecond timestamps, per-sensor sequence counters, callback-delivery latency where computable, and monotonicity/repeat/regression summaries.
 - Spatial-pose status, including NOT_INSTRUMENTED when applicable.
 - Analysis code/version, metrics, deviations, exclusions, and reviewer decisions.
 - Custody/access log and all corrections as linked new records.

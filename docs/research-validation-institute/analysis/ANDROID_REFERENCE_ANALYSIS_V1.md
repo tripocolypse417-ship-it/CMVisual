@@ -67,7 +67,10 @@ The reference artifact is a separate JSON file. Keep the instrument's original n
       [0, 0, 1]
     ]
   },
-  "analysis": { "maxInterpolationGapNs": "20000000" },
+  "analysis": {
+    "maxInterpolationGapNs": "20000000",
+    "requiredSensors": ["accelerometer", "gyroscope"]
+  },
   "referenceSamples": [
     {
       "timestampNs": "1000000000",
@@ -88,6 +91,22 @@ The numbers above are format examples only. They are not prescribed clock offset
 - `referenceToWaveRadarRotationMatrix`: right-handed orthonormal transform from reference IMU axes into the WaveRadar phone sensor frame.
 - `maxInterpolationGapNs`: preregistered maximum bracketing interval. The analyzer does not extrapolate.
 - `standardUncertainty`: per-axis standard uncertainty in the stated channel units, copied from the instrument's documented calibration evidence.
+- `requiredSensors`: an explicit preregistered subset of `accelerometer` and/or `gyroscope`. Set this only after the fresh device inventory establishes which channels are supported and registered. If omitted, both channels remain the default analysis scope, but the result cannot become a review candidate until the scope is explicitly declared.
+
+### Sensor lifecycle and channel scope
+
+The analyzer reports, separately for each channel, the observed counts of native capability state, listener-registration state, and sample-arrival state. A numeric `ARRIVED` sample does not silently fill in missing capability or registration metadata. For a channel to become a review candidate, every captured ARRIVED polling record must explicitly show `SUPPORTED` and `REGISTERED`; missing or contradictory lifecycle metadata leaves that channel exploratory.
+
+The preregistered `requiredSensors` list controls which channels are required for the overall comparison. An explicitly unsupported gyroscope can be reported as `NOT_IN_REQUIRED_ANALYSIS_SCOPE` while an accelerometer-only study proceeds, provided that accelerometer-only scope was set before collection. Unsupported sensors are not treated as failed measurements. Do not change the required channel set after inspecting confirmatory results; create a new protocol version instead.
+
+The report also keeps these device-level observations separate:
+
+- Native Android SensorManager availability.
+- Native SensorManager runtime-permission policy (`NOT_REQUIRED`, `GRANTED`, or `UNKNOWN`).
+- Browser/Web motion permission state.
+- Spatial-pose provider state, including `NOT_INSTRUMENTED`.
+
+Browser motion permission does not substitute for native SensorManager permission state. Spatial-pose availability is not required for an accelerometer/gyroscope bench comparison and is never inferred from those sensors.
 
 A calibration metadata envelope is only a candidate for review. The certificate, asset identity, validity dates, uncertainty, witness independence, and custody must be checked by an independent evidence custodian.
 
@@ -109,20 +128,21 @@ The report records SHA-256 digests of the exact two input files. The two input f
 1. Fit an affine mapping from reference monotonic time to Android elapsed-realtime using at least three strictly increasing synchronization pairs.
 2. Report clock drift, fit residuals, declared synchronization uncertainty, and invalid pair counts. A good mathematical fit does not prove that the physical synchronization procedure was correct.
 3. **Do not extrapolate the clock mapping.** Android event timestamps outside the first-to-last observed synchronization-pair range are excluded as `CLOCK_MAPPING_OUTSIDE_SYNC_PAIR_RANGE`. Place documented synchronization events so the preregistered acquisition window is bracketed; if it is not, the affected samples remain unmatched.
-3. Require a right-handed orthonormal 3×3 coordinate transform. A valid matrix does not prove that the fixture was physically aligned correctly.
-4. Extract only `ARRIVED`, `MEASURED` samples with a raw `timestampElapsedRealtimeNanos` value from Android `SensorEvent.timestamp`, finite 3-axis values, and a valid native sample sequence. Preserve `timestampBasis` separately: the current baseline may label the display measurement timestamp `WALL_CLOCK_ESTIMATE_FROM_ELAPSED_REALTIME`, while the raw monotonic event timestamp remains in `timestampElapsedRealtimeNanos`.
-5. Deduplicate repeated UI polling records by native `sampleSequence`; exclude conflicting duplicate sequences. Report sequence gaps and non-monotonic event timestamps.
-6. Linearly interpolate reference values only between bracketing reference samples whose gap is at or below the preregistered limit. No extrapolation is performed.
-7. Report per-axis bias, sample standard deviation of error, RMSE, 95th-percentile absolute error, maximum absolute error, and vector RMSE for accelerometer and gyroscope separately.
+4. Require a right-handed orthonormal 3×3 coordinate transform. A valid matrix does not prove that the fixture was physically aligned correctly.
+5. Extract only `ARRIVED`, `MEASURED` samples with a raw `timestampElapsedRealtimeNanos` value from Android `SensorEvent.timestamp`, finite 3-axis values, and a valid native sample sequence. Preserve `timestampBasis` separately: the current baseline may label the display measurement timestamp `WALL_CLOCK_ESTIMATE_FROM_ELAPSED_REALTIME`, while the raw monotonic event timestamp remains in `timestampElapsedRealtimeNanos`.
+6. Deduplicate repeated UI polling records by native `sampleSequence`; exclude conflicting duplicate sequences. Report sequence gaps and non-monotonic event timestamps.
+7. Linearly interpolate reference values only between bracketing reference samples whose gap is at or below the preregistered limit. No extrapolation is performed.
+8. Report per-axis bias, sample standard deviation of error, RMSE, 95th-percentile absolute error, maximum absolute error, and vector RMSE for accelerometer and gyroscope separately.
 
-No automatic pass/fail threshold is embedded. A reviewer must interpret denominators, gaps, uncertainty, clock residuals, alignment, exclusions, and protocol deviations against thresholds fixed before confirmatory data collection.
+No automatic pass/fail threshold is embedded. A reviewer must interpret denominators, gaps, uncertainty, clock residuals, alignment, lifecycle-state completeness, required channel scope, exclusions, and protocol deviations against thresholds fixed before confirmatory data collection. Each channel has its own `accuracyEvidenceStatus`; the top-level status is a candidate only when every preregistered required channel is eligible.
 
 ## Output dispositions
 
 - `COMPUTED_COMPARISON_PENDING_INDEPENDENT_REVIEW`: numerical comparisons were computable; this is not a validation pass.
 - `NOT_COMPUTABLE_WITH_CURRENT_SYNC_OR_FRAME_METADATA`: required clock mapping or coordinate transform was unavailable or invalid.
 - `CANDIDATE_FOR_INDEPENDENT_REVIEW_NOT_VERIFIED`: all required metadata gates were present. The independent custodian and reviewer still must authenticate source artifacts and method.
-- `INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY`: one or more preregistration, calibration, uncertainty, synchronization, sequence-integrity, or matched-sample conditions were not established.
+- `INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY`: one or more preregistration, required-scope, calibration, uncertainty, synchronization, lifecycle, sequence-integrity, native permission-policy, or matched-sample conditions were not established.
+- `NOT_IN_REQUIRED_ANALYSIS_SCOPE` (per channel): the channel was intentionally excluded from the preregistered comparison scope; this is not a finding that the sensor failed.
 
 ## QA fixture guard
 

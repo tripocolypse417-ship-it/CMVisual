@@ -11,8 +11,17 @@ const waveRadarExport = {
     const values = [index + 1.1, index + 2, 9.0];
     const record = {
       nativeSensorBaseline: {
+        nativeSensorManager: { state: 'AVAILABLE' },
+        permissions: {
+          nativeAndroidSensorRuntime: { state: 'NOT_REQUIRED' },
+          webMotion: { permissionState: 'UNKNOWN' },
+        },
+        spatialPose: { state: 'NOT_INSTRUMENTED' },
+        platform: { manufacturer: 'Motorola', model: 'Moto G Play 2024' },
         sensors: {
           accelerometer: {
+            capability: { state: 'SUPPORTED' },
+            registration: { state: 'REGISTERED' },
             sampleArrival: {
               state: 'ARRIVED',
               evidenceClass: 'MEASURED',
@@ -23,6 +32,8 @@ const waveRadarExport = {
             },
           },
           gyroscope: {
+            capability: { state: 'SUPPORTED' },
+            registration: { state: 'REGISTERED' },
             sampleArrival: {
               state: 'ARRIVED',
               evidenceClass: 'MEASURED',
@@ -77,7 +88,10 @@ const referenceArtifact = {
       [0, 0, 1],
     ],
   },
-  analysis: { maxInterpolationGapNs: '1500000000' },
+  analysis: {
+    maxInterpolationGapNs: '1500000000',
+    requiredSensors: ['accelerometer', 'gyroscope'],
+  },
   referenceSamples: [
     { timestampNs: '1000000000', accelerometerMps2: [1, 2, 9], gyroscopeRadPerSec: [0.1, 0.2, 0.3] },
     { timestampNs: '2000000000', accelerometerMps2: [2, 3, 9], gyroscopeRadPerSec: [0.1, 0.2, 0.3] },
@@ -108,6 +122,17 @@ assert.equal(report.sensors.gyroscope.matchedSampleCount, 3);
 assert.equal(report.sensors.gyroscope.vectorRmse, 0);
 assert.equal(report.analysisMethod.automaticPassFail, false);
 assert.equal(report.instrumentCalibration.measurementWindowCoveredByCalibration, true);
+assert.equal(report.deviceContext.nativeSensorManagerAvailabilityComplete, true);
+assert.equal(report.deviceContext.nativeSensorRuntimePermissionPolicyComplete, true);
+assert.equal(report.deviceContext.nativeSensorManagerStateCounts.AVAILABLE, 4);
+assert.equal(report.deviceContext.nativeAndroidSensorRuntimePermissionStateCounts.NOT_REQUIRED, 4);
+assert.equal(report.deviceContext.webMotionPermissionStateCounts.UNKNOWN, 4);
+assert.equal(report.deviceContext.spatialPoseStateCounts.NOT_INSTRUMENTED, 4);
+assert.equal(report.sensors.accelerometer.waveRadar.capabilityStateCounts.SUPPORTED, 4);
+assert.equal(report.sensors.accelerometer.waveRadar.registrationStateCounts.REGISTERED, 4);
+assert.equal(report.sensors.accelerometer.waveRadar.lifecycleEvidenceComplete, true);
+assert.deepEqual(report.inputs.requiredSensors, ['accelerometer', 'gyroscope']);
+assert.equal(report.inputs.requiredSensorScopeDeclared, true);
 
 const noSync = structuredClone(referenceArtifact);
 noSync.clockSync.pairs = [];
@@ -182,6 +207,69 @@ const sampleQaReport = analyzeAndroidReference({ waveRadarExport: sampleMarkedQa
 assert.equal(sampleQaReport.qaFixture.detected, true);
 assert.ok(sampleQaReport.qaFixture.reasons.includes('WAVERADAR_SAMPLE_QA_FIXTURE_FLAG'));
 assert.equal(sampleQaReport.accuracyEvidenceStatus, 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY');
+
+// A clean, preregistered accelerometer + gyroscope fixture demonstrates the
+// candidate path. It remains a software fixture and is never measurement evidence.
+const cleanWaveRadarExport = structuredClone(waveRadarExport);
+delete cleanWaveRadarExport.qaFixture;
+const cleanReferenceArtifact = structuredClone(referenceArtifact);
+delete cleanReferenceArtifact.qaFixture;
+const cleanReport = analyzeAndroidReference({
+  waveRadarExport: cleanWaveRadarExport,
+  referenceArtifact: cleanReferenceArtifact,
+});
+assert.equal(cleanReport.accuracyEvidenceStatus, 'CANDIDATE_FOR_INDEPENDENT_REVIEW_NOT_VERIFIED');
+assert.equal(cleanReport.sensors.accelerometer.accuracyEvidenceStatus, 'CANDIDATE_FOR_INDEPENDENT_REVIEW_NOT_VERIFIED');
+assert.equal(cleanReport.sensors.gyroscope.accuracyEvidenceStatus, 'CANDIDATE_FOR_INDEPENDENT_REVIEW_NOT_VERIFIED');
+
+// If the device inventory confirms no gyroscope, the preregistered scope can
+// explicitly require only accelerometer. The unsupported channel is reported,
+// not silently treated as a failed measurement or a required comparison.
+const accelerometerOnlyWave = structuredClone(cleanWaveRadarExport);
+for (const sample of accelerometerOnlyWave.samples) {
+  const gyro = sample.nativeSensorBaseline.sensors.gyroscope;
+  gyro.capability.state = 'UNSUPPORTED';
+  gyro.registration.state = 'UNSUPPORTED';
+  gyro.sampleArrival.state = 'UNKNOWN';
+  gyro.sampleArrival.evidenceClass = 'UNKNOWN';
+  gyro.sampleArrival.value = null;
+}
+const accelerometerOnlyReference = structuredClone(cleanReferenceArtifact);
+accelerometerOnlyReference.analysis.requiredSensors = ['accelerometer'];
+const accelerometerOnlyReport = analyzeAndroidReference({
+  waveRadarExport: accelerometerOnlyWave,
+  referenceArtifact: accelerometerOnlyReference,
+});
+assert.equal(accelerometerOnlyReport.accuracyEvidenceStatus, 'CANDIDATE_FOR_INDEPENDENT_REVIEW_NOT_VERIFIED');
+assert.equal(accelerometerOnlyReport.sensors.accelerometer.accuracyEvidenceStatus, 'CANDIDATE_FOR_INDEPENDENT_REVIEW_NOT_VERIFIED');
+assert.equal(accelerometerOnlyReport.sensors.gyroscope.accuracyEvidenceStatus, 'NOT_IN_REQUIRED_ANALYSIS_SCOPE');
+assert.equal(accelerometerOnlyReport.sensors.gyroscope.waveRadar.capabilityStateCounts.UNSUPPORTED, 4);
+
+// A measured numeric event does not silently imply confirmed support or listener
+// registration. Unknown lifecycle metadata keeps the channel exploratory.
+const unknownLifecycleWave = structuredClone(accelerometerOnlyWave);
+unknownLifecycleWave.samples[0].nativeSensorBaseline.sensors.accelerometer.capability.state = 'UNKNOWN';
+unknownLifecycleWave.samples[0].nativeSensorBaseline.sensors.accelerometer.registration.state = 'UNKNOWN';
+const unknownLifecycleReport = analyzeAndroidReference({
+  waveRadarExport: unknownLifecycleWave,
+  referenceArtifact: accelerometerOnlyReference,
+});
+assert.equal(unknownLifecycleReport.sensors.accelerometer.waveRadar.lifecycleEvidenceComplete, false);
+assert.equal(unknownLifecycleReport.sensors.accelerometer.accuracyEvidenceStatus, 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY');
+
+// Browser motion permission is reported independently and does not overwrite
+// the native SensorManager permission policy.
+const browserDeniedWave = structuredClone(cleanWaveRadarExport);
+for (const sample of browserDeniedWave.samples) {
+  sample.nativeSensorBaseline.permissions.webMotion.permissionState = 'DENIED';
+}
+const browserDeniedReport = analyzeAndroidReference({
+  waveRadarExport: browserDeniedWave,
+  referenceArtifact: cleanReferenceArtifact,
+});
+assert.equal(browserDeniedReport.accuracyEvidenceStatus, 'CANDIDATE_FOR_INDEPENDENT_REVIEW_NOT_VERIFIED');
+assert.equal(browserDeniedReport.deviceContext.webMotionPermissionStateCounts.DENIED, 4);
+assert.equal(browserDeniedReport.deviceContext.nativeAndroidSensorRuntimePermissionStateCounts.NOT_REQUIRED, 4);
 
 assert.throws(() => analyzeAndroidReference({ waveRadarExport, referenceArtifact: { ...referenceArtifact, analysis: {} } }), /maxInterpolationGapNs/);
 assert.throws(() => analyzeAndroidReference({ waveRadarExport, referenceArtifact: { ...referenceArtifact, schema: 'wrong' } }), /schema/);
