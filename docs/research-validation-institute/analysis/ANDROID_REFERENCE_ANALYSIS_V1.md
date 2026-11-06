@@ -112,7 +112,7 @@ The report records SHA-256 digests of the exact two input files. The two input f
 4. Require a right-handed orthonormal 3×3 coordinate transform. A valid matrix does not prove that the fixture was physically aligned correctly.
 5. Extract only `ARRIVED`, `MEASURED` samples with a raw `timestampElapsedRealtimeNanos` value from Android `SensorEvent.timestamp`, finite 3-axis values, and a valid native sample sequence. Preserve `timestampBasis` separately: the current baseline may label the display measurement timestamp `WALL_CLOCK_ESTIMATE_FROM_ELAPSED_REALTIME`, while the raw monotonic event timestamp remains in `timestampElapsedRealtimeNanos`.
 6. Deduplicate repeated UI polling records by native `sampleSequence`; exclude conflicting duplicate sequences. Report sequence gaps and non-monotonic event timestamps.
-6. Linearly interpolate reference values only between bracketing reference samples whose gap is at or below the preregistered limit. No extrapolation is performed.
+7. Linearly interpolate reference values only between bracketing reference samples whose gap is at or below the preregistered limit. No extrapolation is performed.
 8. Report per-axis bias, sample standard deviation of error, RMSE, 95th-percentile absolute error, maximum absolute error, and vector RMSE for accelerometer and gyroscope separately.
 
 No automatic pass/fail threshold is embedded. A reviewer must interpret denominators, gaps, uncertainty, clock residuals, alignment, exclusions, and protocol deviations against thresholds fixed before confirmatory data collection.
@@ -135,8 +135,9 @@ The analyzer does not infer support from sample arrival, registration from suppo
 
 - `COMPUTED_COMPARISON_PENDING_INDEPENDENT_REVIEW`: numerical comparisons were computable; this is not a validation pass.
 - `NOT_COMPUTABLE_WITH_CURRENT_SYNC_OR_FRAME_METADATA`: required clock mapping or coordinate transform was unavailable or invalid.
-- `CANDIDATE_FOR_INDEPENDENT_REVIEW_NOT_VERIFIED`: all required metadata gates were present. The independent custodian and reviewer still must authenticate source artifacts and method.
-- `INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY`: one or more preregistration, calibration, uncertainty, synchronization, sequence-integrity, or matched-sample conditions were not established.
+- `CANDIDATE_FOR_INDEPENDENT_REVIEW_NOT_VERIFIED`: all required metadata gates were present for every analyzed channel. The independent custodian and reviewer still must authenticate source artifacts and method.
+- `PARTIAL_CHANNEL_CANDIDATE_NOT_VERIFIED`: at least one, but not all, analyzed channels individually meet the metadata gates. Per-channel status and exclusion reasons remain authoritative.
+- `INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY`: no analyzed channel met the candidate metadata gates; one or more preregistration, calibration, uncertainty, synchronization, lifecycle, sequence-integrity, or matched-sample conditions were not established.
 
 ## QA fixture guard
 
