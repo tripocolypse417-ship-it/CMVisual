@@ -109,11 +109,11 @@ The report records SHA-256 digests of the exact two input files. The two input f
 1. Fit an affine mapping from reference monotonic time to Android elapsed-realtime using at least three strictly increasing synchronization pairs.
 2. Report clock drift, fit residuals, declared synchronization uncertainty, and invalid pair counts. A good mathematical fit does not prove that the physical synchronization procedure was correct.
 3. **Do not extrapolate the clock mapping.** Android event timestamps outside the first-to-last observed synchronization-pair range are excluded as `CLOCK_MAPPING_OUTSIDE_SYNC_PAIR_RANGE`. Place documented synchronization events so the preregistered acquisition window is bracketed; if it is not, the affected samples remain unmatched.
-3. Require a right-handed orthonormal 3×3 coordinate transform. A valid matrix does not prove that the fixture was physically aligned correctly.
-4. Extract only `ARRIVED`, `MEASURED` samples with a raw `timestampElapsedRealtimeNanos` value from Android `SensorEvent.timestamp`, finite 3-axis values, and a valid native sample sequence. Preserve `timestampBasis` separately: the current baseline may label the display measurement timestamp `WALL_CLOCK_ESTIMATE_FROM_ELAPSED_REALTIME`, while the raw monotonic event timestamp remains in `timestampElapsedRealtimeNanos`.
-5. Deduplicate repeated UI polling records by native `sampleSequence`; exclude conflicting duplicate sequences. Report sequence gaps and non-monotonic event timestamps.
-6. Linearly interpolate reference values only between bracketing reference samples whose gap is at or below the preregistered limit. No extrapolation is performed.
-7. Report per-axis bias, sample standard deviation of error, RMSE, 95th-percentile absolute error, maximum absolute error, and vector RMSE for accelerometer and gyroscope separately.
+4. Require a right-handed orthonormal 3×3 coordinate transform. A valid matrix does not prove that the fixture was physically aligned correctly.
+5. Extract only `ARRIVED`, `MEASURED` samples with a raw `timestampElapsedRealtimeNanos` value from Android `SensorEvent.timestamp`, finite 3-axis values, and a valid native sample sequence. Preserve `timestampBasis` separately: the current baseline may label the display measurement timestamp `WALL_CLOCK_ESTIMATE_FROM_ELAPSED_REALTIME`, while the raw monotonic event timestamp remains in `timestampElapsedRealtimeNanos`.
+6. Deduplicate repeated UI polling records by native `sampleSequence`; exclude conflicting duplicate sequences. Report sequence gaps and non-monotonic event timestamps.
+7. Linearly interpolate reference values only between bracketing reference samples whose gap is at or below the preregistered limit. No extrapolation is performed.
+8. Report per-axis bias, sample standard deviation of error, RMSE, 95th-percentile absolute error, maximum absolute error, and vector RMSE for accelerometer and gyroscope separately.
 
 No automatic pass/fail threshold is embedded. A reviewer must interpret denominators, gaps, uncertainty, clock residuals, alignment, exclusions, and protocol deviations against thresholds fixed before confirmatory data collection.
 
