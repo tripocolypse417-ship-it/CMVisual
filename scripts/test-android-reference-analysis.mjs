@@ -8,7 +8,7 @@ assert.ok(exampleBlock, 'Protocol documentation must retain its machine-readable
 const documentedExample = JSON.parse(exampleBlock[1]);
 assert.equal(documentedExample.qaFixture, true, 'The documentation-only artifact must be explicitly marked QA-only.');
 assert.equal(documentedExample.instrument.calibrationStatus, 'UNKNOWN', 'The example must not imply real calibration.');
-assert.equal(documentedExample.instrument.calibrationCertificateSha256, '<64-character SHA-256 hex digest>');
+assert.equal(documentedExample.instrument.calibrationCertificateSha256, 'NOT-A-REAL-DIGEST');
 
 const waveTimes = [2_000_000_000, 3_000_000_000, 4_000_000_000];
 const waveRadarExport = {
