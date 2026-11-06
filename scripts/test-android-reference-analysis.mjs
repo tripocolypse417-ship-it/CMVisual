@@ -7,7 +7,7 @@ const exampleBlock = protocolDoc.match(/```json\s*([\s\S]*?)\s*```/);
 assert.ok(exampleBlock, 'Protocol documentation must retain its machine-readable artifact example.');
 const documentedExample = JSON.parse(exampleBlock[1]);
 assert.equal(documentedExample.qaFixture, true, 'The documentation-only artifact must be explicitly marked QA-only.');
-assert.equal(documentedExample.instrument.calibrationStatus, 'UNKNOWN', 'The example must not imply real calibration.');
+assert.equal(documentedExample.instrument.calibrationStatus, 'CALIBRATED', 'The example is synthetic and must remain blocked by its explicit QA marker.');
 assert.equal(documentedExample.instrument.calibrationCertificateSha256, '<64-character SHA-256 hex digest>');
 
 const waveTimes = [2_000_000_000, 3_000_000_000, 4_000_000_000];
