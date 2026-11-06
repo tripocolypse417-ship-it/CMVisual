@@ -523,9 +523,76 @@ export function analyzeAndroidReference({ waveRadarExport, referenceArtifact, in
   const nativeLifecycleAcceptable = CHANNELS.every(channel =>
     sensors[channel.sensor].waveRadar.nativeLifecycleStateMismatchCount === 0
   );
-  const accuracyEvidenceStatus = !qaFixture.detected && analysisCanCompare && allChannelsHaveMatches && nativeLifecycleAcceptable && preregistrationComplete && clockMethodComplete &&
-    clockFit.declaredUncertaintyComplete && clockFit.invalidPairCount === 0 &&
-    calibration.state === 'METADATA_COMPLETE_PENDING_CUSTODIAN_VERIFICATION' &&
+  const channelSequenceIntegrity = channel => {
+    const wave = sensors[channel.sensor].waveRadar;
+    const reference = sensors[channel.sensor].reference;
+    return wave.conflictingDuplicateSequenceCount === 0 &&
+      wave.nonMonotonicEventTimestampCount === 0 &&
+      wave.outOfOrderSequenceCount === 0 &&
+      reference.conflictingTimestampCount === 0;
+  };
+  const channelNativePermissionPolicyConfirmed = channel => {
+    const counts = sensors[channel.sensor].waveRadar.captureStateCounts.nativeAndroidSensorRuntimePermission || {};
+    const total = Object.values(counts).reduce((sum, value) => sum + value, 0);
+    return total > 0 && counts.NOT_REQUIRED === total;
+  };
+  for (const channel of CHANNELS) {
+    const sensor = sensors[channel.sensor];
+    const states = sensor.waveRadar.captureStateCounts;
+    const capability = states.capability || {};
+    const registration = states.registration || {};
+    const manager = states.nativeSensorManager || {};
+    const bridge = states.nativeBridge || {};
+    const reasons = [];
+    if (qaFixture.detected) reasons.push('QA_FIXTURE_MARKED');
+    if (!analysisCanCompare) reasons.push('CLOCK_OR_COORDINATE_FRAME_NOT_COMPUTABLE');
+    if ((capability.SUPPORTED || 0) === 0 && (capability.UNSUPPORTED || 0) > 0) {
+      sensor.channelEvidenceStatus = 'NOT_ASSESSED_SENSOR_UNSUPPORTED';
+      reasons.push('NATIVE_SENSOR_CAPABILITY_UNSUPPORTED');
+    } else if ((capability.SUPPORTED || 0) === 0) {
+      sensor.channelEvidenceStatus = 'NOT_ASSESSED_SENSOR_SUPPORT_UNKNOWN';
+      reasons.push('NATIVE_SENSOR_CAPABILITY_NOT_CONFIRMED');
+    } else if ((registration.REGISTERED || 0) === 0 && ((registration.REGISTRATION_FAILED || 0) > 0 || (registration.NOT_REGISTERED || 0) > 0)) {
+      sensor.channelEvidenceStatus = 'NOT_ASSESSED_LISTENER_REGISTRATION_INCOMPLETE';
+      reasons.push('NATIVE_LISTENER_NOT_REGISTERED');
+    } else if ((manager.AVAILABLE || 0) === 0) {
+      sensor.channelEvidenceStatus = 'NOT_ASSESSED_NATIVE_SENSOR_MANAGER_UNAVAILABLE';
+      reasons.push('NATIVE_SENSOR_MANAGER_NOT_AVAILABLE');
+    } else if ((bridge.OK || 0) === 0) {
+      sensor.channelEvidenceStatus = 'NOT_ASSESSED_NATIVE_BRIDGE_UNAVAILABLE';
+      reasons.push('NATIVE_BRIDGE_NOT_OK');
+    } else if (sensor.matchedSampleCount === 0) {
+      sensor.channelEvidenceStatus = 'NO_COMPARISON_COMPUTED';
+      reasons.push('NO_MATCHED_REFERENCE_SAMPLES');
+    } else {
+      const permissionPolicyConfirmed = channelNativePermissionPolicyConfirmed(channel);
+      const candidate = !qaFixture.detected && analysisCanCompare &&
+        sensor.matchedSampleCount > 0 &&
+        sensor.waveRadar.nativeLifecycleStateMismatchCount === 0 &&
+        channelSequenceIntegrity(channel) &&
+        permissionPolicyConfirmed &&
+        preregistrationComplete && clockMethodComplete &&
+        clockFit.declaredUncertaintyComplete && clockFit.invalidPairCount === 0 &&
+        calibration.state === 'METADATA_COMPLETE_PENDING_CUSTODIAN_VERIFICATION' &&
+        calibration.perChannelStandardUncertaintyPresent[channel.sensor];
+      if (candidate) sensor.channelEvidenceStatus = 'CANDIDATE_FOR_INDEPENDENT_REVIEW_NOT_VERIFIED';
+      else sensor.channelEvidenceStatus = 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY';
+      if (!permissionPolicyConfirmed) reasons.push('NATIVE_ANDROID_SENSOR_PERMISSION_POLICY_NOT_CONFIRMED');
+      if (sensor.waveRadar.nativeLifecycleStateMismatchCount > 0) reasons.push('NATIVE_SENSOR_LIFECYCLE_STATE_MISMATCH');
+      if (!channelSequenceIntegrity(channel)) reasons.push('SEQUENCE_OR_TIMESTAMP_INTEGRITY_ISSUE');
+      if (!preregistrationComplete) reasons.push('PREREGISTRATION_INCOMPLETE');
+      if (!clockMethodComplete || !clockFit.declaredUncertaintyComplete || clockFit.invalidPairCount > 0) reasons.push('CLOCK_SYNCHRONIZATION_METADATA_INCOMPLETE');
+      if (calibration.state !== 'METADATA_COMPLETE_PENDING_CUSTODIAN_VERIFICATION' || !calibration.perChannelStandardUncertaintyPresent[channel.sensor]) reasons.push('REFERENCE_CALIBRATION_METADATA_INCOMPLETE');
+    }
+    sensor.channelEvidenceReasons = [...new Set(reasons)];
+    sensor.nativeAndroidSensorPermissionPolicyConfirmed = channelNativePermissionPolicyConfirmed(channel);
+    sensor.browserMotionPermissionStateCounts = states.webMotionPermission || {};
+    sensor.spatialPoseStateCounts = states.spatialPose || {};
+  }
+  const allChannelsHaveChannelCandidates = CHANNELS.every(channel =>
+    sensors[channel.sensor].channelEvidenceStatus === 'CANDIDATE_FOR_INDEPENDENT_REVIEW_NOT_VERIFIED'
+  );
+  const accuracyEvidenceStatus = allChannelsHaveChannelCandidates && allChannelsHaveMatches && nativeLifecycleAcceptable &&
     allChannelsHaveReferenceUncertainty && sequenceIntegrityAcceptable
     ? 'CANDIDATE_FOR_INDEPENDENT_REVIEW_NOT_VERIFIED'
     : 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY';
