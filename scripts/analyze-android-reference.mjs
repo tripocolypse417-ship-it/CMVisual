@@ -229,18 +229,68 @@ function extractWaveRadarEvents(samples, sensor) {
   const conflicts = new Set();
   const exclusions = {};
   const count = reason => { exclusions[reason] = (exclusions[reason] || 0) + 1; };
+  const captureStateCounts = {
+    nativeSensorManager: {},
+    nativeBridge: {},
+    capability: {},
+    registration: {},
+    nativeAndroidSensorRuntimePermission: {},
+    webMotionPermission: {},
+    spatialPose: {},
+  };
+  const recordState = (group, value) => {
+    const state = typeof value === 'string' && value.trim() ? value : 'UNKNOWN';
+    captureStateCounts[group][state] = (captureStateCounts[group][state] || 0) + 1;
+    return state;
+  };
   let rawArrivedCount = 0;
+  let lifecycleEligiblePollingRecords = 0;
+  let nativeLifecycleStateMismatchCount = 0;
   let previousObservedSequence = null;
   let outOfOrderSequenceCount = 0;
   const timestampBasisCounts = {};
 
   for (let pollIndex = 0; pollIndex < (Array.isArray(samples) ? samples.length : 0); pollIndex += 1) {
-    const arrival = samples[pollIndex]?.nativeSensorBaseline?.sensors?.[sensor]?.sampleArrival;
+    const sample = samples[pollIndex];
+    const baseline = sample?.nativeSensorBaseline;
+    const sensorRecord = baseline?.sensors?.[sensor];
+    const arrival = sensorRecord?.sampleArrival;
+    if (arrival?.state === 'ARRIVED') rawArrivedCount += 1;
+
+    const managerState = recordState('nativeSensorManager', baseline?.nativeSensorManager?.state);
+    const bridgeState = recordState('nativeBridge', baseline?.bridgeCallState ?? sample?.nativeSensorBridgeCallState);
+    const capabilityState = recordState('capability', sensorRecord?.capability?.state);
+    const registrationState = recordState('registration', sensorRecord?.registration?.state);
+    recordState('nativeAndroidSensorRuntimePermission', baseline?.permissions?.nativeAndroidSensorRuntime?.state);
+    recordState('webMotionPermission', baseline?.permissions?.webMotion?.permissionState);
+    recordState('spatialPose', baseline?.spatialPose?.state);
+
+    if (managerState !== 'AVAILABLE') {
+      count(`NATIVE_SENSOR_MANAGER_${managerState}_NOT_AVAILABLE`);
+      nativeLifecycleStateMismatchCount += 1;
+      continue;
+    }
+    if (capabilityState !== 'SUPPORTED') {
+      count(`CAPABILITY_${capabilityState}_NOT_CONFIRMED_SUPPORTED`);
+      nativeLifecycleStateMismatchCount += 1;
+      continue;
+    }
+    if (registrationState !== 'REGISTERED') {
+      count(`REGISTRATION_${registrationState}_NOT_CONFIRMED_REGISTERED`);
+      nativeLifecycleStateMismatchCount += 1;
+      continue;
+    }
+    if (bridgeState !== 'OK') {
+      count(`NATIVE_BRIDGE_${bridgeState}_NOT_OK`);
+      nativeLifecycleStateMismatchCount += 1;
+      continue;
+    }
+    lifecycleEligiblePollingRecords += 1;
+
     if (!arrival || arrival.state !== 'ARRIVED') {
       count(arrival?.state || 'MISSING_SENSOR_CAPTURE');
       continue;
     }
-    rawArrivedCount += 1;
     if (arrival.evidenceClass !== 'MEASURED') {
       count('NON_MEASURED_EVIDENCE_CLASS');
       continue;
@@ -291,6 +341,9 @@ function extractWaveRadarEvents(samples, sensor) {
     events,
     diagnostics: {
       rawArrivedPollingRecords: rawArrivedCount,
+      lifecycleEligiblePollingRecords,
+      nativeLifecycleStateMismatchCount,
+      captureStateCounts,
       uniqueNativeEvents: events.length,
       repeatedPollRecords: exclusions.REPEATED_POLL_OF_SAME_NATIVE_EVENT || 0,
       conflictingDuplicateSequenceCount: exclusions.CONFLICTING_DUPLICATE_SEQUENCE_EXCLUDED || 0,
@@ -467,7 +520,10 @@ export function analyzeAndroidReference({ waveRadarExport, referenceArtifact, in
     sensors[channel.sensor].waveRadar.outOfOrderSequenceCount === 0 &&
     sensors[channel.sensor].reference.conflictingTimestampCount === 0
   );
-  const accuracyEvidenceStatus = !qaFixture.detected && analysisCanCompare && allChannelsHaveMatches && preregistrationComplete && clockMethodComplete &&
+  const nativeLifecycleAcceptable = CHANNELS.every(channel =>
+    sensors[channel.sensor].waveRadar.nativeLifecycleStateMismatchCount === 0
+  );
+  const accuracyEvidenceStatus = !qaFixture.detected && analysisCanCompare && allChannelsHaveMatches && nativeLifecycleAcceptable && preregistrationComplete && clockMethodComplete &&
     clockFit.declaredUncertaintyComplete && clockFit.invalidPairCount === 0 &&
     calibration.state === 'METADATA_COMPLETE_PENDING_CUSTODIAN_VERIFICATION' &&
     allChannelsHaveReferenceUncertainty && sequenceIntegrityAcceptable
@@ -511,6 +567,8 @@ export function analyzeAndroidReference({ waveRadarExport, referenceArtifact, in
       interpolation: 'LINEAR_BETWEEN_BRACKETING_REFERENCE_SAMPLES_ONLY; NO_EXTRAPOLATION',
       maxInterpolationGapNs: maxInterpolationGapNs.toString(),
       waveRadarRepeatedPollPolicy: 'Deduplicate identical repeated polling records by native sampleSequence; exclude conflicting duplicate sequences.',
+      nativeSampleEligibility: 'Require nativeSensorManager AVAILABLE, per-sensor capability SUPPORTED, registration REGISTERED, bridgeCallState OK, and sampleArrival ARRIVED / MEASURED. Report and gate each lifecycle state independently.',
+      permissionAndPoseSeparation: 'Report native Android sensor runtime permission, browser/web motion permission, and spatial-pose availability separately. Web permission and spatial-pose state are not substitutes for native sensor support or registration and do not gate native IMU comparison.',
       alignmentTimestampField: 'timestampElapsedRealtimeNanos (raw Android SensorEvent.timestamp); timestampBasis is retained as measurement-timestamp context, not used as the alignment clock.',
       sequenceGapPolicy: 'Report missing sequence counts; do not synthesize samples.',
       metrics: ['per-axis bias', 'sample standard deviation of error', 'RMSE', '95th percentile absolute error', 'maximum absolute error', 'vector RMSE'],
