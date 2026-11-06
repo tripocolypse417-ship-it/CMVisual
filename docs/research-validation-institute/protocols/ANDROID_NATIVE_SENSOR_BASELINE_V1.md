@@ -86,6 +86,11 @@ A consumer phone, uncalibrated compass, manually estimated movement, or the Wave
 2. Start a new session with no prior session data imported into the run.
 3. Query capabilities once and preserve the complete capability response.
 4. Record each sensor's support state, registration state, and sample-history state separately.
+
+**Target-device planning note:** Motorola's published moto g play (2024) specification lists an accelerometer, proximity sensor, ambient-light sensor, e-compass, and barometer, but does not list a gyroscope. This published list is not proof that the Android runtime lacks a gyroscope on every hardware/firmware variant. Query `SensorManager.getDefaultSensor(TYPE_GYROSCOPE)` on the actual test device and preserve the result as `SUPPORTED`, `UNSUPPORTED`, or `UNKNOWN`. If the fresh inventory confirms no gyroscope, preregister an accelerometer-only analysis scope (`analysis.requiredSensors: ["accelerometer"]`) before confirmatory capture; do not classify an unsupported gyro as a failed measurement.
+
+Manufacturer source: https://en-us.support.motorola.com/app/answers/detail/a_id/177738/~/moto-g-play-2024-%7C-specifications (accessed 2026-11-05).
+
 5. Capture for at least 60 seconds while the phone remains stationary on the fixture.
 6. Pause and resume the app once; capture the lifecycle transition and whether listeners are re-registered.
 7. Stop and export the complete session.
