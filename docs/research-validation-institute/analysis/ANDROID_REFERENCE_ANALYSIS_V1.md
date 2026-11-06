@@ -31,20 +31,20 @@ The reference artifact is a separate JSON file. Keep the instrument's original n
     "endedAt": "2026-11-03T12:10:00.000Z"
   },
   "instrument": {
-    "makeModel": "Reference IMU make/model",
-    "assetId": "LAB-ASSET-001",
-    "calibrationStatus": "CALIBRATED",
-    "calibrationEvidenceRef": "custody://calibration-certificate-001",
+    "makeModel": "SYNTHETIC QA FIXTURE — NOT A REAL INSTRUMENT",
+    "assetId": "QA-ONLY-DO-NOT-USE",
+    "calibrationStatus": "UNKNOWN",
+    "calibrationEvidenceRef": "qa://not-a-calibration-certificate",
     "calibrationDate": "2026-01-01T00:00:00.000Z",
     "calibrationValidThrough": "2027-01-01T00:00:00.000Z",
-    "calibrationCertificateSha256": "<64-character SHA-256 hex digest>",
+    "calibrationCertificateSha256": "NOT-A-REAL-DIGEST",
     "standardUncertainty": {
       "accelerometerMps2": { "x": 0.01, "y": 0.01, "z": 0.01 },
       "gyroscopeRadPerSec": { "x": 0.001, "y": 0.001, "z": 0.001 }
     }
   },
   "clockSync": {
-    "method": "documented common trigger / pulse method",
+    "method": "SYNTHETIC EXAMPLE ONLY — replace with documented physical method",
     "pairs": [
       {
         "referenceTimestampNs": "1000000000",
@@ -113,12 +113,14 @@ The report records SHA-256 digests of the exact two input files. The two input f
 2. Report clock drift, fit residuals, declared synchronization uncertainty, and invalid pair counts. A good mathematical fit does not prove that the physical synchronization procedure was correct.
 3. **Do not extrapolate the clock mapping.** Android event timestamps outside the first-to-last observed synchronization-pair range are excluded as `CLOCK_MAPPING_OUTSIDE_SYNC_PAIR_RANGE`. Place documented synchronization events so the preregistered acquisition window is bracketed; if it is not, the affected samples remain unmatched.
 4. Require a right-handed orthonormal 3×3 coordinate transform. A valid matrix does not prove that the fixture was physically aligned correctly.
-5. Extract only `ARRIVED`, `MEASURED` samples with a raw `timestampElapsedRealtimeNanos` value from Android `SensorEvent.timestamp`, finite 3-axis values, and a valid native sample sequence. Preserve `timestampBasis` separately: the current baseline may label the display measurement timestamp `WALL_CLOCK_ESTIMATE_FROM_ELAPSED_REALTIME`, while the raw monotonic event timestamp remains in `timestampElapsedRealtimeNanos`.
+5. Extract only `ARRIVED`, `MEASURED` samples whose per-capture native sensor manager is `AVAILABLE`, per-sensor capability is `SUPPORTED`, listener registration is `REGISTERED`, and native bridge call state is `OK`. Keep capability, registration, bridge state, sample arrival, and timestamp provenance distinct; contradictory or unknown lifecycle states are excluded and prevent candidate-review eligibility. Preserve `timestampBasis` separately: the current baseline may label the display measurement timestamp `WALL_CLOCK_ESTIMATE_FROM_ELAPSED_REALTIME`, while the raw monotonic event timestamp remains in `timestampElapsedRealtimeNanos`.
 6. Deduplicate repeated UI polling records by native `sampleSequence`; exclude conflicting duplicate sequences. Report sequence gaps and non-monotonic event timestamps.
 7. Linearly interpolate reference values only between bracketing reference samples whose gap is at or below the preregistered limit. No extrapolation is performed.
 8. Report per-axis bias, sample standard deviation of error, RMSE, 95th-percentile absolute error, maximum absolute error, and vector RMSE for accelerometer and gyroscope separately.
 
-No automatic pass/fail threshold is embedded. A reviewer must interpret denominators, gaps, uncertainty, clock residuals, alignment, exclusions, and protocol deviations against thresholds fixed before confirmatory data collection.
+Browser/web motion permission is reported separately from Android SensorManager's native runtime-permission policy; a browser permission denial is not treated as proof that native SensorManager access is denied. Spatial-pose availability is also reported independently and is not inferred from accelerometer/gyroscope readings. Neither browser permission state nor spatial-pose status substitutes for native support or registration.
+
+No automatic pass/fail threshold is embedded. A reviewer must interpret denominators, gaps, uncertainty, clock residuals, alignment, lifecycle exclusions, and protocol deviations against thresholds fixed before confirmatory data collection.
 
 ## Output dispositions
 
