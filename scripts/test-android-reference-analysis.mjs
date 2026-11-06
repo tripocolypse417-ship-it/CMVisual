@@ -11,8 +11,16 @@ const waveRadarExport = {
     const values = [index + 1.1, index + 2, 9.0];
     const record = {
       nativeSensorBaseline: {
+        schema: 'waveradar-android-native-baseline-v1',
+        permissions: {
+          nativeAndroidSensorRuntime: { state: 'NOT_REQUIRED' },
+          webMotion: { permissionState: 'PROMPT_REQUIRED' },
+        },
+        spatialPose: { state: 'NOT_INSTRUMENTED', source: null },
         sensors: {
           accelerometer: {
+            capability: { state: 'SUPPORTED' },
+            registration: { state: 'REGISTERED' },
             sampleArrival: {
               state: 'ARRIVED',
               evidenceClass: 'MEASURED',
@@ -23,6 +31,8 @@ const waveRadarExport = {
             },
           },
           gyroscope: {
+            capability: { state: 'SUPPORTED' },
+            registration: { state: 'REGISTERED' },
             sampleArrival: {
               state: 'ARRIVED',
               evidenceClass: 'MEASURED',
@@ -89,6 +99,12 @@ const report = analyzeAndroidReference({ waveRadarExport, referenceArtifact });
 assert.equal(report.schema, ANALYSIS_SCHEMA);
 assert.equal(report.analysisDisposition, 'COMPUTED_COMPARISON_PENDING_INDEPENDENT_REVIEW');
 assert.equal(report.qaFixture.detected, true);
+assert.equal(report.nativeAccessContext.nativeAndroidSensorRuntimePolicy.state, 'NOT_REQUIRED');
+assert.equal(report.nativeAccessContext.webMotionPermission.state, 'PROMPT_REQUIRED');
+assert.equal(report.nativeAccessContext.spatialPose.state, 'NOT_INSTRUMENTED');
+assert.equal(report.sensors.accelerometer.lifecycle.capability.state, 'SUPPORTED');
+assert.equal(report.sensors.accelerometer.lifecycle.registration.state, 'REGISTERED');
+assert.deepEqual(report.sensors.accelerometer.eligibilityReasons, ['QA_FIXTURE_INPUT']);
 assert.deepEqual(report.qaFixture.reasons, [
   'WAVERADAR_EXPORT_QA_FIXTURE_FLAG',
   'REFERENCE_ARTIFACT_QA_FIXTURE_FLAG',
@@ -182,6 +198,28 @@ const sampleQaReport = analyzeAndroidReference({ waveRadarExport: sampleMarkedQa
 assert.equal(sampleQaReport.qaFixture.detected, true);
 assert.ok(sampleQaReport.qaFixture.reasons.includes('WAVERADAR_SAMPLE_QA_FIXTURE_FLAG'));
 assert.equal(sampleQaReport.accuracyEvidenceStatus, 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY');
+
+const unsupportedGyro = structuredClone(waveRadarExport);
+for (const sample of unsupportedGyro.samples) {
+  sample.nativeSensorBaseline.sensors.gyroscope.capability.state = 'UNSUPPORTED';
+  sample.nativeSensorBaseline.sensors.gyroscope.registration.state = 'UNSUPPORTED';
+}
+const unsupportedGyroReport = analyzeAndroidReference({ waveRadarExport: unsupportedGyro, referenceArtifact });
+assert.equal(unsupportedGyroReport.sensors.gyroscope.lifecycle.capability.state, 'UNSUPPORTED');
+assert.equal(unsupportedGyroReport.sensors.gyroscope.lifecycle.registration.state, 'UNSUPPORTED');
+assert.ok(unsupportedGyroReport.sensors.gyroscope.eligibilityReasons.includes('SENSOR_CAPABILITY_NOT_CONFIRMED_SUPPORTED'));
+assert.ok(unsupportedGyroReport.sensors.gyroscope.eligibilityReasons.includes('SENSOR_REGISTRATION_NOT_CONFIRMED_REGISTERED'));
+assert.equal(unsupportedGyroReport.nativeAccessContext.webMotionPermission.state, 'PROMPT_REQUIRED');
+assert.equal(unsupportedGyroReport.nativeAccessContext.spatialPose.state, 'NOT_INSTRUMENTED');
+
+const artifactClassQa = structuredClone(waveRadarExport);
+delete artifactClassQa.qaFixture;
+artifactClassQa.evidenceClass = 'QA_FIXTURE';
+const referenceWithoutFlag = structuredClone(referenceArtifact);
+delete referenceWithoutFlag.qaFixture;
+const artifactClassQaReport = analyzeAndroidReference({ waveRadarExport: artifactClassQa, referenceArtifact: referenceWithoutFlag });
+assert.ok(artifactClassQaReport.qaFixture.reasons.includes('WAVERADAR_EXPORT_QA_EVIDENCE_CLASS'));
+assert.equal(artifactClassQaReport.accuracyEvidenceStatus, 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY');
 
 assert.throws(() => analyzeAndroidReference({ waveRadarExport, referenceArtifact: { ...referenceArtifact, analysis: {} } }), /maxInterpolationGapNs/);
 assert.throws(() => analyzeAndroidReference({ waveRadarExport, referenceArtifact: { ...referenceArtifact, schema: 'wrong' } }), /schema/);

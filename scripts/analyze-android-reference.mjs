@@ -370,7 +370,9 @@ function calibrationMetadata(instrument = {}, measurementWindow = {}) {
 function detectQaFixture(waveRadarExport, referenceArtifact) {
   const reasons = [];
   if (waveRadarExport.qaFixture === true) reasons.push('WAVERADAR_EXPORT_QA_FIXTURE_FLAG');
+  if (waveRadarExport.evidenceClass === 'QA_FIXTURE') reasons.push('WAVERADAR_EXPORT_QA_EVIDENCE_CLASS');
   if (referenceArtifact.qaFixture === true) reasons.push('REFERENCE_ARTIFACT_QA_FIXTURE_FLAG');
+  if (referenceArtifact.evidenceClass === 'QA_FIXTURE') reasons.push('REFERENCE_ARTIFACT_QA_EVIDENCE_CLASS');
   if (Array.isArray(waveRadarExport.samples) && waveRadarExport.samples.some(sample =>
     sample?.qaFixture === true || sample?.evidenceClass === 'QA_FIXTURE'
   )) reasons.push('WAVERADAR_SAMPLE_QA_FIXTURE_FLAG');
@@ -378,6 +380,80 @@ function detectQaFixture(waveRadarExport, referenceArtifact) {
     sample?.qaFixture === true || sample?.evidenceClass === 'QA_FIXTURE'
   )) reasons.push('REFERENCE_SAMPLE_QA_FIXTURE_FLAG');
   return { detected: reasons.length > 0, reasons };
+}
+
+function summarizeStates(records, selector, allowedStates) {
+  const values = records.map(record => {
+    const value = selector(record);
+    return allowedStates.has(value) ? value : 'UNKNOWN';
+  });
+  const counts = {};
+  for (const value of values) counts[value] = (counts[value] || 0) + 1;
+  const unique = Object.keys(counts);
+  return {
+    state: unique.length === 1 ? unique[0] : unique.length === 0 ? 'UNKNOWN' : 'MIXED',
+    complete: records.length > 0 && values.length === records.length && values.every(value => value !== 'UNKNOWN'),
+    recordCount: records.length,
+    counts,
+  };
+}
+
+function baselineRecords(samples) {
+  return (Array.isArray(samples) ? samples : [])
+    .map(sample => sample?.nativeSensorBaseline)
+    .filter(record => record?.schema === 'waveradar-android-native-baseline-v1');
+}
+
+function summarizeSensorLifecycle(samples, sensor) {
+  const records = baselineRecords(samples);
+  return {
+    baselineRecordCoverage: {
+      capturedSampleCount: Array.isArray(samples) ? samples.length : 0,
+      baselineRecordCount: records.length,
+      complete: Array.isArray(samples) && samples.length > 0 && records.length === samples.length,
+    },
+    capability: summarizeStates(
+      records,
+      record => record.sensors?.[sensor]?.capability?.state,
+      new Set(['SUPPORTED', 'UNSUPPORTED', 'UNKNOWN']),
+    ),
+    registration: summarizeStates(
+      records,
+      record => record.sensors?.[sensor]?.registration?.state,
+      new Set(['REGISTERED', 'NOT_REGISTERED', 'REGISTRATION_FAILED', 'UNSUPPORTED', 'UNKNOWN']),
+    ),
+  };
+}
+
+function summarizeNativeAccessContext(samples) {
+  const records = baselineRecords(samples);
+  return {
+    baselineRecordCoverage: {
+      capturedSampleCount: Array.isArray(samples) ? samples.length : 0,
+      baselineRecordCount: records.length,
+      complete: Array.isArray(samples) && samples.length > 0 && records.length === samples.length,
+    },
+    nativeAndroidSensorRuntimePolicy: summarizeStates(
+      records,
+      record => record.permissions?.nativeAndroidSensorRuntime?.state,
+      new Set(['NOT_REQUIRED', 'UNKNOWN']),
+    ),
+    webMotionPermission: summarizeStates(
+      records,
+      record => record.permissions?.webMotion?.permissionState,
+      new Set(['DENIED', 'PROMPT_REQUIRED', 'UNKNOWN']),
+    ),
+    spatialPose: summarizeStates(
+      records,
+      record => record.spatialPose?.state,
+      new Set(['AVAILABLE', 'UNAVAILABLE', 'NOT_INSTRUMENTED', 'UNKNOWN']),
+    ),
+    interpretation: {
+      webMotionPermissionAffectsNativeSensorEligibility: false,
+      spatialPoseAffectsNativeSensorEligibility: false,
+      note: 'Web motion permission and spatial-pose provider state are reported independently; neither is substituted for native SensorManager capability or registration.',
+    },
+  };
 }
 
 export function analyzeAndroidReference({ waveRadarExport, referenceArtifact, inputDigests = {} }) {
@@ -398,6 +474,7 @@ export function analyzeAndroidReference({ waveRadarExport, referenceArtifact, in
   const measurementWindow = referenceArtifact.measurementWindow || {};
   const calibration = calibrationMetadata(referenceArtifact.instrument || {}, measurementWindow);
   const qaFixture = detectQaFixture(waveRadarExport, referenceArtifact);
+  const nativeAccessContext = summarizeNativeAccessContext(waveRadarExport.samples);
   const preregistration = referenceArtifact.preregistration || {};
   const clockMethodComplete = typeof referenceArtifact.clockSync?.method === 'string' && referenceArtifact.clockSync.method.trim().length > 0;
   const preregistrationComplete = typeof preregistration.protocolId === 'string' && preregistration.protocolId.trim().length > 0
@@ -411,6 +488,7 @@ export function analyzeAndroidReference({ waveRadarExport, referenceArtifact, in
   for (const channel of CHANNELS) {
     const wave = extractWaveRadarEvents(waveRadarExport.samples, channel.sensor);
     const reference = buildReferenceChannel(referenceArtifact.referenceSamples, channel.referenceField);
+    const lifecycle = summarizeSensorLifecycle(waveRadarExport.samples, channel.sensor);
     const exclusions = {};
     const count = reason => { exclusions[reason] = (exclusions[reason] || 0) + 1; };
     const errors = [];
@@ -442,8 +520,42 @@ export function analyzeAndroidReference({ waveRadarExport, referenceArtifact, in
       }
     }
 
+    const sequenceIntegrityAcceptable =
+      wave.diagnostics.conflictingDuplicateSequenceCount === 0 &&
+      wave.diagnostics.nonMonotonicEventTimestampCount === 0 &&
+      wave.diagnostics.outOfOrderSequenceCount === 0 &&
+      reference.diagnostics.conflictingTimestampCount === 0;
+    const eligibilityReasons = [];
+    if (qaFixture.detected) eligibilityReasons.push('QA_FIXTURE_INPUT');
+    if (!lifecycle.baselineRecordCoverage.complete) eligibilityReasons.push('NATIVE_BASELINE_RECORD_COVERAGE_INCOMPLETE');
+    if (!lifecycle.capability.complete || lifecycle.capability.state !== 'SUPPORTED') eligibilityReasons.push('SENSOR_CAPABILITY_NOT_CONFIRMED_SUPPORTED');
+    if (!lifecycle.registration.complete || lifecycle.registration.state !== 'REGISTERED') eligibilityReasons.push('SENSOR_REGISTRATION_NOT_CONFIRMED_REGISTERED');
+    if (!nativeAccessContext.baselineRecordCoverage.complete) eligibilityReasons.push('NATIVE_ACCESS_CONTEXT_INCOMPLETE');
+    if (!nativeAccessContext.nativeAndroidSensorRuntimePolicy.complete ||
+        nativeAccessContext.nativeAndroidSensorRuntimePolicy.state !== 'NOT_REQUIRED') {
+      eligibilityReasons.push('NATIVE_ANDROID_SENSOR_RUNTIME_POLICY_NOT_CONFIRMED');
+    }
+    if (!analysisCanCompare) eligibilityReasons.push('CLOCK_OR_COORDINATE_FRAME_NOT_COMPUTABLE');
+    if (errors.length === 0) eligibilityReasons.push('NO_MATCHED_REFERENCE_SAMPLES');
+    if (!preregistrationComplete) eligibilityReasons.push('PREREGISTRATION_NOT_ESTABLISHED');
+    if (!clockMethodComplete || !clockFit.declaredUncertaintyComplete || clockFit.invalidPairCount !== 0) {
+      eligibilityReasons.push('CLOCK_SYNCHRONIZATION_METHOD_OR_UNCERTAINTY_INCOMPLETE');
+    }
+    if (calibration.state !== 'METADATA_COMPLETE_PENDING_CUSTODIAN_VERIFICATION') {
+      eligibilityReasons.push('INSTRUMENT_CALIBRATION_METADATA_INCOMPLETE');
+    }
+    if (!calibration.perChannelStandardUncertaintyPresent[channel.sensor]) {
+      eligibilityReasons.push('REFERENCE_CHANNEL_UNCERTAINTY_INCOMPLETE');
+    }
+    if (!sequenceIntegrityAcceptable) eligibilityReasons.push('SEQUENCE_OR_REFERENCE_TIMESTAMP_INTEGRITY_NOT_ESTABLISHED');
+
+    const sensorAccuracyEvidenceStatus = eligibilityReasons.length === 0
+      ? 'CANDIDATE_FOR_INDEPENDENT_REVIEW_NOT_VERIFIED'
+      : 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY';
+
     sensors[channel.sensor] = {
       unit: channel.unit,
+      lifecycle,
       waveRadar: wave.diagnostics,
       reference: reference.diagnostics,
       validReferenceSamples: reference.rows.length,
@@ -453,31 +565,28 @@ export function analyzeAndroidReference({ waveRadarExport, referenceArtifact, in
       unmatchedOrExcludedByReason: exclusions,
       perAxisError: summarizeErrors(errors),
       vectorRmse: errors.length
-        ? Math.sqrt(errors.reduce((sum, vector) => sum + vector.reduce((inner, value) => inner + value * value, 0), 0) / errors.length)
+        ? Math.sqrt(errors.reduce((sum, vector) => sum + vector.reduce((inner, value) => sum + value * value, 0), 0) / errors.length)
         : null,
       comparisonStatus: errors.length ? 'COMPUTED_PENDING_INDEPENDENT_REVIEW' : 'NO_COMPARISON_COMPUTED',
+      accuracyEvidenceStatus: sensorAccuracyEvidenceStatus,
+      eligibilityReasons,
     };
   }
 
-  const allChannelsHaveMatches = CHANNELS.every(channel => sensors[channel.sensor].matchedSampleCount > 0);
-  const allChannelsHaveReferenceUncertainty = Object.values(calibration.perChannelStandardUncertaintyPresent).every(Boolean);
-  const sequenceIntegrityAcceptable = CHANNELS.every(channel =>
-    sensors[channel.sensor].waveRadar.conflictingDuplicateSequenceCount === 0 &&
-    sensors[channel.sensor].waveRadar.nonMonotonicEventTimestampCount === 0 &&
-    sensors[channel.sensor].waveRadar.outOfOrderSequenceCount === 0 &&
-    sensors[channel.sensor].reference.conflictingTimestampCount === 0
-  );
-  const accuracyEvidenceStatus = !qaFixture.detected && analysisCanCompare && allChannelsHaveMatches && preregistrationComplete && clockMethodComplete &&
-    clockFit.declaredUncertaintyComplete && clockFit.invalidPairCount === 0 &&
-    calibration.state === 'METADATA_COMPLETE_PENDING_CUSTODIAN_VERIFICATION' &&
-    allChannelsHaveReferenceUncertainty && sequenceIntegrityAcceptable
+  const candidateChannelCount = CHANNELS.filter(channel =>
+    sensors[channel.sensor].accuracyEvidenceStatus === 'CANDIDATE_FOR_INDEPENDENT_REVIEW_NOT_VERIFIED'
+  ).length;
+  const accuracyEvidenceStatus = candidateChannelCount === CHANNELS.length
     ? 'CANDIDATE_FOR_INDEPENDENT_REVIEW_NOT_VERIFIED'
-    : 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY';
+    : candidateChannelCount > 0
+      ? 'PARTIAL_CHANNEL_CANDIDATE_NOT_VERIFIED'
+      : 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY';
 
   return {
     schema: ANALYSIS_SCHEMA,
     generatedAt: new Date().toISOString(),
     qaFixture,
+    nativeAccessContext,
     analysisDisposition: analysisCanCompare ? 'COMPUTED_COMPARISON_PENDING_INDEPENDENT_REVIEW' : 'NOT_COMPUTABLE_WITH_CURRENT_SYNC_OR_FRAME_METADATA',
     accuracyEvidenceStatus,
     inputs: {
