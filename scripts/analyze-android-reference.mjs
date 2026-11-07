@@ -229,34 +229,66 @@ function extractWaveRadarEvents(samples, sensor) {
   const conflicts = new Set();
   const exclusions = {};
   const count = reason => { exclusions[reason] = (exclusions[reason] || 0) + 1; };
+  const captureStateCounts = {
+    nativeSensorManager: {},
+    nativeBridge: {},
+    capability: {},
+    registration: {},
+    nativeAndroidSensorRuntimePermission: {},
+    webMotionPermission: {},
+    spatialPose: {},
+    sampleArrival: {},
+  };
   let rawArrivedCount = 0;
+  let lifecycleEligiblePollingRecords = 0;
+  let nativeLifecycleStateMismatchCount = 0;
+  let arrivedPollingRecordsWithConfirmedLifecycle = 0;
+  let arrivedPollingRecordsWithUnconfirmedLifecycle = 0;
   let previousObservedSequence = null;
   let outOfOrderSequenceCount = 0;
   const timestampBasisCounts = {};
-  const capabilityStateCounts = {};
-  const registrationStateCounts = {};
-  const sampleArrivalStateCounts = {};
-  let arrivedPollingRecordsWithConfirmedLifecycle = 0;
-  let arrivedPollingRecordsWithUnconfirmedLifecycle = 0;
+
+  const recordState = (group, value) => {
+    const state = typeof value === 'string' && value.trim() ? value : 'UNKNOWN';
+    incrementStateCount(captureStateCounts[group], state);
+    return state;
+  };
 
   for (let pollIndex = 0; pollIndex < (Array.isArray(samples) ? samples.length : 0); pollIndex += 1) {
-    const sensorRecord = samples[pollIndex]?.nativeSensorBaseline?.sensors?.[sensor];
+    const sample = samples[pollIndex];
+    const baseline = sample?.nativeSensorBaseline;
+    const sensorRecord = baseline?.sensors?.[sensor];
     const arrival = sensorRecord?.sampleArrival;
-    const capabilityState = sensorRecord?.capability?.state;
-    const registrationState = sensorRecord?.registration?.state;
-    incrementStateCount(capabilityStateCounts, capabilityState);
-    incrementStateCount(registrationStateCounts, registrationState);
-    incrementStateCount(sampleArrivalStateCounts, arrival?.state);
+    if (arrival?.state === 'ARRIVED') rawArrivedCount += 1;
+
+    const managerState = recordState('nativeSensorManager', baseline?.nativeSensorManager?.state);
+    const bridgeState = recordState('nativeBridge', baseline?.bridgeCallState ?? sample?.nativeSensorBridgeCallState);
+    const capabilityState = recordState('capability', sensorRecord?.capability?.state);
+    const registrationState = recordState('registration', sensorRecord?.registration?.state);
+    recordState('nativeAndroidSensorRuntimePermission', baseline?.permissions?.nativeAndroidSensorRuntime?.state);
+    recordState('webMotionPermission', baseline?.permissions?.webMotion?.permissionState);
+    recordState('spatialPose', baseline?.spatialPose?.state);
+    recordState('sampleArrival', arrival?.state);
+
+    const lifecycleProblems = [];
+    if (managerState !== 'AVAILABLE') lifecycleProblems.push(`NATIVE_SENSOR_MANAGER_${managerState}_NOT_AVAILABLE`);
+    if (bridgeState !== 'OK') lifecycleProblems.push(`NATIVE_BRIDGE_${bridgeState}_NOT_OK`);
+    if (capabilityState !== 'SUPPORTED') lifecycleProblems.push(`CAPABILITY_${capabilityState}_NOT_CONFIRMED_SUPPORTED`);
+    if (registrationState !== 'REGISTERED') lifecycleProblems.push(`REGISTRATION_${registrationState}_NOT_CONFIRMED_REGISTERED`);
+
+    if (lifecycleProblems.length > 0) {
+      nativeLifecycleStateMismatchCount += 1;
+      for (const reason of lifecycleProblems) count(reason);
+      if (arrival?.state === 'ARRIVED') arrivedPollingRecordsWithUnconfirmedLifecycle += 1;
+      continue;
+    }
+
+    lifecycleEligiblePollingRecords += 1;
     if (!arrival || arrival.state !== 'ARRIVED') {
       count(arrival?.state || 'MISSING_SENSOR_CAPTURE');
       continue;
     }
-    rawArrivedCount += 1;
-    if (capabilityState === 'SUPPORTED' && registrationState === 'REGISTERED') {
-      arrivedPollingRecordsWithConfirmedLifecycle += 1;
-    } else {
-      arrivedPollingRecordsWithUnconfirmedLifecycle += 1;
-    }
+    arrivedPollingRecordsWithConfirmedLifecycle += 1;
     if (arrival.evidenceClass !== 'MEASURED') {
       count('NON_MEASURED_EVIDENCE_CLASS');
       continue;
@@ -307,6 +339,9 @@ function extractWaveRadarEvents(samples, sensor) {
     events,
     diagnostics: {
       rawArrivedPollingRecords: rawArrivedCount,
+      lifecycleEligiblePollingRecords,
+      nativeLifecycleStateMismatchCount,
+      captureStateCounts,
       uniqueNativeEvents: events.length,
       repeatedPollRecords: exclusions.REPEATED_POLL_OF_SAME_NATIVE_EVENT || 0,
       conflictingDuplicateSequenceCount: exclusions.CONFLICTING_DUPLICATE_SEQUENCE_EXCLUDED || 0,
@@ -314,17 +349,19 @@ function extractWaveRadarEvents(samples, sensor) {
       missingSequenceCount,
       nonMonotonicEventTimestampCount,
       timestampBasisCounts,
-      capabilityStateCounts,
-      registrationStateCounts,
-      sampleArrivalStateCounts,
+      capabilityStateCounts: captureStateCounts.capability,
+      registrationStateCounts: captureStateCounts.registration,
+      sampleArrivalStateCounts: captureStateCounts.sampleArrival,
       arrivedPollingRecordsWithConfirmedLifecycle,
       arrivedPollingRecordsWithUnconfirmedLifecycle,
-      lifecycleEvidenceComplete: rawArrivedCount > 0 && arrivedPollingRecordsWithUnconfirmedLifecycle === 0,
+      lifecycleEvidenceComplete: Array.isArray(samples) && samples.length > 0 &&
+        lifecycleEligiblePollingRecords === samples.length &&
+        nativeLifecycleStateMismatchCount === 0 && rawArrivedCount > 0 &&
+        arrivedPollingRecordsWithUnconfirmedLifecycle === 0,
       excludedByReason: exclusions,
     },
   };
 }
-
 function summarizeErrors(errors) {
   if (!errors.length) return null;
   const metrics = {};
@@ -392,7 +429,9 @@ function calibrationMetadata(instrument = {}, measurementWindow = {}) {
 function detectQaFixture(waveRadarExport, referenceArtifact) {
   const reasons = [];
   if (waveRadarExport.qaFixture === true) reasons.push('WAVERADAR_EXPORT_QA_FIXTURE_FLAG');
+  if (waveRadarExport.evidenceClass === 'QA_FIXTURE') reasons.push('WAVERADAR_EXPORT_QA_EVIDENCE_CLASS');
   if (referenceArtifact.qaFixture === true) reasons.push('REFERENCE_ARTIFACT_QA_FIXTURE_FLAG');
+  if (referenceArtifact.evidenceClass === 'QA_FIXTURE') reasons.push('REFERENCE_ARTIFACT_QA_EVIDENCE_CLASS');
   if (Array.isArray(waveRadarExport.samples) && waveRadarExport.samples.some(sample =>
     sample?.qaFixture === true || sample?.evidenceClass === 'QA_FIXTURE'
   )) reasons.push('WAVERADAR_SAMPLE_QA_FIXTURE_FLAG');
