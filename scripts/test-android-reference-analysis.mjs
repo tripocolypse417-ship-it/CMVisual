@@ -260,7 +260,7 @@ const unknownLifecycleReport = analyzeAndroidReference({
 });
 assert.equal(unknownLifecycleReport.sensors.accelerometer.waveRadar.lifecycleEvidenceComplete, false);
 assert.equal(unknownLifecycleReport.sensors.accelerometer.accuracyEvidenceStatus, 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY');
- 
+
 // A failed native bridge poll is preserved in diagnostics but its stale/retained
 // sensor state cannot contribute a comparison event or review-candidate status.
 const bridgeFailedWave = structuredClone(cleanWaveRadarExport);
