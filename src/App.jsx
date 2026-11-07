@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -35,7 +35,20 @@ class CMVisualErrorBoundary extends React.Component {
 }
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Redirect after render, not during render. Rendering-time redirects can
+  // repeatedly restart the app's authentication flow and create a login loop.
+  useEffect(() => {
+    if (authError?.type === 'auth_required' && location.pathname !== '/login') {
+      navigate('/login', {
+        replace: true,
+        state: { from: location.pathname + location.search + location.hash },
+      });
+    }
+  }, [authError, location.hash, location.pathname, location.search, navigate]);
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
@@ -51,8 +64,7 @@ const AuthenticatedApp = () => {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically
-      navigateToLogin();
+      // The effect above performs a guarded in-app redirect after render.
       return null;
     }
   }
