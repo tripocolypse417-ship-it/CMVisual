@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { analyzeAndroidReference, ANALYSIS_SCHEMA } from './analyze-android-reference.mjs';
 
 const waveTimes = [2_000_000_000, 3_000_000_000, 4_000_000_000];
@@ -12,6 +13,7 @@ const waveRadarExport = {
     const record = {
       nativeSensorBaseline: {
         nativeSensorManager: { state: 'AVAILABLE' },
+        bridgeCallState: 'OK',
         permissions: {
           nativeAndroidSensorRuntime: { state: 'NOT_REQUIRED' },
           webMotion: { permissionState: 'UNKNOWN' },
@@ -124,6 +126,8 @@ assert.equal(report.analysisMethod.automaticPassFail, false);
 assert.equal(report.instrumentCalibration.measurementWindowCoveredByCalibration, true);
 assert.equal(report.deviceContext.nativeSensorManagerAvailabilityComplete, true);
 assert.equal(report.deviceContext.nativeSensorRuntimePermissionPolicyComplete, true);
+assert.equal(report.sensors.accelerometer.waveRadar.captureStateCounts.nativeBridge.OK, 4);
+assert.equal(report.sensors.accelerometer.waveRadar.lifecycleEvidenceComplete, true);
 assert.equal(report.deviceContext.nativeSensorManagerStateCounts.AVAILABLE, 4);
 assert.equal(report.deviceContext.nativeAndroidSensorRuntimePermissionStateCounts.NOT_REQUIRED, 4);
 assert.equal(report.deviceContext.webMotionPermissionStateCounts.UNKNOWN, 4);
@@ -257,6 +261,62 @@ const unknownLifecycleReport = analyzeAndroidReference({
 assert.equal(unknownLifecycleReport.sensors.accelerometer.waveRadar.lifecycleEvidenceComplete, false);
 assert.equal(unknownLifecycleReport.sensors.accelerometer.accuracyEvidenceStatus, 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY');
 
+// A failed native bridge poll is preserved in diagnostics but its stale/retained
+// sensor state cannot contribute a comparison event or review-candidate status.
+const bridgeFailedWave = structuredClone(cleanWaveRadarExport);
+bridgeFailedWave.samples[0].nativeSensorBaseline.bridgeCallState = 'CALL_FAILED';
+const bridgeFailedReport = analyzeAndroidReference({
+  waveRadarExport: bridgeFailedWave,
+  referenceArtifact: cleanReferenceArtifact,
+});
+assert.equal(bridgeFailedReport.sensors.accelerometer.waveRadar.captureStateCounts.nativeBridge.CALL_FAILED, 1);
+assert.equal(bridgeFailedReport.sensors.accelerometer.waveRadar.nativeLifecycleStateMismatchCount, 1);
+assert.equal(bridgeFailedReport.sensors.accelerometer.waveRadar.lifecycleEvidenceComplete, false);
+assert.equal(bridgeFailedReport.sensors.accelerometer.matchedSampleCount, 2);
+assert.equal(bridgeFailedReport.accuracyEvidenceStatus, 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY');
+
+// Missing bridge state is UNKNOWN, not an implicit successful native call.
+const missingBridgeWave = structuredClone(cleanWaveRadarExport);
+delete missingBridgeWave.samples[0].nativeSensorBaseline.bridgeCallState;
+const missingBridgeReport = analyzeAndroidReference({
+  waveRadarExport: missingBridgeWave,
+  referenceArtifact: cleanReferenceArtifact,
+});
+assert.equal(missingBridgeReport.sensors.accelerometer.waveRadar.captureStateCounts.nativeBridge.UNKNOWN, 1);
+assert.equal(missingBridgeReport.sensors.accelerometer.waveRadar.nativeLifecycleStateMismatchCount, 1);
+assert.equal(missingBridgeReport.accuracyEvidenceStatus, 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY');
+
+// Manager unavailability is a separate failure from bridge and sensor support.
+const unavailableManagerWave = structuredClone(cleanWaveRadarExport);
+unavailableManagerWave.samples[0].nativeSensorBaseline.nativeSensorManager.state = 'UNAVAILABLE';
+const unavailableManagerReport = analyzeAndroidReference({
+  waveRadarExport: unavailableManagerWave,
+  referenceArtifact: cleanReferenceArtifact,
+});
+assert.equal(unavailableManagerReport.sensors.accelerometer.waveRadar.captureStateCounts.nativeSensorManager.UNAVAILABLE, 1);
+assert.equal(unavailableManagerReport.sensors.accelerometer.matchedSampleCount, 2);
+assert.equal(unavailableManagerReport.accuracyEvidenceStatus, 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY');
+
+// Root-level evidenceClass markers are treated like explicit QA fixture flags.
+const rootWaveQa = structuredClone(cleanWaveRadarExport);
+rootWaveQa.evidenceClass = 'QA_FIXTURE';
+const rootWaveQaReport = analyzeAndroidReference({
+  waveRadarExport: rootWaveQa,
+  referenceArtifact: cleanReferenceArtifact,
+});
+assert.ok(rootWaveQaReport.qaFixture.reasons.includes('WAVERADAR_EXPORT_QA_EVIDENCE_CLASS'));
+assert.equal(rootWaveQaReport.accuracyEvidenceStatus, 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY');
+
+const rootReferenceQa = structuredClone(cleanReferenceArtifact);
+rootReferenceQa.evidenceClass = 'QA_FIXTURE';
+const rootReferenceQaReport = analyzeAndroidReference({
+  waveRadarExport: cleanWaveRadarExport,
+  referenceArtifact: rootReferenceQa,
+});
+assert.ok(rootReferenceQaReport.qaFixture.reasons.includes('REFERENCE_ARTIFACT_QA_EVIDENCE_CLASS'));
+assert.equal(rootReferenceQaReport.accuracyEvidenceStatus, 'INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY');
+
+
 // Browser motion permission is reported independently and does not overwrite
 // the native SensorManager permission policy.
 const browserDeniedWave = structuredClone(cleanWaveRadarExport);
@@ -275,4 +335,9 @@ assert.throws(() => analyzeAndroidReference({ waveRadarExport, referenceArtifact
 assert.throws(() => analyzeAndroidReference({ waveRadarExport, referenceArtifact: { ...referenceArtifact, schema: 'wrong' } }), /schema/);
 assert.throws(() => analyzeAndroidReference({ waveRadarExport: { ...waveRadarExport, schema: 'unknown' }, referenceArtifact }), /cmvisual-physical-validation/);
 
-console.log('Android independent-reference synchronization, deduplication, interpolation, metrics, and non-promotion tests: PASS');
+const analysisDoc = readFileSync(new URL('../docs/research-validation-institute/analysis/ANDROID_REFERENCE_ANALYSIS_V1.md', import.meta.url), 'utf8');
+const exampleJson = analysisDoc.match(/```json\n([\s\S]*?)\n```/);
+assert.ok(exampleJson, 'analysis documentation must contain a parseable JSON artifact example');
+assert.equal(JSON.parse(exampleJson[1]).qaFixture, true, 'documentation artifact example must be explicitly QA-only');
+
+console.log('Android independent-reference synchronization, lifecycle gates, interpolation, metrics, and non-promotion tests: PASS');

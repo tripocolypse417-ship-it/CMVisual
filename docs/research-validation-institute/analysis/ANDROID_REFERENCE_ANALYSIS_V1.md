@@ -18,6 +18,7 @@ The reference artifact is a separate JSON file. Keep the instrument's original n
 ```json
 {
   "schema": "waveradar.independent-reference-imu.v1",
+  "qaFixture": true,
   "preregistration": {
     "protocolId": "WR-ANDROID-NATIVE-BASELINE-001",
     "protocolVersion": "1",
@@ -81,7 +82,7 @@ The reference artifact is a separate JSON file. Keep the instrument's original n
 }
 ```
 
-The numbers above are format examples only. They are not prescribed clock offsets, uncertainties, sample values, or acceptance limits. Replace the identity matrix only with a measured, documented reference-to-phone coordinate transform. Do not assume co-mounted instruments are perfectly aligned without documenting fixture alignment and uncertainty.
+The JSON example is deliberately marked `qaFixture: true`. It is a documentation fixture only and must never be submitted as a real instrument record. For a real collection, create a new artifact from the approved protocol, remove the QA marker only after replacing every placeholder with verified instrument, calibration, clock, fixture, and custody information, and preserve the original instrument export unchanged. The numbers above are format examples only. They are not prescribed clock offsets, uncertainties, sample values, or acceptance limits. Replace the identity matrix only with a measured, documented reference-to-phone coordinate transform. Do not assume co-mounted instruments are perfectly aligned without documenting fixture alignment and uncertainty.
 
 ### Required field meaning
 
@@ -95,7 +96,7 @@ The numbers above are format examples only. They are not prescribed clock offset
 
 ### Sensor lifecycle and channel scope
 
-The analyzer reports, separately for each channel, the observed counts of native capability state, listener-registration state, and sample-arrival state. A numeric `ARRIVED` sample does not silently fill in missing capability or registration metadata. For a channel to become a review candidate, every captured ARRIVED polling record must explicitly show `SUPPORTED` and `REGISTERED`; missing or contradictory lifecycle metadata leaves that channel exploratory.
+The analyzer reports, separately for each channel and polling record, the native SensorManager state, native bridge-call state, capability, listener registration, and sample-arrival state. A numeric `ARRIVED` sample does not silently fill in missing capability, registration, manager, or bridge metadata. A record contributes a comparison event only when the manager is `AVAILABLE`, the native bridge call is `OK`, capability is `SUPPORTED`, registration is `REGISTERED`, and the sample is `ARRIVED` / `MEASURED` with valid sequence, timestamp, and vector data. A missing or contradictory manager/bridge/capability/registration state is counted and excluded. Any such lifecycle mismatch prevents that channel from becoming a review candidate for the capture; it is not silently discarded from diagnostics.
 
 The preregistered `requiredSensors` list controls which channels are required for the overall comparison. An explicitly unsupported gyroscope can be reported as `NOT_IN_REQUIRED_ANALYSIS_SCOPE` while an accelerometer-only study proceeds, provided that accelerometer-only scope was set before collection. Unsupported sensors are not treated as failed measurements. Do not change the required channel set after inspecting confirmatory results; create a new protocol version instead.
 
@@ -141,7 +142,7 @@ No automatic pass/fail threshold is embedded. A reviewer must interpret denomina
 - `COMPUTED_COMPARISON_PENDING_INDEPENDENT_REVIEW`: numerical comparisons were computable; this is not a validation pass.
 - `NOT_COMPUTABLE_WITH_CURRENT_SYNC_OR_FRAME_METADATA`: required clock mapping or coordinate transform was unavailable or invalid.
 - `CANDIDATE_FOR_INDEPENDENT_REVIEW_NOT_VERIFIED`: all required metadata gates were present. The independent custodian and reviewer still must authenticate source artifacts and method.
-- `INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY`: one or more preregistration, required-scope, calibration, uncertainty, synchronization, lifecycle, sequence-integrity, native permission-policy, or matched-sample conditions were not established.
+- `INSTRUMENTATION_OR_EXPLORATORY_COMPARISON_ONLY`: one or more preregistration, required-scope, calibration, uncertainty, synchronization, native manager/bridge/capability/registration lifecycle, sequence-integrity, native permission-policy, or matched-sample conditions were not established.
 - `NOT_IN_REQUIRED_ANALYSIS_SCOPE` (per channel): the channel was intentionally excluded from the preregistered comparison scope; this is not a finding that the sensor failed.
 
 ## QA fixture guard

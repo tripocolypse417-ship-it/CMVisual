@@ -85,7 +85,7 @@ A consumer phone, uncalibrated compass, manually estimated movement, or the Wave
 1. Record the APK artifact, commit SHA, package name, app version, Android release/build, manufacturer/model, and test operator.
 2. Start a new session with no prior session data imported into the run.
 3. Query capabilities once and preserve the complete capability response.
-4. Record each sensor's support state, registration state, and sample-history state separately.
+4. Record native SensorManager availability and native bridge-call state separately; record each sensor's support, listener-registration, and sample-arrival state separately for every polling record.
 
 **Target-device planning note:** Motorola's published moto g play (2024) specification lists an accelerometer, proximity sensor, ambient-light sensor, e-compass, and barometer, but does not list a gyroscope. This published list is not proof that the Android runtime lacks a gyroscope on every hardware/firmware variant. Query `SensorManager.getDefaultSensor(TYPE_GYROSCOPE)` on the actual test device and preserve the result as `SUPPORTED`, `UNSUPPORTED`, or `UNKNOWN`. If the fresh inventory confirms no gyroscope, preregister an accelerometer-only analysis scope (`analysis.requiredSensors: ["accelerometer"]`) before confirmatory capture; do not classify an unsupported gyro as a failed measurement.
 
@@ -95,7 +95,7 @@ Manufacturer source: https://en-us.support.motorola.com/app/answers/detail/a_id/
 6. Pause and resume the app once; capture the lifecycle transition and whether listeners are re-registered.
 7. Stop and export the complete session.
 
-Do not infer UNSUPPORTED from a failed bridge call. A bridge failure is UNKNOWN unless the native API explicitly reports otherwise.
+Do not infer UNSUPPORTED from a failed bridge call. A bridge failure is UNKNOWN unless the native API explicitly reports otherwise. Preserve the failed poll and its reason. The offline comparison analyzer must exclude any poll whose native SensorManager state is not AVAILABLE, whose bridgeCallState is not OK, or whose channel is not explicitly SUPPORTED and REGISTERED. It must retain those exclusions in diagnostics; a failed or missing bridge state cannot be treated as a successful poll.
 
 ### B. Static orientation sequence
 
@@ -129,7 +129,7 @@ For each sensor, retain:
 
 The event timestamp and callback-entry timestamp use the same Android monotonic clock. Where both are present and callback time is not earlier than event time, calculate callback delivery latency as (callbackElapsedRealtimeNanos - eventElapsedRealtimeNanos) / 1,000,000. Preserve missing or negative-order cases as unavailable/invalid; do not substitute wall-clock subtraction.
 
-Compare sequence and event-timestamp order only within the same capture session. Report sequence regressions, repeated polling snapshots, event-timestamp regressions, and observed event-time deltas. A sequence increase between two polling snapshots means native callbacks occurred between the snapshots but were not individually retained by the polling export; it is **not** evidence that Android dropped those callbacks.
+Compare sequence and event-timestamp order only within the same capture session. Report sequence regressions, repeated polling snapshots, event-timestamp regressions, and observed event-time deltas. Preserve the native bridge-call state for every polling record. A CALL_FAILED, INVALID_RESPONSE, NOT_AVAILABLE, or missing state remains distinct from sensor support/registration and is not eligible as a comparison poll. A sequence increase between two polling snapshots means native callbacks occurred between the snapshots but were not individually retained by the polling export; it is **not** evidence that Android dropped those callbacks.
 
 Calculate clock offset, drift, timestamp skew, inter-sample intervals, gaps, duplicate sequence values, and monotonicity only where the captured clocks and raw records support the calculation. Do not compare wall-clock timestamps as though they share the same clock basis without a measured synchronization transformation.
 
@@ -171,6 +171,7 @@ The export must include:
 - Raw reference data artifact ID and cryptographic digest when supplied by the evidence custodian.
 - Fixture geometry, coordinate frames, alignment transform, and uncertainty.
 - Clock synchronization method and offset/uncertainty.
+- Native SensorManager availability and native bridge-call state for every polling record.
 - Per-sensor support, registration, sample-arrival, timestamp, and permission states.
 - Raw event and callback elapsed-realtime nanosecond timestamps, per-sensor sequence counters, callback-delivery latency where computable, and monotonicity/repeat/regression summaries.
 - Spatial-pose status, including NOT_INSTRUMENTED when applicable.
@@ -187,7 +188,7 @@ An independent reviewer must verify:
 - Instrument identity, calibration status, calibration validity period, and uncertainty.
 - The raw reference artifact matches its declared digest and timestamp.
 - The fixture and coordinate-frame alignment are reproducible.
-- The analysis follows the preregistered method.
+- The analysis follows the preregistered method, including exclusion of failed/unknown native bridge polls and manager/capability/registration mismatches.
 - Exclusions and deviations are justified and preserved.
 - Conclusions stay within the tested device/build/condition envelope.
 
