@@ -30,6 +30,26 @@ async function permissionState(name) {
   }
 }
 
+async function fetchJson(path, timeoutMs = 6000) {
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+  try {
+    const response = await fetch(path, {
+      method: 'GET',
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
+      ...(controller ? { signal: controller.signal } : {}),
+    });
+    if (!response.ok) return { ok: false, status: response.status, data: null };
+    const data = await response.json();
+    return { ok: true, status: response.status, data };
+  } catch {
+    return { ok: false, status: 0, data: null };
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 export default function GlobalAutomationWizard() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -59,6 +79,36 @@ export default function GlobalAutomationWizard() {
 
     const online = typeof navigator !== 'undefined' && navigator.onLine;
     add('network', 'Network connectivity', online ? 'READY' : 'ACTION', online ? 'Online; queued evidence can attempt sync.' : 'Offline; capture can continue locally and sync can retry later.');
+
+    const [health, readiness] = await Promise.all([
+      fetchJson('/api/health'),
+      fetchJson('/api/system/readiness'),
+    ]);
+    add(
+      'service',
+      'Live WaveRadar service',
+      health.ok && health.data?.ok === true ? 'READY' : 'ACTION',
+      health.ok && health.data?.ok === true
+        ? 'The live API is responding. This confirms service availability, not sensor accuracy.'
+        : online
+          ? 'The health endpoint could not be confirmed. Retry the check before starting a capture.'
+          : 'Connect to the internet, then retry the service check.'
+    );
+    if (readiness.ok && readiness.data?.ok === true) {
+      const counts = readiness.data.counts || {};
+      const validated = Number(counts.validatedDevices) || 0;
+      const passed = Number(counts.passedValidationRuns) || 0;
+      add(
+        'physical-gate',
+        'Physical validation gate',
+        validated > 0 && passed > 0 ? 'ACTION' : 'ACTION',
+        validated > 0 && passed > 0
+          ? 'The backend reports passing validation records. Review their reference evidence before relying on field accuracy.'
+          : `Validation is still outstanding: ${validated} validated device(s), ${passed} passing run(s). The wizard will not mark spatial accuracy as proven.`
+      );
+    } else {
+      add('physical-gate', 'Physical validation gate', 'ACTION', 'Readiness data is unavailable. Physical accuracy remains unverified until evidence is checked.');
+    }
 
     const cameraPermission = await permissionState('camera');
     add('camera', 'Camera permission', cameraPermission === 'GRANTED' ? 'READY' : cameraPermission === 'DENIED' ? 'ACTION' : 'ACTION', cameraPermission === 'GRANTED' ? 'Browser reports camera permission granted; camera operation still needs a live capability check.' : `Camera permission: ${cameraPermission}. The wizard will not request permission without your tap.`);
@@ -91,12 +141,14 @@ export default function GlobalAutomationWizard() {
   useEffect(() => { void runAudit(); }, [runAudit]);
 
   const nextStep = useMemo(() => {
+    if (checks.some(c => c.id === 'network' && c.status !== 'READY')) return { label: 'Reconnect and recheck', route: '/physical-validation' };
+    if (checks.some(c => c.id === 'service' && c.status !== 'READY')) return { label: 'Retry service check', route: '/physical-validation' };
     if (checks.some(c => c.id === 'identity' && c.status !== 'READY')) return { label: 'Initialize device', route: '/physical-validation' };
     if (checks.some(c => c.id === 'camera' && c.status !== 'READY')) return { label: 'Check camera and permissions', route: '/physical-validation' };
     if (checks.some(c => c.id === 'native-sensors' && c.status !== 'READY')) return { label: 'Check phone sensors', route: '/physical-validation' };
     if (checks.some(c => c.id === 'known-points' && c.status !== 'READY')) return { label: 'Record a known point', route: '/physical-validation' };
     if (checks.some(c => c.id === 'queue' && c.status !== 'READY')) return { label: 'Review evidence sync', route: '/physical-validation' };
-    return { label: 'Run physical validation', route: '/physical-validation' };
+    return { label: 'Continue guided validation', route: '/physical-validation' };
   }, [checks]);
 
   if (location.pathname === '/about' || location.pathname === '/contact' || location.pathname === '/how-it-works' || location.pathname === '/investors') return null;
