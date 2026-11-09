@@ -57,7 +57,7 @@ Record—not infer—the following:
 
 If the package cannot be installed without replacing an existing app, stop. Do not uninstall the existing app, clear its storage, or attempt a signature downgrade as a workaround. Preserve the install error and current device state.
 
-## C. Fresh runtime inventory — before accuracy collection
+## D. Fresh runtime inventory — before accuracy collection
 
 Start a new capture session. Do not import prior samples or replay data into it.
 
@@ -95,7 +95,7 @@ The current expected spatial-pose state is NOT_INSTRUMENTED unless a separately 
 
 After inventory, preregister the exact required comparison channels. If the gyro is not supported, an accelerometer-only study may be selected before confirmatory collection; do not change scope after seeing the results.
 
-## D. Capture sequence
+## E. Capture sequence
 
 Use the parent protocol for the full method and timing. Record start/end times, session IDs, operator actions, and deviations for each phase.
 
@@ -108,7 +108,7 @@ Use the parent protocol for the full method and timing. Record start/end times, 
 
 If no calibrated reference instrument is available, perform only the clearly labeled **instrumentation-only inventory/lifecycle session**. Do not create a reference artifact with guessed values, identity transform, invented uncertainty, or copied sample values.
 
-## E. Clock and coordinate controls
+## F. Clock and coordinate controls
 
 - Record at least three synchronization pairs spanning the capture interval; use a documented common trigger/pulse or other justified method.
 - Preserve the reference logger's original monotonic timestamps and Android SensorEvent.timestamp values exactly.
@@ -118,7 +118,7 @@ If no calibrated reference instrument is available, perform only the clearly lab
 - Analyzer interpolation is allowed only between bracketing reference samples within the preregistered maximum gap. No extrapolation is permitted.
 - Preserve synchronization uncertainty and fixture alignment uncertainty; do not replace unknown uncertainty with zero.
 
-## F. Evidence custody and export
+## G. Evidence custody and export
 
 Create a new evidence package; never overwrite raw files.
 
@@ -139,7 +139,7 @@ Required package contents:
 
 A SHA-256 digest detects byte changes relative to a known digest; it does not prove who created the file, that the instrument was calibrated, or that the measurement is true. Keep original raw files read-only and store corrections/normalizations as linked derivatives.
 
-## G. Analysis review checklist
+## H. Analysis review checklist
 
 - [ ] QA fixtures and documentation examples are excluded from experimental eligibility.
 - [ ] Native manager and bridge states are complete and acceptable for every included poll.
@@ -154,7 +154,7 @@ A SHA-256 digest detects byte changes relative to a known digest; it does not pr
 - [ ] Per-channel metrics, denominators, exclusions, uncertainty, and protocol deviations are reported.
 - [ ] No automatic pass/fail or validation promotion is inferred from a computed comparison.
 
-## H. Disposition vocabulary
+## I. Disposition vocabulary
 
 Use only a disposition supported by the evidence:
 
@@ -167,7 +167,7 @@ Use only a disposition supported by the evidence:
 
 No disposition in this run sheet establishes spatial pose, absolute position, indoor localization, through-wall sensing, human presence, victim localization, or life-safety readiness.
 
-## I. Session closeout
+## J. Session closeout
 
 - [ ] Original WaveRadar export preserved and digest recorded.
 - [ ] Original reference export preserved and digest recorded, or explicitly recorded as not available.
