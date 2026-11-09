@@ -68,9 +68,19 @@ Read-only access-tier checks were performed against the deployed Core endpoints:
 | Signed-in app-user recovery endpoint | 200 | Route works; synthetic test user has no validation runs |
 | Signed-in app-user metrics request without run ID | 400 | Expected input validation |
 
-A 401 produced by running a user-only route without an app end-user identity is not evidence of a broken enrollment token. The signed-in test-user path succeeded. The actual owner account's device binding, token issuance, and physical handset authorization remain unverified because no authenticated session from the target phone was available.
+Additional read-only/negative enrollment checks returned:
 
-No enrollment token was issued, no ownership was changed, and no observation or validation record was created by these checks.
+| Check | Result | Interpretation |
+|---|---:|---|
+| Public enrollment-token request | 401 | Expected user-authentication gate |
+| Signed-in request to issue a token for a deliberately unowned probe device | 404 `OWNED_DEVICE_NOT_FOUND` | Ownership check blocks token issuance |
+| Signed-in claim with an invalid prior credential | 409 `PRIOR_ENROLLMENT_TOKEN_INVALID_OR_EXPIRED` | Claim stops before migration |
+| Device ingest without a bearer token | 401 `DEVICE_TOKEN_REQUIRED` | Expected device-token gate |
+| Device ingest with an invalid bearer token | 401 `DEVICE_TOKEN_INVALID_OR_EXPIRED` | Expected token-validation gate |
+
+The device enrollment-token table contained 33 records before and after these checks. No token was issued, no ownership was changed, and no observation or validation record was created.
+
+A 401 produced by running a user-only route without an app end-user identity is not evidence of a broken enrollment token. The signed-in test-user path succeeded. The actual owner account's device binding, token issuance, and physical handset authorization remain unverified because no authenticated session from the target phone was available.
 
 ## 4. Android build-path identity
 
