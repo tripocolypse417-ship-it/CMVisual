@@ -104,11 +104,30 @@ function isValidSensorSample(name, measurement) {
 
 function normalizeSpatialPose(pose) {
   if (POSE_STATES.has(pose?.state)) {
+    const source = typeof pose.source === 'string' && pose.source.trim()
+      ? pose.source.trim()
+      : null;
+    const observedAt = normalizeIso(pose.observedAt);
+    const ageMs = finiteNonNegative(pose.ageMs) ? pose.ageMs : null;
+
+    // A bare provider claim is not enough to establish availability. Require
+    // the queried provider identity and a parseable observation time so an
+    // uninstrumented or incomplete status cannot be promoted to AVAILABLE.
+    if (pose.state === 'AVAILABLE' && (!source || !observedAt)) {
+      return {
+        state: 'UNKNOWN',
+        source,
+        observedAt,
+        ageMs,
+        note: 'Provider-reported AVAILABLE state lacks a named source and valid observation timestamp; availability remains UNKNOWN.',
+      };
+    }
+
     return {
       state: pose.state,
-      source: typeof pose.source === 'string' ? pose.source : null,
-      observedAt: normalizeIso(pose.observedAt),
-      ageMs: finiteNonNegative(pose.ageMs) ? pose.ageMs : null,
+      source,
+      observedAt,
+      ageMs,
       note: typeof pose.note === 'string' ? pose.note : null,
     };
   }
