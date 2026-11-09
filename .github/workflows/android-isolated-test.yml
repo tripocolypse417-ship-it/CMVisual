@@ -128,9 +128,21 @@ jobs:
             echo "::error::apksigner was not found; cannot verify APK signer."
             exit 1
           fi
-          CERT_OUTPUT="$("$APKSIGNER" verify --print-certs "$APK")"
-          CERT_SHA256="$(printf '%s\n' "$CERT_OUTPUT" | sed -n 's/^Signer #1 certificate SHA-256 digest: *//p' | head -n 1 | tr -d ' :')"
-          if ! [[ "$CERT_SHA256" =~ ^[A-Fa-f0-9]{64}$ ]]; then
+          CERT_OUTPUT="$("$APKSIGNER" verify --print-certs "$APK" 2>&1)"
+          CERT_SHA256="$(printf '%s\n' "$CERT_OUTPUT" | awk '
+            {
+              line = tolower($0)
+              if (line ~ /sha-256 digest:/) {
+                sub(/^.*sha-256 digest:[[:space:]]*/, "", line)
+                gsub(/[^0-9a-f]/, "", line)
+                if (length(line) == 64) {
+                  print line
+                  exit
+                }
+              }
+            }')"
+          if ! [[ "$CERT_SHA256" =~ ^[a-f0-9]{64}$ ]]; then
+            printf '%s\n' "$CERT_OUTPUT" >&2
             echo "::error::Could not extract a valid signer certificate SHA-256 digest."
             exit 1
           fi
