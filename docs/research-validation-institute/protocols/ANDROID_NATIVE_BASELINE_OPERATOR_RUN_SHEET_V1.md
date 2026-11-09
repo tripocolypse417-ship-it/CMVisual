@@ -27,7 +27,13 @@ Mark each item with its evidence reference. A blank item is a **STOP** for confi
 
 **STOP conditions:** missing/expired calibration evidence; unknown reference uncertainty; loose or undocumented mounting; inability to synchronize clocks; missing backup; unexpected package/signing identity; capture includes unapproved personal data; or protocol scope/thresholds were changed after inspecting results.
 
-## B. Installation and identity record
+## B. Build-path identity and artifact selection
+
+The canonical GitHub CI workflow `.github/workflows/android-isolated-test.yml` builds the isolated Capacitor test APK with package ID `com.waveradar.app.safetest`, using the native plugin at `native/android/WaveRadarSensorsPlugin.java` and the hosted WaveRadar workspace URL. Record the exact workflow run, source commit, artifact name, APK digest, generated package ID, and signing-certificate fingerprint for the tested APK.
+
+The WaveRadar 2.0 Hatchable project also contains a separate Kotlin Android application source under `public/native-android/app`, with package ID `com.waveradar.android.safetest` and version name `0.3.1-test`. This is not the APK produced by the canonical GitHub CI workflow. Do not treat results from one package or native implementation as validating the other. If the Kotlin application is selected as the test target, record it as a separate build path and run a separately scoped baseline.
+
+## C. Installation and identity record
 
 Record—not infer—the following:
 
