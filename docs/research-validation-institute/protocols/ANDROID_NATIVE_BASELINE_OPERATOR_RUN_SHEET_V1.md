@@ -2,7 +2,7 @@
 
 **Protocol:** WR-ANDROID-NATIVE-BASELINE-001  
 **Status:** Operator aid only. The parent protocol remains DRAFT until independently preregistered and approved.  
-**Target:** Motorola moto g play (2024); record the exact hardware and Android build from the device at execution.  
+**Target:** User-reported new Android device; exact manufacturer/model/OS/build must be captured at execution. The Core registry contains only an older, unvalidated Android 14 browser fingerprint whose user-agent string names `moto g play - 2024`; do not assume it is the current target.  
 **Purpose:** Make a fresh native-sensor inventory and independent-reference bench session repeatable, while preserving every raw artifact.
 
 This run sheet does not supply acceptance thresholds, certify equipment, or authorize life-safety use. Do not begin confirmatory collection until the protocol lead has completed the preregistration record and an independent reviewer has approved the scope and thresholds.
