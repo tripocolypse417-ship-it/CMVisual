@@ -93,6 +93,40 @@ const invalidTimestampSpatialPose = buildNativeSensorBaseline({
   capturedAt: at,
 });
 assert.equal(invalidTimestampSpatialPose.spatialPose.state, 'UNKNOWN', 'an invalid provider observation time cannot establish availability');
+
+const staleSpatialPose = buildNativeSensorBaseline({
+  capabilities: supported,
+  snapshot,
+  spatialPose: { state: 'AVAILABLE', source: 'ARCore', observedAt: at, ageMs: 0 },
+  capturedAt: '2026-10-30T20:00:06.000Z',
+});
+assert.equal(staleSpatialPose.spatialPose.state, 'UNKNOWN', 'a provider observation older than the freshness window cannot remain AVAILABLE');
+assert.equal(staleSpatialPose.spatialPose.ageMs, 6000, 'freshness is derived from the capture and provider timestamps');
+assert.match(staleSpatialPose.spatialPose.note, /stale relative to the capture timestamp/);
+
+const futureSpatialPose = buildNativeSensorBaseline({
+  capabilities: supported,
+  snapshot,
+  spatialPose: { state: 'AVAILABLE', source: 'ARCore', observedAt: '2026-10-30T20:00:01.000Z', ageMs: 0 },
+  capturedAt: at,
+});
+assert.equal(futureSpatialPose.spatialPose.state, 'UNKNOWN', 'a future provider timestamp cannot establish availability');
+assert.match(futureSpatialPose.spatialPose.note, /later than the capture timestamp/);
+
+const unboundedSpatialPose = buildNativeSensorBaseline({
+  capabilities: supported,
+  snapshot,
+  spatialPose: { state: 'AVAILABLE', source: 'ARCore', observedAt: at, ageMs: 0 },
+});
+assert.equal(unboundedSpatialPose.spatialPose.state, 'UNKNOWN', 'availability cannot be freshness-checked without a capture timestamp');
+assert.match(unboundedSpatialPose.spatialPose.note, /without a valid capture timestamp/);
+
+const staleSpatialPoseSummary = summarizeNativeSensorBaseline({
+  samples: [{ nativeSensorBaseline: instrumentedSpatialPose }],
+  generatedAt: '2026-10-30T20:00:06.000Z',
+});
+assert.equal(staleSpatialPoseSummary.spatialPose.state, 'UNKNOWN', 'a once-fresh provider state becomes UNKNOWN when stale at summary time');
+assert.equal(staleSpatialPoseSummary.spatialPose.ageMs, 6000);
 assert.equal(baseline.sensors.accelerometer.capability.state, 'SUPPORTED');
 assert.equal(baseline.sensors.accelerometer.registration.state, 'REGISTERED');
 assert.equal(baseline.sensors.accelerometer.sampleArrival.state, 'ARRIVED');
