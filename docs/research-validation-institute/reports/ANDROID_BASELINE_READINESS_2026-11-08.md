@@ -4,7 +4,7 @@
 **Status:** Physical baseline not collected; no accuracy result is asserted  
 **Core project:** WaveRadar 2.0, Hatchable project version 414  
 **Snapshot time:** 2026-11-09T00:57:23.980Z (2026-11-08 18:57:23 America/Chicago)  
-**Purpose:** Preserve the current blocker state and prevent historical, synthetic, or mismatched-build evidence from being mistaken for a fresh Motorola baseline.
+**Purpose:** Preserve the current blocker state and prevent historical, synthetic, or mismatched-build evidence from being mistaken for a fresh baseline on the user's currently reported Android handset.
 
 ## 1. Core diagnostic snapshot
 
@@ -28,7 +28,7 @@ The latest observation timestamp was **2026-10-24T19:41:16.142Z**. The evidence 
 | `browser.imu` / `imu.motion` | 3,806 |
 | `android.sensor-manager` / `imu.native-snapshot` | 215 |
 
-The API explicitly states that the ingestion-schema label `MEASURED` does not prove physical sensor truth. No observation in this inventory is integrity-verified, and the inventory does not establish a fresh Motorola moto g play (2024) capture paired with independent ground truth.
+The API explicitly states that the ingestion-schema label `MEASURED` does not prove physical sensor truth. No observation in this inventory is integrity-verified, and the inventory does not establish a fresh capture from the user's new phone paired with independent ground truth.
 
 The separate safety-readiness endpoint returned **`release: NOT_AUTHORIZED`**. Its critical gates remain:
 
@@ -43,7 +43,7 @@ The 78 historical runs remain unchanged. The status inventory contains 8 FAILED 
 
 ## 2. Device identity and capability limits
 
-The current device registry has eight records, but none identifies the target hardware as a verified **Motorola moto g play (2024)**. The latest Android-labelled registry entry reports manufacturer `Unknown` and model `Android`; that is not sufficient to establish the target phone's identity.
+A fresh device-registry inspection on 2026-11-09 found eight records. One Android 14 browser fingerprint has a user-agent string naming `moto g play - 2024`, but its structured fields remain manufacturer `Unknown`, model `Android`, validation state `UNVALIDATED`, and last-seen time 2026-11-02T02:19:20.175Z. This is historical metadata, not a verified current-device identity. The user has reported a new phone, but no matching new handset record is present. Do not assume the prior Moto fingerprint is the current test target.
 
 The capability snapshot inventory contains records for camera, geolocation, motion, and spatial pose. The most recent reported states include:
 
@@ -122,27 +122,27 @@ The PR now includes:
 - This read-only readiness snapshot.
 - A regression guard that refuses to report spatial-pose state `AVAILABLE` unless a named provider source and valid observation timestamp are supplied.
 
-The last verified CI run before the latest code/test edits passed all three workflows: Runtime Safety Check, Code Quality Checks, and Isolated Android Test APK Build. The new spatial-pose regression assertions were added after that run; their CI result must be checked separately before treating the new commit as verified.
+The PR head `09b3923349dafaeb3e1ea0cea6ade95a60d44cd7` passed all three GitHub workflows on 2026-11-09: Runtime Safety Check (run 42544147533), Code Quality Checks (42544147508), and Isolated Android Test APK Build (42544147495). This verifies the CI build and repository tests for that commit only; it does not establish APK installation compatibility or physical sensor accuracy.
 
 No PR was merged. No deployment was made.
 
 ## 6. Research & Validation Lab readiness
 
-The separate Lab remains at deployed version 15 with 17 active API functions. The function inventory reported zero errors in the preceding 24 hours.
+The separate Lab is now deployed at version 16 with 18 active API functions. The latest function inventory reported zero runtime errors in the preceding 24 hours.
 
 A read-only database audit found:
 
 - 2 scientific protocol templates, both `draft`: Android Native Sensor Fresh Baseline and Wi-Fi BFI/CSI feasibility.
 - 9 retired QA-only lab templates.
-- 1 reviewer, 4 testers, and 1 researcher; all are suspended synthetic/QA identities.
-- 0 active reviewer scopes.
+- 1 reviewer, 4 testers, and 1 researcher; all are suspended synthetic/QA identities after the controlled test.
+- 0 active reviewers; one retained scope row is attached only to a retired QA lab.
 - 23 assignments, all attached to retired QA labs; the two scientific draft protocols have no assignments.
 - 12 evidence records (3 MEASURED, 8 SIMULATED, 1 UNKNOWN); all 12 are explicitly marked `source_metadata.qa_fixture=true`.
-- 7 review decisions and 138 append-only audit events.
+- 7 review decisions and 150 append-only audit events.
 
-Role checks returned 401 for an anonymous reviewer-package request and 403 for a signed-in non-reviewer attempting package/export. These confirm negative access gates. A successful in-scope independent reviewer package/export path and cross-lab denial cannot be fully re-established with the current database state because no active independent reviewer or active scientific lab assignment exists.
+Controlled API-only role/isolation testing temporarily activated one synthetic QA identity and two retired QA labs, then restored every role to suspended and both labs to retired. Results: tester assignment list returned only three assignments for that tester; own evidence GET returned 200 and another tester's evidence returned 404; researcher GET returned four own submissions; reviewer queue returned two explicitly scoped assignments and excluded self-review/unscoped records; a scoped retired-lab archive returned six records; unscoped export returned 404; self-review and conflict-of-interest checks returned 403; suspended reviewer export returned 403. A canonical QA payload recomputed to a matching digest. A missing-digest QA record was blocked from a verified decision with 409 and no decision/audit count change. Retired protocols remained absent from the active review queue and new review-package route.
 
-All QA records remain preserved and excluded from scientific eligibility. No evidence, assignment, review decision, or audit event was changed during this audit.
+The successful reviewer path used only a synthetic QA identity and does not establish a real independent reviewer. All QA identities are again suspended, both QA labs are retired, and no scientific protocol was activated. Original evidence and review decisions were not changed; 12 append-only admin audit events were added to record the temporary activation and restoration operations. QA fixtures remain excluded from scientific eligibility.
 
 ## 7. Blocking inputs for a defensible physical baseline
 
