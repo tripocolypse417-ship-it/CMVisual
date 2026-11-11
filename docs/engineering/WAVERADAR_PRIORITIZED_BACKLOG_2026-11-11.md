@@ -36,7 +36,7 @@
 - **Dependencies:** Record-level provenance, raw payload retention, canonical serialization, append-only hashes, custody/access history, and deterministic reconciliation.
 - **Acceptance criteria:** Every observation has source/device/sensor identity, capture and receive timestamps, schema/configuration version, raw-payload digest, integrity state, and eligibility decision. Invalid/incomplete records are excluded from validation/training without modifying originals. Integrity verification never automatically means physical accuracy.
 - **Next action:** Continue read-only reconciliation and design a versioned integrity-verification pass that writes only append-only verification records.
-- **Evidence:** WaveRadar Core `/api/system/readiness` and `/api/ai/learning-loop`; existing evidence/recovery PRs #44 and #55.
+- **Evidence:** WaveRadar Core `/api/system/readiness` and `/api/ai/learning-loop`; existing evidence/recovery PRs #44 and #55; open issue [#46 transactional evidence persistence](https://github.com/tripocolypse417-ship-it/CMVisual/issues/46) and [#42 capability evidence gates](https://github.com/tripocolypse417-ship-it/CMVisual/issues/42).
 
 ### P0 — Independent Lab reviewer and protocol preregistration
 
@@ -54,7 +54,7 @@
 - **Dependencies:** Version-controlled copy of the active Kotlin source; explicit schema/version; tests; current-device capture; coordinate-frame/calibration contract; independent ground truth before accuracy claims.
 - **Acceptance criteria:** Rename the field to `frameTimestampNs`; add `clockDomain=ARCORE_UNSPECIFIED`; preserve `Frame.getAndroidCameraTimestamp()`, callback-entry time, and wall-clock receive time separately; do not compare across clock domains until synchronization pairs establish a mapping; add monotonic-progression/age checks only after the timebase is established. Only then define a source-linked WIS scene adapter that carries pose frame, calibration, uncertainty, and evidence class without merging camera, aircraft, and object locations.
 - **Next action:** Resolve the active Kotlin source ownership/mirroring plan before changing the Hatchable project. Then build a tested adapter into the world scene/model API. Do not patch the archival `waveradar` snapshot and call it current source.
-- **Evidence:** [PR #63 run sheet](https://github.com/tripocolypse417-ship-it/CMVisual/pull/63); [Google ARCore Frame API](https://developers.google.com/ar/reference/java/com/google/ar/core/Frame#getTimestamp); live WaveRadar 2.0 `api/world/scene.js` and `api/world/model.js`.
+- **Evidence:** [PR #63 run sheet](https://github.com/tripocolypse417-ship-it/CMVisual/pull/63); [Google ARCore Frame API](https://developers.google.com/ar/reference/java/com/google/ar/core/Frame#getTimestamp); live WaveRadar 2.0 `api/world/scene.js` and `api/world/model.js`; open issue [#53 Command + Helmet replay](https://github.com/tripocolypse417-ship-it/CMVisual/issues/53).
 
 ### P1 — Persistent Android debug signing
 
@@ -72,7 +72,7 @@
 - **Dependencies:** Review of each diff, CI, branch ancestry, migration compatibility, and explicit merge approval.
 - **Acceptance criteria:** One dependency-ordered sequence with no duplicated or conflicting changes; every PR's tests and review state are current; no evidence migration or deployment is implicit.
 - **Next action:** Review the main chain in order: #43 → #44 → #55 → #57 → #58 → #62 → #63 → #65. Review #41 separately. Treat #56, #60, and #61 as parallel branches requiring overlap review. Do not merge automatically.
-- **Evidence:** [CMVisual open PRs](https://github.com/tripocolypse417-ship-it/CMVisual/pulls); [CMVisual open issues](https://github.com/tripocolypse417-ship-it/CMVisual/issues).
+- **Evidence:** [CMVisual open PRs](https://github.com/tripocolypse417-ship-it/CMVisual/pulls); [CMVisual open issues](https://github.com/tripocolypse417-ship-it/CMVisual/issues); Android runtime issue [#1](https://github.com/tripocolypse417-ship-it/CMVisual/issues/1), [#18](https://github.com/tripocolypse417-ship-it/CMVisual/issues/18), and crash issue [#5](https://github.com/tripocolypse417-ship-it/CMVisual/issues/5).
 
 ### P1 — Restore a meaningful TypeScript quality gate
 
@@ -108,7 +108,7 @@
 - **Dependencies:** Versioned source-of-truth, operator authorization, exact model/controller/firmware matrix, vendor scopes/credentials where required, lawful sample data, and independent reference.
 - **Acceptance criteria:** Versioned read-only observation envelope; aircraft/controller/camera/sensor/object locations remain distinct; source/capture/receive times, coordinate frames, calibration, uncertainty, provenance, and authorization are retained; prohibited control writes fail at the adapter boundary.
 - **Next action:** Stage an OGC SensorThings v2.0 read-only adapter and v1.1 compatibility tests using licensed sample data. No aircraft scan, vendor connection, or control operation.
-- **Evidence:** [PR #68 drone interoperability register](https://github.com/tripocolypse417-ship-it/CMVisual/pull/68); live WaveRadar 2.0 `api/integrations/drone/catalog.js` and `api/integrations/drone/area-intelligence.js`.
+- **Evidence:** [PR #68 drone interoperability register](https://github.com/tripocolypse417-ship-it/CMVisual/pull/68); live WaveRadar 2.0 `api/integrations/drone/catalog.js` and `api/integrations/drone/area-intelligence.js`; existing DFR/partner issues [#50](https://github.com/tripocolypse417-ship-it/CMVisual/issues/50) and [#51](https://github.com/tripocolypse417-ship-it/CMVisual/issues/51).
 
 ### P2 — Free authorized Android remote access
 
