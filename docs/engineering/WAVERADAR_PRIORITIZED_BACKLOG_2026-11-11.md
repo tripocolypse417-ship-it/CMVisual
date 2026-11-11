@@ -121,10 +121,10 @@
 ### P3 — Cinematic Showcase / Studio integration
 
 - **Owner:** WaveRadar Media + WaveRadar Engineering.
-- **Status:** SEPARATE PROJECTS — Cinematic Showcase v13 and WaveRadar Studio v4 are deployed independently; no integrated workflow with WaveRadar 2.0 is established.
-- **Dependencies:** Verified source capture, approved claim matrix, actual feature readiness, and one source of truth for media assets.
-- **Acceptance criteria:** Five-minute chief-facing showcase uses real recorded product behavior; concepts and simulations are labeled; no invented statistics, operational claims, or unvalidated capabilities.
-- **Next action:** Keep current projects separate until source synchronization and evidence/claim review are complete.
+- **Status:** SEPARATE PROJECTS — Cinematic Showcase v13 and WaveRadar Studio v4 are deployed independently; no integrated workflow with WaveRadar 2.0 is established. A five-minute chief-facing script exists, but only one 6.08-second concept clip is recorded and no full assembly exists. Studio is a planning/prompt/asset-registry workspace with browser-local storage and JSON export, not a video renderer.
+- **Dependencies:** Real screen recordings from the current product, approved claim matrix, actual feature readiness, licensed firefighter/training footage, and one source of truth for media assets.
+- **Acceptance criteria:** Five-minute chief-facing showcase uses real recorded product behavior; concepts and simulations are labeled; asset attribution/license records travel with the project; no invented statistics, operational claims, or unvalidated capabilities.
+- **Next action:** Keep current projects separate until source synchronization and evidence/claim review are complete. The existing asset manifest records a U.S. Air Force public-domain training photo, a Fort Rucker CC BY 2.0 photo with attribution, and original CC0 SVG concepts; all overlays/routes/sensor visuals are simulated.
 
 ### P3 — Funding and external partnership pipeline
 
