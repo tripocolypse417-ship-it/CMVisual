@@ -47,14 +47,14 @@
 - **Next action:** Identify a qualified independent evaluator and prepare a partner-specific test request as a draft. External contact requires founder approval.
 - **Evidence:** [PR #64 Lab role/export recheck](https://github.com/tripocolypse417-ship-it/CMVisual/pull/64); live Lab v18; [v18 follow-up report](https://github.com/tripocolypse417-ship-it/CMVisual/blob/validation/lab-role-isolation-export-20261109/docs/research-validation-institute/reports/LAB_ROLE_ISOLATION_EXPORT_RECHECK_2026-11-11.md).
 
-### P1 — Correct ARCore timestamp semantics in the Kotlin test path
+### P1 — Correct ARCore timestamp semantics and connect verified pose to WIS
 
 - **Owner:** WaveRadar Engineering.
-- **Status:** BLOCKED BY SOURCE-OF-TRUTH GAP — the Hatchable Kotlin source serializes ARCore `Frame.getTimestamp()` under `monotonicTimestampNs`, but Google's API states its time base is undefined and only likely similar to `System.nanoTime()`.
-- **Dependencies:** Version-controlled copy of the active Kotlin source; explicit schema/version; tests; device capture.
-- **Acceptance criteria:** Rename the field to `frameTimestampNs`; add `clockDomain=ARCORE_UNSPECIFIED`; preserve `Frame.getAndroidCameraTimestamp()`, callback-entry time, and wall-clock receive time separately; do not compare across clock domains until synchronization pairs establish a mapping; add monotonic-progression/age checks only after the timebase is established.
-- **Next action:** Resolve the active Kotlin source ownership/mirroring plan before changing the Hatchable project. Do not patch the archival `waveradar` snapshot and call it current source.
-- **Evidence:** [PR #63 run sheet](https://github.com/tripocolypse417-ship-it/CMVisual/pull/63); [Google ARCore Frame API](https://developers.google.com/ar/reference/java/com/google/ar/core/Frame#getTimestamp).
+- **Status:** BLOCKED BY SOURCE-OF-TRUTH GAP — the Hatchable Kotlin source serializes ARCore `Frame.getTimestamp()` under `monotonicTimestampNs`, but Google's API states its time base is undefined and only likely similar to `System.nanoTime()`. The live WaveRadar 2.0 world scene/model API does not consume this ARCore pose capture or expose an integrated pose-provider field.
+- **Dependencies:** Version-controlled copy of the active Kotlin source; explicit schema/version; tests; current-device capture; coordinate-frame/calibration contract; independent ground truth before accuracy claims.
+- **Acceptance criteria:** Rename the field to `frameTimestampNs`; add `clockDomain=ARCORE_UNSPECIFIED`; preserve `Frame.getAndroidCameraTimestamp()`, callback-entry time, and wall-clock receive time separately; do not compare across clock domains until synchronization pairs establish a mapping; add monotonic-progression/age checks only after the timebase is established. Only then define a source-linked WIS scene adapter that carries pose frame, calibration, uncertainty, and evidence class without merging camera, aircraft, and object locations.
+- **Next action:** Resolve the active Kotlin source ownership/mirroring plan before changing the Hatchable project. Then build a tested adapter into the world scene/model API. Do not patch the archival `waveradar` snapshot and call it current source.
+- **Evidence:** [PR #63 run sheet](https://github.com/tripocolypse417-ship-it/CMVisual/pull/63); [Google ARCore Frame API](https://developers.google.com/ar/reference/java/com/google/ar/core/Frame#getTimestamp); live WaveRadar 2.0 `api/world/scene.js` and `api/world/model.js`.
 
 ### P1 — Persistent Android debug signing
 
