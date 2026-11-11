@@ -1,6 +1,6 @@
 # WaveRadar Local Agent
 
-A zero-subscription, computer-hosted coordinator for the CMVisual repository. It uses the locally installed Codex CLI for bounded engineering work and Git for an isolated persistent worktree. It does not require a hosted agent service, API key, database, or new paid subscription.
+A computer-hosted, local-first coordinator for the CMVisual repository. It uses the locally installed Codex CLI for bounded engineering work and Git for an isolated persistent worktree. The runner itself does not require a hosted agent service, API key, database, or a new paid subscription; Codex CLI access and usage are still subject to the signed-in account's plan and limits.
 
 ## What it does
 
@@ -8,11 +8,18 @@ A zero-subscription, computer-hosted coordinator for the CMVisual repository. It
 - Uses a dedicated local worktree and branch: agent/waveradar-local.
 - Preserves the user's normal checkout and its uncommitted changes.
 - Keeps work-in-progress in the isolated worktree between runs.
-- Runs Codex CLI with workspace-only writes, no approval bypass, and network disabled.
+- Runs Codex CLI with workspace-write permissions limited to the isolated worktree and network disabled. The unattended invocation does not pause for approval before edits inside that worktree; review every diff before manually creating a PR.
 - Writes timestamped logs and a Markdown report under ~/.waveradar-agent/.
 - Does not commit, push, open PRs, merge, deploy, send messages, submit applications, or spend money.
 
-The agent is a local assistant, not a life-safety control system. Its outputs require engineering review. It must never turn simulations, inferred values, or unverified sensor observations into validation evidence.
+The agent is a local assistant, not remote control of the user's phone or a cloud computer, and not a life-safety control system. It requires a computer where Git, Python, and Codex CLI are installed. Its outputs require engineering review. It must never turn simulations, inferred values, or unverified sensor observations into validation evidence.
+
+## Access and cost limits
+
+- No new subscription or credit purchase is required by this repository runner.
+- Codex CLI access is not guaranteed on every account and usage may be limited by the signed-in plan. Do not buy an upgrade or credits for this workflow without the owner's approval.
+- The GitHub Actions `WaveRadar Cloud Coordinator` workflow is a deterministic repository snapshot and CI check. It does not invoke Codex, operate a device, or modify code. Its daily schedule only runs when the workflow is present on the repository's default branch; a draft PR does not start the daily schedule.
+- This local runner does not solve phone-only remote access. Use the separate authorized Android device workflow for phone diagnostics.
 
 ## Requirements
 
