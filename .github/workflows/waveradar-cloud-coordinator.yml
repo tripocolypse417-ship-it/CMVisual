@@ -5,6 +5,7 @@ on:
     # 15:00 UTC is 09:00 Central during standard time; GitHub cron is UTC.
     - cron: "0 15 * * *"
   workflow_dispatch:
+  pull_request:
 
 permissions:
   contents: read
