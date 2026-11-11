@@ -111,6 +111,62 @@ jobs:
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
 
+      - name: Generate APK evidence manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="android/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          APK_SHA256="$(sha256sum "$APK" | awk '{print $1}')"
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          if [ -z "$SDK_ROOT" ]; then
+            echo "::error::Android SDK root is unavailable; cannot verify APK signer."
+            exit 1
+          fi
+          APKSIGNER="$(find "$SDK_ROOT/build-tools" -type f -name apksigner 2>/dev/null | sort -V | tail -n 1)"
+          if [ -z "$APKSIGNER" ]; then
+            echo "::error::apksigner was not found; cannot verify APK signer."
+            exit 1
+          fi
+          CERT_OUTPUT="$("$APKSIGNER" verify --print-certs "$APK" 2>&1)"
+          CERT_SHA256="$(printf '%s\n' "$CERT_OUTPUT" | awk '
+            {
+              line = tolower($0)
+              if (line ~ /sha-256 digest:/) {
+                sub(/^.*sha-256 digest:[[:space:]]*/, "", line)
+                gsub(/[^0-9a-f]/, "", line)
+                if (length(line) == 64) {
+                  print line
+                  exit
+                }
+              }
+            }')"
+          if ! [[ "$CERT_SHA256" =~ ^[a-f0-9]{64}$ ]]; then
+            printf '%s\n' "$CERT_OUTPUT" >&2
+            echo "::error::Could not extract a valid signer certificate SHA-256 digest."
+            exit 1
+          fi
+          SIGNING_MODE="runner-generated"
+          if [ -n "${WAVERADAR_DEBUG_KEYSTORE_BASE64:-}" ]; then
+            SIGNING_MODE="persistent"
+          fi
+          cat > WAVERADAR-APK-MANIFEST.txt <<EOF
+          schema=waveradar.android-apk-manifest.v1
+          package_id=com.waveradar.app.safetest
+          source_commit=$GITHUB_SHA
+          workflow_run_id=$GITHUB_RUN_ID
+          apk_sha256=$APK_SHA256
+          signer_certificate_sha256=$CERT_SHA256
+          signing_mode=$SIGNING_MODE
+          hosted_url=$WAVERADAR_HOSTED_URL
+          EOF
+          {
+            echo "### Isolated APK evidence manifest"
+            echo "- APK SHA-256: `$APK_SHA256`"
+            echo "- Signer certificate SHA-256: `$CERT_SHA256`"
+            echo "- Signing mode: `$SIGNING_MODE`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload isolated test APK
         uses: actions/upload-artifact@v4
         with:
@@ -132,9 +188,11 @@ jobs:
             echo 'Keep the existing WaveRadar installation and its app data until recovery is verified.'
           } > WAVERADAR-ISOLATED-APK-NOTES.txt
 
-      - name: Upload install safety note
+      - name: Upload install safety note and APK manifest
         uses: actions/upload-artifact@v4
         with:
           name: WaveRadar-isolated-install-notes
-          path: WAVERADAR-ISOLATED-APK-NOTES.txt
+          path: |
+            WAVERADAR-ISOLATED-APK-NOTES.txt
+            WAVERADAR-APK-MANIFEST.txt
           if-no-files-found: error

@@ -65,6 +65,34 @@ assert.equal(baseline.permissions.nativeAndroidSensorRuntime.state, 'NOT_REQUIRE
 assert.equal(baseline.permissions.webMotion.permissionState, 'UNKNOWN', 'observed events do not imply permission API state');
 assert.equal(baseline.permissions.webMotion.eventsObserved, 'OBSERVED');
 assert.equal(baseline.spatialPose.state, 'NOT_INSTRUMENTED');
+
+const unprovenSpatialPose = buildNativeSensorBaseline({
+  capabilities: supported,
+  snapshot,
+  spatialPose: { state: 'AVAILABLE' },
+  capturedAt: at,
+});
+assert.equal(unprovenSpatialPose.spatialPose.state, 'UNKNOWN', 'AVAILABLE requires a named provider and a valid observation timestamp');
+assert.equal(unprovenSpatialPose.spatialPose.source, null);
+assert.match(unprovenSpatialPose.spatialPose.note, /named source and valid observation timestamp/);
+
+const instrumentedSpatialPose = buildNativeSensorBaseline({
+  capabilities: supported,
+  snapshot,
+  spatialPose: { state: 'AVAILABLE', source: 'ARCore', observedAt: at, ageMs: 0 },
+  capturedAt: at,
+});
+assert.equal(instrumentedSpatialPose.spatialPose.state, 'AVAILABLE');
+assert.equal(instrumentedSpatialPose.spatialPose.source, 'ARCore');
+assert.equal(instrumentedSpatialPose.spatialPose.observedAt, at);
+
+const invalidTimestampSpatialPose = buildNativeSensorBaseline({
+  capabilities: supported,
+  snapshot,
+  spatialPose: { state: 'AVAILABLE', source: 'ARCore', observedAt: 'not-a-timestamp' },
+  capturedAt: at,
+});
+assert.equal(invalidTimestampSpatialPose.spatialPose.state, 'UNKNOWN', 'an invalid provider observation time cannot establish availability');
 assert.equal(baseline.sensors.accelerometer.capability.state, 'SUPPORTED');
 assert.equal(baseline.sensors.accelerometer.registration.state, 'REGISTERED');
 assert.equal(baseline.sensors.accelerometer.sampleArrival.state, 'ARRIVED');
