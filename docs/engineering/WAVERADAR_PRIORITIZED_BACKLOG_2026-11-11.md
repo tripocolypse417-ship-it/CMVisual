@@ -18,6 +18,15 @@
 | Drone/aerial | Documentation catalog and stored-observation query only | No vendor adapter, live feed, authorized aircraft, or independently validated aerial capability |
 | WIS / World Data Commons | World model APIs and separate spatial-perception project exist | No World Data Commons source/adapter found in WaveRadar 2.0; three WDC projects are v0 with no deployments |
 
+
+### 1.1 Core route-boundary and timing recheck — 2026-11-11
+
+- **Read-only aggregate:** 4,021 observations; 0 integrity-verified; 4,021 integrity-UNKNOWN; 8 registered device records versus 5 distinct device IDs represented in the observation aggregate. The latest observation remains 2026-10-24T19:41:16.142Z. No observations arrived in the preceding 24 hours.
+- **Event-to-receipt delay:** mean 38,325,893 ms (~10.6 h), median 501,819 ms (~8.4 min), p95 259,468,025 ms (~72.1 h); 1,119 observations exceed 1 hour and 393 exceed 24 hours. This is `received_at - observed_at`, including device buffering, offline upload, and transport; it is not server processing latency. The public quality route's `timestampIntegrity=PASS` means no future observed timestamps were found, not that device clocks are synchronized.
+- **No-write authorization/input checks:** anonymous device-ingest POST without a bearer token returned 401 `DEVICE_TOKEN_REQUIRED`; anonymous dataset-import POST returned 401 `AUTHENTICATION_REQUIRED` before external fetch/database write; public device-registration POST without a device ID returned 400 `DEVICE_ID_INVALID`; public synthetic-model POST without an inputs object returned 400 `INPUTS_OBJECT_REQUIRED`; synthetic app-user reviewer export with a valid existing assignment ID returned 403 `Reviewer authorization is not active`. These are expected gates, not a reproducible authentication defect. Active independent Lab reviewers remain 0.
+- **Public registry caveat:** `api/sensors/register-public.js` intentionally permits a bounded, non-sensitive device identifier and metadata to be registered as an unowned row; it does not establish account ownership, issue an enrollment token, or ingest observations. The authenticated registration route can claim an unowned row, while observation ingestion separately requires an account-bound, device-bound bearer token. No valid public registration was invoked. No rate limiter was identified in the handler; review abuse/rate limiting before broad public exposure. No abuse is observed or claimed.
+- **Evidence:** WaveRadar Core `/api/validation/report`, `/api/validation/quality`, `/api/system/diagnostics`, `/api/system/readiness`, `/api/ai/learning-loop`; live route-source inspection and read-only route tests; Lab `/api/reviewer/export` with synthetic app-user context.
+
 ## 2. Ranked work items
 
 ### P0 — Fresh Android native-sensor baseline
@@ -94,11 +103,11 @@
 ### P2 — Source-metadata ingestion reliability
 
 - **Owner:** WaveRadar Engineering.
-- **Status:** DEGRADED — 58 source definitions; current source uses `SOURCE_BATCH_SIZE=1` and hourly scheduling, implying about a 58-hour full cycle. The scheduler reports 1 error in 49 runs over 7 days; current `last_error` is null and the failed-run detail is not exposed in the current summary.
-- **Dependencies:** Version-controlled active function source, idempotency proof, per-source timeout/error records, dry-run, and batch-overlap tests.
-- **Acceptance criteria:** Bounded multi-source batches, deterministic least-recently-attempted selection, no duplicate imports, per-source timeout/error detail, and a measured refresh cycle. No source is promoted to trusted/validated by ingestion alone.
-- **Next action:** Mirror the current function into the canonical source workflow before changing batch size or cron cadence. The previously discussed 4-source/2-hour proposal is not present in current source and is not implemented.
-- **Evidence:** Live WaveRadar 2.0 `api/automation/source-metadata-ingest.js`; live cron inventory.
+- **Status:** DEGRADED — 58 source definitions; current source uses `SOURCE_BATCH_SIZE=1` and hourly scheduling, implying about a 58-hour full cycle. The 7-day log contains one 504 at 2026-11-09T06:41:20Z after 65,263 ms: the scheduler exceeded its 65-second budget. The log does not identify which source or processing phase stalled. The current `last_error` is null; all 24 logged runs in the preceding 24 hours returned 200, with a maximum duration of 27,925 ms.
+- **Dependencies:** Version-controlled active function source, phase-level timing/error records, idempotency proof, bounded retry policy, and dry-run/overlap tests.
+- **Acceptance criteria:** Every source attempt records source ID, fetch/body-read/parse/database phase durations, timeout category, HTTP status, and final disposition; a slow source cannot starve the catalog or exceed the scheduler budget; retries remain idempotent; no source is promoted to trusted/validated by ingestion alone.
+- **Next action:** Preserve the current one-source/hour schedule. Instrument the source/phase timing first and identify the cause of the 2026-11-09 overrun before changing batch size or cadence. The previously discussed 4-source/2-hour proposal is not present in current source and is not implemented.
+- **Evidence:** Live WaveRadar 2.0 `api/automation/source-metadata-ingest.js` (58 sources, 9-second fetch timeout, batch size 1); 7-day error log request [b9560b8d-d5e8-4b55-b289-5a8196b55826](https://waveradar-20.hatchable.site); 24-hour log window 2026-11-10T18:02:08Z–2026-11-11T17:02:30Z (24/24 HTTP 200).
 
 ### P2 — AI provider failure handling without paid dependencies
 
