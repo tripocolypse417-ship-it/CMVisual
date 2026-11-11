@@ -74,6 +74,15 @@
 - **Next action:** Review the main chain in order: #43 → #44 → #55 → #57 → #58 → #62 → #63 → #65. Review #41 separately. Treat #56, #60, and #61 as parallel branches requiring overlap review. Do not merge automatically.
 - **Evidence:** [CMVisual open PRs](https://github.com/tripocolypse417-ship-it/CMVisual/pulls); [CMVisual open issues](https://github.com/tripocolypse417-ship-it/CMVisual/issues).
 
+### P1 — Restore a meaningful TypeScript quality gate
+
+- **Owner:** WaveRadar Engineering.
+- **Status:** DEGRADED — the Code Quality workflow marks the legacy `npm run typecheck` step `continue-on-error: true`. The latest inspected successful run logged 1,034 TypeScript diagnostics: 298 across 53 project source files and 736 in the Leaflet dependency. The job still reports success.
+- **Dependencies:** A reproducible baseline, dependency/source error separation, module ownership, and tests that protect runtime behavior while types are corrected.
+- **Acceptance criteria:** Critical evidence, native-sensor, validation, and world-model modules have strict, passing type checks; third-party declaration errors are isolated without suppressing project errors; the full project debt is tracked and the non-blocking exception is removed only when the intended scope is clean.
+- **Next action:** Establish a source-only diagnostic baseline, then prioritize `src/lib/dataContract.js`, `src/lib/nativeSensorBaseline.js`, `src/lib/physicalValidationQueue.js`, `src/hooks/useSensorBridge.js`, `src/hooks/useSpatialWorld.js`, and `src/hooks/useWorldDataQuality.js`. Do not bulk-cast to `any` or hide errors.
+- **Evidence:** [Code Quality run #43068062631](https://github.com/tripocolypse417-ship-it/CMVisual/actions/runs/43068062631); `.github/workflows/quality-checks.yml`.
+
 ### P2 — Source-metadata ingestion reliability
 
 - **Owner:** WaveRadar Engineering.
