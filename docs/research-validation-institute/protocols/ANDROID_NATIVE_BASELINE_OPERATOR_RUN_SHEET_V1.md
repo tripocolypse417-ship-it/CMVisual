@@ -41,7 +41,7 @@ Record—not infer—the following:
 
 | Field | Recorded value / evidence reference |
 |---|---|
-| Device manufacturer/model | Motorola Moto G Play — XT2413V (user-reported; verify device Settings/About phone at session start) |
+| Device manufacturer/model | Not yet identified — capture from the current handset's Settings / About phone at session start. The previously used Motorola Moto G Play XT2413V is historical only and must not be assumed current. |
 | Hardware revision / SKU (if available) | |
 | Android release / build fingerprint | |
 | Security patch level | |
