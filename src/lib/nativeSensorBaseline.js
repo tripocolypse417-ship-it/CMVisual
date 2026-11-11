@@ -102,17 +102,25 @@ function isValidSensorSample(name, measurement) {
   return Array.isArray(values) && values.length > 0 && values.every(finiteNumber);
 }
 
-function normalizeSpatialPose(pose) {
+function normalizeSpatialPose(pose, referenceAt) {
   if (POSE_STATES.has(pose?.state)) {
     const source = typeof pose.source === 'string' && pose.source.trim()
       ? pose.source.trim()
       : null;
     const observedAt = normalizeIso(pose.observedAt);
-    const ageMs = finiteNonNegative(pose.ageMs) ? pose.ageMs : null;
+    const referenceTime = Date.parse(normalizeIso(referenceAt) ?? '');
+    const observedTime = Date.parse(observedAt ?? '');
+    const derivedAgeMs = Number.isFinite(referenceTime) && Number.isFinite(observedTime)
+      ? referenceTime - observedTime
+      : null;
+    const suppliedAgeMs = finiteNonNegative(pose.ageMs) ? pose.ageMs : null;
+    const ageMs = derivedAgeMs !== null && finiteNonNegative(derivedAgeMs)
+      ? Math.max(derivedAgeMs, suppliedAgeMs ?? 0)
+      : suppliedAgeMs;
 
-    // A bare provider claim is not enough to establish availability. Require
-    // the queried provider identity and a parseable observation time so an
-    // uninstrumented or incomplete status cannot be promoted to AVAILABLE.
+    // A current availability claim needs a named provider, a valid provider
+    // observation time, and a valid reference time for freshness evaluation.
+    // This is a software freshness guard, not a pose-accuracy threshold.
     if (pose.state === 'AVAILABLE' && (!source || !observedAt)) {
       return {
         state: 'UNKNOWN',
@@ -120,6 +128,42 @@ function normalizeSpatialPose(pose) {
         observedAt,
         ageMs,
         note: 'Provider-reported AVAILABLE state lacks a named source and valid observation timestamp; availability remains UNKNOWN.',
+      };
+    }
+    if (pose.state === 'AVAILABLE' && !Number.isFinite(referenceTime)) {
+      return {
+        state: 'UNKNOWN',
+        source,
+        observedAt,
+        ageMs,
+        note: 'Spatial-pose availability cannot be time-bounded without a valid capture timestamp; availability remains UNKNOWN.',
+      };
+    }
+    if (pose.state === 'AVAILABLE' && derivedAgeMs !== null && derivedAgeMs < 0) {
+      return {
+        state: 'UNKNOWN',
+        source,
+        observedAt,
+        ageMs,
+        note: 'Spatial-pose provider observation is later than the capture timestamp; availability remains UNKNOWN.',
+      };
+    }
+    if (pose.state === 'AVAILABLE' && ageMs == null) {
+      return {
+        state: 'UNKNOWN',
+        source,
+        observedAt,
+        ageMs,
+        note: 'Spatial-pose provider freshness cannot be established; availability remains UNKNOWN.',
+      };
+    }
+    if (pose.state === 'AVAILABLE' && ageMs > NATIVE_SENSOR_STALE_MS) {
+      return {
+        state: 'UNKNOWN',
+        source,
+        observedAt,
+        ageMs,
+        note: `Spatial-pose provider observation is stale relative to the capture timestamp (age ${ageMs} ms; limit ${NATIVE_SENSOR_STALE_MS} ms); availability remains UNKNOWN.`,
       };
     }
 
@@ -277,7 +321,7 @@ export function buildNativeSensorBaseline({
       },
       webMotion: normalizeWebMotionStatus(webMotionPermission),
     },
-    spatialPose: normalizeSpatialPose(spatialPose),
+    spatialPose: normalizeSpatialPose(spatialPose, capturedAt),
     sensors,
     note: 'MEASURED applies only to a finite native numeric sample. No accuracy, calibration, absolute position, or operational readiness is asserted.',
   };
@@ -459,7 +503,7 @@ export function summarizeNativeSensorBaseline({
       },
       webMotion: normalizeWebMotionStatus(webMotionPermission),
     },
-    spatialPose: normalizeSpatialPose(spatialPose ?? latestRecord?.spatialPose),
+    spatialPose: normalizeSpatialPose(spatialPose ?? latestRecord?.spatialPose, generatedAt),
     sensors,
     evidenceLimit: 'Captured sample counts are polling snapshots, not native event counts. Repeated snapshots may contain the same latest event; sequence advances between snapshots indicate intervening native callbacks not individually retained by polling, not proven dropped callbacks. Event and callback elapsed-realtime timestamps share the Android monotonic clock. Wall-clock timestamps may be adjusted.',
   };
