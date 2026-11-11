@@ -59,12 +59,20 @@
 ### P1 — Persistent Android debug signing
 
 - **Owner:** Founder (secret configuration) + WaveRadar Engineering (verification).
-- **Status:** BLOCKED — the 2026-11-11 isolated APK build log and 2026-10-31 main build log show `WAVERADAR_DEBUG_KEYSTORE_BASE64` empty and an ephemeral signing-key warning.
+- **Status:** BLOCKED — the current PR #68 APK build [43070079760](https://github.com/tripocolypse417-ship-it/CMVisual/actions/runs/43070079760), the 2026-11-11 isolated APK build [43066453967](https://github.com/tripocolypse417-ship-it/CMVisual/actions/runs/43066453967), and the 2026-10-31 main build [41198437561](https://github.com/tripocolypse417-ship-it/CMVisual/actions/runs/41198437561) show `WAVERADAR_DEBUG_KEYSTORE_BASE64` empty and an ephemeral signing-key warning.
 - **Dependencies:** Founder-approved debug keystore generation/storage, GitHub repository secret access, existing app-data backup, APK manifest and signer verification.
 - **Acceptance criteria:** A new CI build records persistent signing mode and stable signer-certificate SHA-256; artifact manifest matches the APK; install/update compatibility is tested on the exact handset without deleting user data.
 - **Next action:** Do not configure or change secrets automatically. Founder must authorize secret setup; back up app data before any one-time reinstall.
-- **Evidence:** [Main APK build run #41198437561](https://github.com/tripocolypse417-ship-it/CMVisual/actions/runs/41198437561); [isolated APK run #43066453967](https://github.com/tripocolypse417-ship-it/CMVisual/actions/runs/43066453967).
+- **Evidence:** [PR #68 APK build run #43070079760](https://github.com/tripocolypse417-ship-it/CMVisual/actions/runs/43070079760); [isolated APK run #43066453967](https://github.com/tripocolypse417-ship-it/CMVisual/actions/runs/43066453967); [main APK run #41198437561](https://github.com/tripocolypse417-ship-it/CMVisual/actions/runs/41198437561).
 
+### P1 — Restore Base44 app identity in the CI APK
+
+- **Owner:** Founder (confirm intended Base44 app configuration) + WaveRadar Engineering (build/runtime verification).
+- **Status:** UNVERIFIED CONFIGURATION — the PR #68 build log for run [43070079760](https://github.com/tripocolypse417-ship-it/CMVisual/actions/runs/43070079760) emitted `VITE_BASE44_APP_ID is not set`. The workflow defines `WAVERADAR_HOSTED_URL` and the debug-signing variable but does not define `VITE_BASE44_APP_ID`. The client reads `appId` from URL/local storage first and otherwise defaults to `import.meta.env.VITE_BASE44_APP_ID`; the Base44 SDK client is initialized with that value. The warning does not prove runtime failure because a URL parameter or stored value may override it, but no clean-install runtime authentication test has been performed.
+- **Dependencies:** Confirm the intended Base44 app ID and runtime URL/parameter path; founder-approved repository variable/secret configuration if required; exact CI artifact and handset.
+- **Acceptance criteria:** A clean test install receives the intended app ID through a documented, non-ambiguous path; Base44 login and a read-only authenticated API call succeed; the build log no longer has an unexplained missing-app-ID warning; no production data or existing installation is altered.
+- **Next action:** Inspect the actual launch URL and existing hosted app configuration, then ask the founder to approve any required CI configuration change. Do not invent an app ID or change repository secrets automatically.
+- **Evidence:** [PR #68 build log/run #43070079760](https://github.com/tripocolypse417-ship-it/CMVisual/actions/runs/43070079760); `src/api/base44Client.js`; `src/lib/app-params.js`; `.github/workflows/build-android.yml`.
 ### P1 — Consolidate the stacked Android PR train
 
 - **Owner:** WaveRadar Engineering; founder controls merge authorization.
