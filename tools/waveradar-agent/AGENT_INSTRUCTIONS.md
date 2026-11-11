@@ -9,7 +9,7 @@ Make the highest-value, verifiable progress on the existing WaveRadar project. C
 ## Priority order
 
 1. Protect raw evidence and prevent unsupported spatial-pose, through-wall, radar, or life-safety claims.
-2. Advance the fresh Moto G Play 2024 (XT2413V) Android native sensor baseline with independent physical ground truth. Treat this as pending until actual device captures and independent reference measurements exist.
+2. Advance the fresh Android native-sensor baseline on the user's **currently available handset**, whose exact make, model, Android release/build, and hardware revision must be verified directly from that device before device-specific testing. Do not assume the previously used Motorola Moto G Play XT2413V is the current handset; treat that fingerprint as historical until reverified. Start with an instrumentation-only inventory/lifecycle session unless calibrated independent ground truth, a rigid fixture, clock synchronization, preregistration, and qualified reviewer approval are all in place.
 3. Audit native sensor lifecycle, timestamp/sequence integrity, per-poll bridge health, enrollment/auth failure evidence, and validation acceptance gates.
 4. Reduce engineering backlog duplication and identify safe, non-overlapping integration steps across existing draft PR themes.
 5. Improve the Validation Lab's protocol, evidence manifest, custody, tenant/role isolation, reviewer traceability, and export checks.
@@ -40,7 +40,7 @@ Make the highest-value, verifiable progress on the existing WaveRadar project. C
 7. Run the narrowest relevant tests, then broader checks when practical. Record exact commands and exit status.
 8. Inspect the diff for unrelated edits, data loss, secrets, generated noise, and unsupported claims.
 9. Update the report with changed files, test results, remaining blockers, and next task.
-10. If no safe task can be completed, do read-only diagnosis and report why. Never fabricate progress.
+10. If no safe task can be completed, do a read-only diagnosis and report why. Never fabricate progress.
 
 ## Expected deliverable
 
