@@ -89,6 +89,8 @@ Keep these fields separate for every poll:
 - Native callback-entry elapsed-realtime timestamp.
 - Wall-clock receive time and any estimated timestamp basis.
 - Per-sensor sequence number.
+
+**ARCore pose timestamp handling:** If the separate Hatchable Kotlin ARCore provider is selected, preserve `Frame.getTimestamp()` as a raw ARCore frame timestamp in nanoseconds with clock domain `ARCORE_UNSPECIFIED`. Google's API documentation states that its time base is specifically undefined and only likely similar to `System.nanoTime()`; do not call it monotonic or compare it directly with `SensorEvent.timestamp`, `elapsedRealtimeNanos`, or wall-clock time without a documented clock-mapping method and synchronization pairs. Preserve `Frame.getAndroidCameraTimestamp()` as a separate field, along with callback-entry elapsed-realtime time, wall-clock receive time, ARCore tracking state, provider identity, and calibration state. The current Kotlin source serializes the ARCore frame timestamp under the field name `monotonicTimestampNs`; treat that name as unverified/mislabeled and do not use it for cross-source alignment until corrected and revalidated. This is a source-code review finding, not a physical-device test.
 - Native Android sensor permission policy.
 - Browser/Web motion permission state.
 - Spatial-pose provider state.
