@@ -101,6 +101,15 @@
 - **Next action:** Prepare a code patch only after the source-of-truth plan is approved; do not add an API key or paid service.
 - **Evidence:** Live WaveRadar 2.0 AI gate; `api/ai/analyze.js`; `api/automation/research-content-cycle.js`.
 
+### P2 — Wi-Fi BFI/CSI, cellular, satellite, and RF feasibility
+
+- **Owner:** WaveRadar Engineering + External university/laboratory partner.
+- **Status:** RESEARCH ONLY — the Lab has a draft KIT Wi-Fi BFI/CSI feasibility protocol; the broader controlled cellular/satellite RF lab work remains in open issues. No calibrated RF equipment, controlled RF environment, or independent partner test is established.
+- **Dependencies:** Authorized RF source and environment, instrument calibration, lawful spectrum plan, exact chipset/driver/API access, representative data, independent ground truth, and a protocol reviewer.
+- **Acceptance criteria:** Define each measurand separately (RSSI/CSI/BFI/packet timing/GNSS metadata); preserve raw complex CSI where exposed; record channel/bandwidth, antenna configuration, device/driver/firmware, environment, interference, calibration, uncertainty, and capture/receive time. Include negative controls and blinded trials where practical. No through-wall occupancy, person count, victim localization, or safety claim from ordinary Wi-Fi/cellular/GNSS metadata.
+- **Next action:** Keep the KIT protocol in DRAFT and prepare a no-cost feasibility/partner package using the existing RF research issues. Do not purchase equipment, transmit/scan without authorization, or contact a laboratory without founder approval.
+- **Evidence:** Lab v18 draft KIT protocol; existing RF research issues [#47](https://github.com/tripocolypse417-ship-it/CMVisual/issues/47) and [#52](https://github.com/tripocolypse417-ship-it/CMVisual/issues/52).
+
 ### P2 — Drone/aerial read-only integration foundation
 
 - **Owner:** WaveRadar Engineering; external operator/vendor for physical integration.
