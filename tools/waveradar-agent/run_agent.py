@@ -110,6 +110,7 @@ If no safe implementation is possible, perform a read-only audit and write a blo
         "codex", "exec",
         "--sandbox", "workspace-write",
         "--ask-for-approval", "never",
+        "--add-dir", str(state),
         "-c", "sandbox_workspace_write.network_access=false",
         "--json",
         prompt,
