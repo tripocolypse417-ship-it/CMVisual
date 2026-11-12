@@ -104,3 +104,40 @@ A source review identified and corrected additional readiness gates in the Lab w
 - The input manifest uses canonical key ordering before hashing so its digest can be independently recomputed after JSONB storage.
 
 The Hatchable dry-run was repeated after these changes: `ok=true`, zero errors, and the same single pre-existing private-project visibility warning. The route remains undeployed and uninvoked.
+
+
+## 7. Independent live verification — 2026-11-12T17:52Z
+
+### Deployment boundary
+
+- The deployed Lab v18 exposes 18 API routes; `/api/delegate/data-correlation` is absent from the live route inventory.
+- The working copy contains `api/delegate/data-correlation.js` and `lib/data-correlation-delegate.js`.
+- Hatchable dry-run validation returned `ok=true`, zero errors, and one existing `visibilityWall` warning. It projects v19 with 19 API functions.
+- A POST to `/api/delegate/data-correlation` returned 404 `Function not found` when exercised as public, member, and admin. The request never reached the handler, so this is not an authorization failure and does not test the handler's declared admin gate.
+- No deployment, audit append, evidence mutation, or statistical correlation occurred.
+
+### Current role-isolation recheck
+
+- `GET /api/admin/labs`: public 401, collaborator member 403, admin 200.
+- `GET /api/reviewer/archive`: public 401; collaborator member/admin 401 because this route requires the separate signed-in app-user ([auth]) identity plane; synthetic app-user test returned 403 because reviewer authorization is not active.
+- `GET /api/reviewer/assignments` as synthetic app user returned 403 because that test identity is not registered as an active reviewer.
+- `GET /api/reviewer/export` as public returned 401. The synthetic app-user request without a valid assignment selector returned 400; this is not a positive reviewer-export test.
+- These results do not establish an authenticated enrollment defect. No real independent reviewer is active, so positive in-scope reviewer export remains unverified.
+
+### Read-only database recheck
+
+| Check | Current result |
+|---|---:|
+| Evidence records | 12 |
+| Explicit `source_metadata.qa_fixture=true` | 12 |
+| MEASURED / SIMULATED / UNKNOWN | 3 / 8 / 1 |
+| Records with stored payload hash | 8 |
+| Records with canonical payload JSON | 7 |
+| Active non-conflicted reviewers | 0 |
+| Active scoped reviewer labs / reviewers | 0 / 0 |
+| Active non-QA protocols | 0 |
+| Append-only audit events | 152 |
+
+All 12 records remain QA fixtures. The three `MEASURED` labels do not make them scientific physical measurements. No eligible non-QA dataset was found, so no statistical correlation, causal analysis, predictive evaluation, or physical validation was run.
+
+**Disposition:** The readiness-only delegate remains staged in the Lab working copy. It is not live and has not executed. Deploying v19 requires founder authorization; positive reviewer testing requires an active, non-conflicted reviewer with explicit lab scope. Original evidence, assignments, protocols, review records, and audit history were not changed.
