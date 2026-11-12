@@ -1,6 +1,6 @@
 # WaveRadar Drone & Aerial Sensor Interoperability Register
 
-**Snapshot date:** 2026-11-11  
+**Snapshot date:** 2026-11-12 (rolling update to the 2026-11-11 register)  
 **Owner:** WaveRadar engineering / Research & Validation Institute  
 **Status:** Research and documentation register only. No vendor adapter, live aircraft feed, operator authorization, or independently validated aerial measurement is established.
 
@@ -172,3 +172,30 @@ No equipment purchase, paid subscription, vendor-account change, credential requ
 - ASTM F3411-22a: https://store.astm.org/standards/f3411
 - OpenDroneID core C library: https://github.com/opendroneid/opendroneid-core-c
 - OGC SensorThings API 2.0, OGC 23-019: https://docs.ogc.org/is/23-019/23-019.html
+
+
+## 6. Release and standards update — 2026-11-12
+
+### DJI Mobile SDK
+The official DJI Developer SDK page now lists **2026-11-05** as the latest Mobile SDK release date: Android MSDK **5.20.1**, Android 4.18, and iOS 4.16.2. The published highlights add DJI Matrice 5T support and a DJI Pilot Plugin feature. The supported-products list also includes Matrice 5T, Mavic 3TA, Matrice 400, Matrice 4D/4TD, 4E/4T, Matrice 350 RTK, Mini 3/4 families, Mavic 3 Enterprise, and Matrice 30/300 families. This supersedes the earlier V5.18.0 (2026-05-22) snapshot in section 2.1. Exact aircraft/controller/firmware compatibility still must be verified against the detailed 5.20.1 release matrix before any adapter work. This is a documentation update only; no SDK was downloaded or installed.
+
+Official source: [DJI Developer SDK release overview](https://developer.dji.com/?site=brandsite) and [DJI Mobile SDK tutorial/release notes](https://developer.dji.com/doc/mobile-sdk-tutorial/en/).
+
+### MAVSDK
+The official GitHub releases page currently lists **v3.17.5** (2026-10-28) and **v4.1.0** (2026-10-27). The v3.17.5 notes include ODOMETRY frame-ID mapping by name and FTP burst-download recovery. The v4.1.0 notes include MavlinkDirect server support in wrappers and command send/receive functionality, along with telemetry, mission, camera, and transport updates. Keep the major-version families explicit; do not infer that a v4 API is source-compatible with v3. WaveRadar must continue to use an isolated telemetry-only adapter and must reject all command-capable paths.
+
+Official source: [MAVSDK releases](https://github.com/mavlink/MAVSDK/releases).
+
+### Skydio and Autel
+- Skydio's official X10 release-notes index still shows the latest X10 point release dated **2026-09-10** (Draper Point Release 2 v46.122.103). The X10D index also shows a 2026-09-10 release. These are aircraft/controller firmware notes, not proof of a new Cloud API or Android API release. No new API credential, entitlement, or adapter was established.
+- Autel's official developer portal still lists Android MSDK V2.6 (DragonFish), dated **2025-08-20**, as its latest visible Android MSDK family. Its supported hardware/controller and firmware constraints remain model-specific. No new SDK release or account access was established.
+
+Official sources: [Skydio X10 release notes](https://support.skydio.com/hc/en-us/sections/20056682092955-Release-Notes-X10), [Skydio X10D release notes](https://support.skydio.com/hc/en-us/sections/27552899133467-Release-Notes-X10D), [Autel Developer Technologies](https://developer.autelrobotics.com/).
+
+### OGC SensorThings API 2.0
+The v2.0 standard remains approved and published on **2026-11-04**. WaveRadar's integration boundary must use the **Sensing** data model and read-only observation/metadata retrieval only. The standard's Tasking functionality is not authorization to control an aircraft, payload, sensor, actuator, mission, or camera; WaveRadar must not implement Tasking writes.
+
+Official source: [OGC SensorThings API 2.0, document 23-019](https://docs.ogc.org/is/23-019/23-019.html).
+
+### Integration disposition
+No maturity level changed: documentation catalog and owner-scoped stored-observation query remain implemented; DFR intake remains implemented but unvalidated; all vendor SDK/API adapters, MAVSDK subscriber, Remote ID receiver, live feeds, camera/gimbal projection, and independent aerial validation remain unimplemented or untested. No aircraft was contacted, no radio scan was performed, no credential was requested, and no flight/control operation was invoked.
