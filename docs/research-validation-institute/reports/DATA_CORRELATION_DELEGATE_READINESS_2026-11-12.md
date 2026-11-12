@@ -90,3 +90,17 @@ The dry run is a static platform validation of the working copy. It is not a run
 6. For physical IMU/spatial comparisons, obtain independently measured ground truth, calibrated references, clock synchronization, and coordinate-frame alignment before analysis.
 
 **Disposition:** Delegate implementation is staged in the Lab working copy as a readiness-only service workflow. It is not live, has not executed a run, and has not produced scientific findings. No original evidence, assignments, protocols, reviews, or audit history were modified.
+
+
+## 6. Follow-up hardening before deployment
+
+A source review identified and corrected additional readiness gates in the Lab working copy:
+
+- Empty objects/arrays and boolean false no longer count as populated metadata.
+- Consent must be affirmative (`granted`, `consented`, `authorized`, or `not_required` with a documented basis); a false/unknown/pending state is excluded.
+- License status must be in an approved state and include a traceable license reference.
+- Evidence from a non-active protocol is excluded from new confirmatory correlation candidates.
+- Reviewer governance now requires an active, non-conflicted reviewer explicitly scoped to every lab represented by candidate evidence; a global active-reviewer count alone is insufficient.
+- The input manifest uses canonical key ordering before hashing so its digest can be independently recomputed after JSONB storage.
+
+The Hatchable dry-run was repeated after these changes: `ok=true`, zero errors, and the same single pre-existing private-project visibility warning. The route remains undeployed and uninvoked.
