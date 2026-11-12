@@ -233,3 +233,14 @@ No PR was merged, no branch was deleted, and no existing issue was closed during
 **Next single highest-value task:** obtain an authorized connection to the current Android handset and capture its exact model/build plus an instrumentation-only native sensor inventory. Accuracy comparison remains blocked until independent ground truth, clock synchronization, preregistration, and an independent reviewer are in place.
 
 **Founder-only actions:** complete the free Android room setup; back up app data before any install; decide whether to authorize persistent debug-signing secret configuration or AI provider setup; approve Lab v19 deployment and any production/scheduler changes. No spending, outreach, account changes, merge, deployment, or data deletion was performed.
+
+
+## 1.3 Independent ground-truth partner shortlist — 2026-11-12
+
+- Added [independent ground-truth lab shortlist and unsent Mizzou request draft](../research-validation-institute/reports/INDEPENDENT_GROUND_TRUTH_LAB_SHORTLIST_2026-11-12.md).
+- **Priority A:** Mizzou Motion Analysis Center, Columbia — published Vicon/force-plate/reference-video capability and a verified director contact. Best potential research-collaboration path for phone rigid-body pose and movement ground truth; not ISO/IEC 17025, and no free access or acceptance is confirmed.
+- **Priority B:** UMKC Human Motion Laboratory — Vicon, AMTI force platforms, EMG and reference video; secondary university candidate, not an accredited calibration provider.
+- **Reference calibration:** NIST 24110C/24130S can calibrate a separate accelerometer; current price/turnaround not established. This does not validate the phone's full sensor stack.
+- **Conditional commercial candidate:** Techmaster's Santa Clara scope lists vibration 0.2–36 gpk, 1 Hz–10 kHz, but its linked ANAB certificate PDF says expiry 2026-10-29 while the vendor scope page claims 2028-10-29. Current accreditation must be confirmed with ANAB before any accredited claim.
+- **Scope mismatch controls:** A2LA Applied Technical Services (Lee's Summit, cert 3103.01) is currently accredited for pneumatic pressure measuring equipment, not accelerometers; IIA Lab Services (St. Louis, cert 397.03) lists dimensional, pressure and torque, not accelerometers. Do not route the Android IMU test to either based only on proximity.
+- No-cost path is unconfirmed university collaboration, not a promise. No outreach, purchase, equipment booking, or data transfer was performed. The Mizzou email draft remains approval-gated.
