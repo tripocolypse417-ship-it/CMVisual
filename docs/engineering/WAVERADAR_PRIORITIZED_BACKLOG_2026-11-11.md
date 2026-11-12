@@ -189,3 +189,15 @@ No PR was merged, no branch was deleted, and no existing issue was closed during
 - Keep MEASURED, DERIVED, INFERRED, PREDICTED, SIMULATED, UNKNOWN, UNAVAILABLE, INTEGRITY-VERIFIED, and INDEPENDENTLY VALIDATED distinct.
 - Never claim through-wall sensing, victim localization, sensor accuracy, independent validation, accreditation, or life-safety readiness without the specific required evidence.
 - Do not treat successful CI, an SDK catalog entry, a sensor capability declaration, or a software simulation as proof of physical device behavior.
+
+
+### P1 — Data Correlation Delegate readiness workflow
+
+- **Owner:** WaveRadar Validation Lab administrator (execution) + independent reviewer (scientific review).
+- **Status:** IMPLEMENTED IN WORKING COPY — bounded admin-gated readiness service staged in Lab v18; not deployed and not yet runtime-invoked. This is not a separate autonomous agent and cannot approve or promote its own work.
+- **Live data readiness:** 12/12 Lab evidence records are explicitly marked `qa_fixture=true`; classes are 3 MEASURED, 8 SIMULATED, and 1 UNKNOWN. Eight records have a stored payload hash and seven have canonical payload JSON. All twelve remain QA-only and excluded. Active non-conflicted reviewers: 0. Active non-QA protocols: 0. Current expected scientific candidate count: 0.
+- **Implementation:** `api/delegate/data-correlation.js` is an admin-only POST workflow; `lib/data-correlation-delegate.js` performs a readiness screen. It recomputes canonical payload hashes, checks envelope-to-row consistency and assignment ownership, screens provenance/consent/license/units/clock/coordinate/calibration/environment metadata, and records a canonical input manifest and run disposition in the existing append-only Lab audit ledger. It does not compute statistical correlations or write to Core.
+- **Verification:** Lab v18 `lab_audit_events_append_only` trigger verified for BEFORE UPDATE and BEFORE DELETE. Hatchable dry-run reports `ok=true`, zero errors, and one existing private-project visibility warning. Runtime invocation and deployment have not occurred.
+- **Acceptance criteria:** Deploy only after founder approval; verify an admin invocation creates one append-only run event; demonstrate zero candidate eligibility for the existing QA-only corpus; then preregister a specific question/method and require a real non-QA dataset plus independent reviewer before statistical analysis.
+- **Next action:** Review the staged Lab source, then request founder authorization before deployment. Do not treat the delegate as a reviewer or scientific authority.
+- **Evidence:** [Delegate readiness and implementation record](https://github.com/tripocolypse417-ship-it/CMVisual/blob/docs/engineering-status-drone-interop-2026-11-11/docs/research-validation-institute/reports/DATA_CORRELATION_DELEGATE_READINESS_2026-11-12.md); [Validation Lab](https://waveradar.hatchable.site).
