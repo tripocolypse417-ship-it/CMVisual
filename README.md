@@ -70,3 +70,10 @@ Open-source dependencies must be reviewed by exact version and license. ORB-SLAM
 ## Ownership and contributions
 
 The project owner retains control of project direction and repository changes. Before accepting external contributions or adding dependencies, record the license, provenance, and any implications for commercial distribution.
+
+
+## Update — 2026-11-12
+
+- **Data Correlation Delegate:** A bounded, admin-gated readiness workflow is staged in the separate Validation Lab working copy (`api/delegate/data-correlation.js` and `lib/data-correlation-delegate.js`); it is not deployed or runtime-invoked. It preserves evidence, excludes explicit QA fixtures, verifies canonical digest/row consistency, checks assignment ownership, consent/license/provenance/units/clock/coordinate/calibration/environment metadata, requires active protocol and reviewer scope for every candidate lab, and records a canonical input manifest in the existing append-only audit ledger. It does not compute correlations, approve its own work, promote evidence, call an AI provider, or write to WaveRadar Core. Current Lab inventory: 12/12 evidence rows explicitly marked QA fixtures, 0 active non-conflicted reviewers, 0 active non-QA protocols, and therefore 0 scientific candidates. Hatchable dry-run passes with zero errors; the live deployment remains v18.
+- **Drone interoperability:** The official DJI developer portal now lists Android MSDK 5.20.1 (2026-11-05), adding Matrice 5T support and DJI Pilot Plugin. The rolling source register records this update, MAVSDK v3.17.5/v4.1.0 release families, and the read-only Sensing-only use of OGC SensorThings API 2.0. No vendor adapter, aircraft connection, live feed, or independently validated aerial capability is established.
+- **Device access:** The free one-device Android allowance remains unused; no private Android room is connected. The current handset identity remains unknown, and no device operation or APK install was performed.
