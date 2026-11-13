@@ -48,7 +48,7 @@ A model's presence in a panel or registry is not evidence of deployment approval
 
 ## 4. Corrections implemented on the CMVisual overhaul branch
 
-The following source changes are isolated on `waveradar-os/architecture-baseline`; they are not yet merged or ported to the Base44 working app:
+The following source changes are isolated on `waveradar-os/architecture-baseline`; a partial, unsynchronized port has also been written to the connected Base44 working app. The Base44 port currently covers source-time track trails, prediction calibration, sensor-frame timestamp handling and range-only spatial gating. The Android lifecycle/evidence-label fix and the model session-scoping/UI wording changes are not yet ported or verified in Base44:
 1. Source capture timestamps are required for track-history points. Receipt time is retained separately for liveness.
 2. Missing or invalid observation timestamps are excluded from prediction calibration rather than replaced with the current time.
 3. Missing coordinates are excluded rather than coerced to zero.
