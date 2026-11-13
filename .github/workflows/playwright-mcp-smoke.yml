@@ -1,0 +1,27 @@
+name: Playwright MCP smoke test
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".mcp.json"
+      - "scripts/test-playwright-mcp.mjs"
+      - "package.json"
+      - ".github/workflows/playwright-mcp-smoke.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  mcp-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Verify Playwright MCP protocol and tool discovery
+        run: node scripts/test-playwright-mcp.mjs
