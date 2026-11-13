@@ -28,7 +28,7 @@ function downloadHandoff(record) {
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export default function VictimAssessmentPanel({ selectedDetection, incidentId }) {
+export default function VictimAssessmentPanel({ selectedDetection, incidentId, sensorConflicts }) {
   const [records, setRecords] = useState(() => loadVictimRecords());
   const [activeVictimId, setActiveVictimId] = useState('');
   const [category, setCategory] = useState('RESPIRATORY');
@@ -66,7 +66,7 @@ export default function VictimAssessmentPanel({ selectedDetection, incidentId })
   };
 
   const captureScan = () => {
-    try { updateRecord(captureVictimScanReference(activeRecord, selectedDetection)); }
+    try { updateRecord(captureVictimScanReference(activeRecord, selectedDetection, { sensorConflicts })); }
     catch (e) { setError(e.message); }
   };
 
@@ -164,7 +164,7 @@ export default function VictimAssessmentPanel({ selectedDetection, incidentId })
                   <span className="text-white/35">{new Date(event.observedAt).toLocaleString()}</span>
                 </div>
                 <div className="mt-0.5 text-[10px] text-white/70">{event.note || event.status || event.source}</div>
-                <div className="mt-0.5 font-mono text-[7px] text-white/35">{event.evidenceClass} · {event.source} · {event.modality || '—'}</div>
+                <div className="mt-0.5 font-mono text-[7px] text-white/35">{event.evidenceClass} · {event.source} · {event.modality || '—'}{event.eventType === 'SCAN_REFERENCE' && event.sensorConflicts?.length ? ` · ${event.sensorConflicts.length} SENSOR CONFLICT(S)` : ''}</div>
               </div>
             ))}
           </div>

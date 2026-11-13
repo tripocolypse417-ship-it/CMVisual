@@ -752,7 +752,7 @@ export default function Home() {
 
         {/* Evidence layer: validated, auditable activity assessment built from current inputs. */}
         <EvidenceAssessmentPanel assessment={evidence} color={color} />
-        <VictimAssessmentPanel selectedDetection={selectedDetection} incidentId={sessionIdRef.current} />
+        <VictimAssessmentPanel selectedDetection={selectedDetection} incidentId={sessionIdRef.current} sensorConflicts={sensorConflicts} />
         <AIAnalystPanel analysis={aiAnalysis} selectedTarget={selectedDetection} color={color} />
         <OneTruthSurface situationPicture={situationPicture} selectedDetection={selectedDetection} color={color} />
         <SpeculativeOutcomePanel

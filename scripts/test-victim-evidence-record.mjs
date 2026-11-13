@@ -32,10 +32,12 @@ assert.equal(record.trackId, 'track-17');
 assert.equal(record.events.length, 1);
 assert.equal(record.events[0].evidenceClass, 'HUMAN_ENTERED');
 
-const withScan = captureVictimScanReference(record, selected, '2026-11-13T10:00:01.000Z');
+const withScan = captureVictimScanReference(record, selected, { sensorConflicts: { conflicts: [{ trackId: 'track-17', sensorCount: 2, rangeSpread: 0.9, bearingSpread: 35, reason: 'MEASUREMENT_DISAGREEMENT' }] } }, '2026-11-13T10:00:01.000Z');
 assert.equal(withScan.events.length, 2);
 assert.equal(withScan.events[1].eventType, 'SCAN_REFERENCE');
 assert.equal(withScan.events[1].confidence, 0.82);
+assert.equal(withScan.events[1].sensorConflicts[0].reason, 'MEASUREMENT_DISAGREEMENT');
+assert.equal(withScan.events[1].sensorConflicts[0].rangeSpreadM, 0.9);
 assert.ok(!('image' in withScan.events[1]));
 assert.throws(() => captureVictimScanReference(record, { ...selected, trackId: 'other' }));
 

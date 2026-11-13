@@ -15,7 +15,7 @@ Each record contains:
 - an opaque victim-record ID, incident ID, and linked sensor-track ID;
 - append-only events with observed and recorded timestamps;
 - explicit evidence class, source, modality, and source observation reference;
-- selected scan metadata (range, bearing, source confidence, uncertainty, corroboration) when the responder captures a scan reference;
+- selected scan metadata (range, bearing, source confidence, uncertainty, corroboration, and matching sensor-conflict summaries) when the responder captures a scan reference;
 - human-entered observable findings, including explicit `NOT_ASSESSED` and `UNABLE_TO_ASSESS` states;
 - conflict flags when a category contains both `OBSERVED` and `NOT_OBSERVED` reports within a five-minute review window;
 - a structured EMS handoff export that preserves source events and limitations.

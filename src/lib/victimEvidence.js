@@ -110,13 +110,13 @@ export function appendVictimObservation(record, input, now = isoNow()) {
   return { ...record, events: [...record.events, event] };
 }
 
-export function captureVictimScanReference(record, detection, now = isoNow()) {
+export function captureVictimScanReference(record, detection, context = {}, now = isoNow()) {
   if (!record || !Array.isArray(record.events)) throw new Error('A valid victim record is required.');
   const trackId = safeText(detection?.trackId ?? detection?.id, 160);
   if (!trackId || trackId !== record.trackId) throw new Error('The selected scan must match the active victim track.');
   if (record.events.length >= MAX_EVENTS_PER_RECORD) throw new Error('This session record reached its event limit; export it before continuing.');
 
-  const numeric = (value) => Number.isFinite(Number(value)) ? Number(value) : null;
+  const numeric = (value) => value == null || value === '' ? null : (Number.isFinite(Number(value)) ? Number(value) : null);
   const event = {
     eventId: makeId('event'),
     eventType: 'SCAN_REFERENCE',
@@ -133,6 +133,10 @@ export function captureVictimScanReference(record, detection, now = isoNow()) {
     uncertaintyM: numeric(detection?.uncertaintyM),
     sensorSources: Array.isArray(detection?.sensorSources) ? detection.sensorSources.map((x) => safeText(x, 80)).filter(Boolean).slice(0, 8) : [],
     corroborated: detection?.corroborated === true,
+    sensorConflicts: (Array.isArray(context?.sensorConflicts?.conflicts) ? context.sensorConflicts.conflicts : [])
+      .filter((item) => String(item?.trackId) === trackId)
+      .slice(0, 8)
+      .map((item) => ({ reason: safeText(item?.reason, 64), sensorCount: Number.isFinite(Number(item?.sensorCount)) ? Number(item.sensorCount) : null, rangeSpreadM: item?.rangeSpread == null ? null : numeric(item.rangeSpread), bearingSpreadDeg: item?.bearingSpread == null ? null : numeric(item.bearingSpread) })),
     limitations: [
       'This is a reference to an existing observation, not a clinical finding.',
       'No raw image, audio, biometric waveform, or identity data is copied into this record.',
