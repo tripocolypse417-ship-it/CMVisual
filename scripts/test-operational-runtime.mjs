@@ -30,6 +30,7 @@ for (const item of cases) {
   assert.equal(state.validationPassed, false, item.name);
   assert.equal(state.operational, false, item.name);
   assert.equal(state.validationClaimIgnored, true, item.name);
+  assert.notEqual(runtime.mode, 'FULL_MULTIMODAL', item.name);
 }
 
 const ordinaryVisual = buildOperationalRuntime({ evidence: ['CAMERA'] });
@@ -39,5 +40,9 @@ assert.equal(ordinaryVisual.capabilityState['visual-detection'].validationPassed
 const experimentalVisible = buildOperationalRuntime({ evidence: ['MMWAVE'] });
 assert.equal(experimentalVisible.advancedEvidencePresent, true);
 assert.equal(experimentalVisible.safeToExposeAdvancedSensing, false);
+assert.notEqual(experimentalVisible.mode, 'FULL_MULTIMODAL');
+
+const cameraWithExperimentalMmwave = buildOperationalRuntime({ camera: true, mmwave: true, evidence: ['MMWAVE'] });
+assert.notEqual(cameraWithExperimentalMmwave.mode, 'FULL_MULTIMODAL');
 
 console.log('Operational runtime trust-gate regression checks passed.');
