@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { validateRegistry } from './validate-open-evidence-registry.mjs';
+const here=path.dirname(fileURLToPath(import.meta.url));
+const registry=JSON.parse(fs.readFileSync(path.resolve(here,'../research/open-evidence/registry.v1.json'),'utf8'));
+assert.deepEqual(validateRegistry(registry),[],'seed registry must pass all gates');
+const duplicate=structuredClone(registry);duplicate.records.push(structuredClone(duplicate.records[0]));assert.ok(validateRegistry(duplicate).some(x=>x.includes('duplicate dataset_id')),'duplicate IDs must fail');
+const license=structuredClone(registry);license.records[0].commercial_use='PERMITTED_BY_VERIFIED_LICENSE';assert.ok(validateRegistry(license).some(x=>x.includes('cannot claim verified commercial permission')),'unverified license cannot be commercially cleared');
+const standard=structuredClone(registry);standard.records.find(x=>x.access_status==='STANDARD_ONLY').training_eligibility='BLOCKED_PENDING_LICENSE_REVIEW';assert.ok(validateRegistry(standard).some(x=>x.includes('standard-only sources cannot be treated as training datasets')),'standards are not training datasets');
+const premature=structuredClone(registry);premature.records[0].ingestion_status='SCHEMA_VALIDATED';assert.ok(validateRegistry(premature).some(x=>x.includes('cannot be ingested before acquisition')),'unacquired source cannot be ingested');
+const noLimit=structuredClone(registry);noLimit.records[0].limitations=[];assert.ok(validateRegistry(noLimit).some(x=>x.includes('must document at least one limitation')),'limitations are mandatory');
+const restricted=structuredClone(registry);restricted.records.find(x=>x.commercial_use==='NONCOMMERCIAL_ONLY').training_eligibility='ELIGIBLE_SUBJECT_TO_VERSION_PINNING';assert.ok(validateRegistry(restricted).some(x=>x.includes('restricted source must be blocked for commercial training')),'noncommercial sources cannot enter commercial training');
+console.log('Open Evidence Registry regression tests: PASS');
