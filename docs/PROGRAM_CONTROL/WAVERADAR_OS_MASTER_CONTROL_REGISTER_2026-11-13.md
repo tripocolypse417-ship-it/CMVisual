@@ -228,3 +228,82 @@ Recommended review sequence (not an automatic merge instruction):
 7. Keep all PRs draft until a qualified reviewer has reviewed the exact combined diff. Do not merge, deploy, publish, or claim physical validation based on this sequence.
 
 No historical observations were edited, reclassified, deleted, or used as new validation evidence in this reconciliation. No external outreach, purchase, deployment, merge, or production mutation was performed.
+
+
+## 12. Commercialization lane — integrated revenue architecture
+
+**Commercial objective:** monetize reusable WaveRadar OS capabilities across adjacent markets while preserving emergency response as the flagship mission. This is a discovery and validation roadmap, not a revenue forecast, customer commitment, or authorization to spend. All product lines share the same governed Core, Edge Runtime, WIS world model, source registry, evidence/provenance layer, identity/policy controls, and validation framework; do not fork separate products prematurely.
+
+### 12.1 Opportunity portfolio and current planning rank
+
+Readiness is a planning assessment based on current architecture and evidence, not a verified product capability. “Time to pilot” is a relative planning estimate after a suitable partner/data source is secured, not a promised calendar date.
+
+| Rank | Revenue stream | Reusable WaveRadar modules | Likely buyer / payer | Monetization hypothesis | Readiness / effort / pilot horizon | Entry gate and risk |
+|---|---|---|---|---|---|---|
+| 1 | Building intelligence and digital-site records | WIS site/building/floor/room model; floorplan and asset ingestion; versioned change history; authorized sensor registry; incident replay | Facility owners/operators, hospitals, campuses, warehouses, industrial sites, municipalities | Per-site subscription; setup/mapping and integration fee; optional maintenance-history module | Medium architecture fit; medium effort; first narrow pilot after one site dataset and workflow partner | Start with owner-supplied plans and manual/authorized records; verify geometry and update provenance. Privacy, security, stale plans and liability controls |
+| 2 | Drone inspection and mapping analytics | Read-only drone adapter; RGB/thermal/photogrammetry ingestion; georeferenced evidence; 3D asset overlays; anomaly review and reports | Inspection firms, utilities, construction, bridge/transport owners, insurers, agriculture/mining operators | Per-mission processing/report; annual software license; integration/support | Medium research fit; medium effort; pilot possible with licensed historical imagery and an inspection partner | No aircraft control; no claim that AI detects defects without ground-truth comparison. Operator authorization, aviation rules, sensor calibration and image/data rights |
+| 3 | Evidence integrity and incident reconstruction | Append-only evidence ledger; synchronized event timeline; source provenance; media references; role-based export; replay | Fire investigators, public-safety agencies, insurers, industrial safety teams, legal/evidence units | Per-case or per-seat license; secure evidence storage; enterprise subscription; integration | Medium architecture fit; medium effort; pilot once secure durable storage, export verification and chain-of-custody review pass | Evidence integrity is not proof of truth. Retention, discovery, admissibility, access logs, privacy and legal review |
+| 4 | Wireless interoperability SDK and sensor gateway | Provider-neutral adapters; capability registry; timestamp/quality envelopes; edge sync; API/SDK | Device makers, robotics integrators, building automation vendors, research institutions | SDK/support license; integration contract; per-device royalty or hosted API | Low-to-medium current implementation readiness; high integration/testing effort; pilot after two real device adapters are tested | Do not imply all radios exist on Moto G Play. Exact hardware/API, permissions, licensing, conformance and independent ranging/position ground truth required |
+| 5 | Industrial and infrastructure monitoring | Edge sensor gateway; asset histories; anomaly/event timelines; WIS spatial context; alert audit | Utilities, manufacturers, logistics/warehouses, transport and infrastructure operators | Per-asset/site monitoring subscription; analytics/API; installation/integration services | Low-to-medium readiness; high domain-validation effort; pilot after one bounded asset use case | No predictive-maintenance or structural-health claims before instrument-specific validation and false-alarm analysis |
+| 6 | Training, simulation and after-action review | Scenario engine; WIS replay; role-specific command/HUD interfaces; synthetic data labeling; performance review | Fire academies, emergency-management agencies, industrial safety trainers, insurers | Per-institution license; scenario packs; training subscription | Low readiness; medium effort; pilot after a clearly labelled simulation and instructor workflow | Simulated outputs must never be presented as measured field performance; human-factors and training-outcome evaluation |
+| 7 | Robotics and autonomous-system interoperability | Shared maps; read-only sensor/telemetry adapters; task/evidence context; fleet event replay | Robotics manufacturers, industrial operators, SAR organizations | Integration/license; per-robot or fleet subscription; API/support | Low readiness; very high effort; later pilot after safe interface and partner access | No autonomous tactical direction or actuation; safety case, command authority, cybersecurity and robot-specific validation |
+| 8 | Building/site data services and privacy-preserving analytics | Authorized data normalization; aggregation; temporal records; consent/purpose policy; API | Property portfolios, research institutions, infrastructure operators | Data-quality/API subscription; portfolio analytics; commissioned integrations | Research hypothesis; medium effort; pilot only with rights-cleared data and privacy review | No resale of identifiable occupant or responder data by default; no inferred occupancy/person tracking without consent, legal basis and validation |
+
+### 12.2 Shared commercial product architecture
+
+Build once and package by customer workflow:
+- **WaveRadar Site Intelligence:** WIS building/site model, assets, version history, authorized sensors and maintenance/incident context.
+- **WaveRadar Aerial Intelligence:** vendor-neutral, read-only drone data ingestion, geospatial/thermal overlays, inspection evidence and human-reviewed reports.
+- **WaveRadar Evidence:** secure case timeline, provenance, evidence integrity checks, replay and controlled export.
+- **WaveRadar Connect:** provider-neutral sensor/wireless SDK and gateway, with explicit capability, permission, timestamp, quality and validation states.
+- **WaveRadar Industrial Monitor:** bounded asset/environment monitoring with calibrated sensor adapters, alert audit and human-reviewed trends.
+- **WaveRadar Training:** clearly labelled synthetic scenarios, replay and instructor-led after-action review.
+- **WaveRadar Robotics Bridge:** later-stage read-only interoperability before any safety-critical control integration.
+
+All offerings must share identity, tenant isolation, consent, data minimization, retention, audit, export and incident-response controls. Emergency-response product claims and commercial building/industrial claims require separate operating envelopes and validation evidence.
+
+### 12.3 $0-upfront commercialization sequence
+
+1. **Package existing software/data workflows first:** prepare sample site model, replay/evidence export and read-only drone-data ingestion using only public/licensed/sample data. Avoid hardware purchases.
+2. **Validate buyer pain before building breadth:** conduct desk research and draft interview scripts for facility operators, drone inspection firms, fire investigators and industrial safety leads. Do not send outreach without explicit approval.
+3. **Use partner-owned data and equipment:** seek no-cost/in-kind pilots through universities, fire-service partners, inspection firms and facility owners. Clearly separate unpaid research collaboration from paid procurement.
+4. **Create a narrow paid-pilot offer only after proof:** define one buyer, one workflow, deliverables, security/privacy terms, success criteria, support burden and price hypothesis. Do not promise performance not independently established.
+5. **Convert repeatable work into subscriptions/licensing:** only after two or more comparable workflows show repeatable onboarding, measurable customer value and support economics.
+6. **Defer capital-intensive products:** Guardian X, custom radio hardware, drone fleets and robotics remain research/partner-funded until demand, feasibility, safety and funding are evidenced.
+
+### 12.4 Commercial acceptance gates
+
+- Customer evidence: named buyer persona, documented workflow/pain, procurement route and willingness-to-pilot evidence; interest is not a sale.
+- Technical: working demo on identified hardware/software versions; repeatable tests; known failure modes; data export and recovery.
+- Evidence: source provenance, integrity, clock/coordinate quality, independent reference where performance is claimed, and clear MEASURED/DERIVED/INFERRED/PREDICTED/SIMULATED labels.
+- Security/privacy: tenant isolation, least privilege, consent/purpose limitation, retention/deletion policy, encryption, threat model and incident response.
+- Legal/compliance: data rights, aviation/spectrum requirements where applicable, contracts, insurance/liability, records retention and applicable product/regulatory review.
+- Economics: delivery cost, support burden, cloud/storage cost, gross-margin hypothesis and no hidden paid dependency.
+- Independence: the Research & Validation Lab must not sell certification of WaveRadar or validate its own claims. Commercial customer pilots cannot replace independent validation.
+
+### 12.5 Commercialization master tasks
+
+| ID | Priority | Deliverable | Status | Acceptance evidence |
+|---|---|---|---|---|
+| WR-TASK-022 | P1 | Shared commercial module map and product-line packaging | PROPOSED | Module-to-product matrix, dependencies, data/security boundaries, no duplicated codebases |
+| WR-TASK-023 | P1 | Validate first buyer workflows: building intelligence, drone inspection, evidence reconstruction | PROPOSED | Desk-researched buyer/problem map, draft interview scripts, procurement route, no outreach sent |
+| WR-TASK-024 | P1 | Build zero-cost sample demonstrations and pilot acceptance criteria | PROPOSED | Rights-cleared sample data, reproducible demo, measurable success/failure criteria, no unsupported claims |
+| WR-TASK-025 | P2 | Pricing and unit-economics hypotheses | PROPOSED | Comparable verified pricing evidence, delivery/support cost model, buyer validation; estimates labelled |
+| WR-TASK-026 | P2 | Wireless SDK and industrial monitoring commercial conformance | PROPOSED | Real hardware compatibility matrix, adapter tests, license review and independent reference evidence |
+| WR-TASK-027 | P2 | Training/simulation and robotics integration packages | PROPOSED | Simulation labeling, instructor/robotics partner requirements, safety and human-factors gates |
+
+### 12.6 Market evidence and interpretation
+
+Recent research supports investigating these categories, not assuming WaveRadar has captured demand or market share:
+- A 2026 review of UAV infrared thermography integrated with BIM/digital twins screened 110 publications and identifies inspection, thermal processing, multimodal integration and asset-management workflows; it also notes that many BIM/digital-twin implementations remain pilot or proof-of-concept scale. Treat this as a research rationale, not proof of product readiness.
+- A 2026 U.S. DOT/FHWA-supported Illinois bridge-inspection report describes camera-equipped UAS value for routine visual inspection, rapid assessment and difficult-to-access documentation, while noting they do not replace hands-on inspection in all cases.
+- Market-size figures from commercial market-research vendors are directional only and must not be used as WaveRadar revenue forecasts or grant claims.
+
+### 12.7 Revenue and ethics rules
+
+- No revenue, customer, contract, pilot, partnership, certification or product readiness is recorded until documentary evidence exists.
+- Do not monetize identifiable firefighter, victim, patient, occupant or incident data by default. Prefer customer-controlled, purpose-limited processing and privacy-preserving aggregation.
+- Do not sell injury diagnosis, medical triage or clinical prediction as a product without appropriate clinical evidence, regulatory review and professional oversight.
+- Do not use the independent Lab as a paid endorsement channel. It may accept external funding only with governance that protects reviewer independence and publication of negative results.
+- Keep founder's $0-upfront constraint; do not buy data, hardware, software, standards, ads or leads. Draft and research only until approved.
+
