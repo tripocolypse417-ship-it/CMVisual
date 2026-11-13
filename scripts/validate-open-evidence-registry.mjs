@@ -41,5 +41,8 @@ export function validateRegistry(registry){
   if(r.benchmark_status==='INDEPENDENTLY_REVIEWED'&&r.independent_validation_status!=='COMPLETED')errors.push(at+' cannot be marked independently reviewed without completed independent review');
  });return errors;
 }
-const file=process.argv[2]?path.resolve(process.cwd(),process.argv[2]):defaultPath;
-try{const data=JSON.parse(fs.readFileSync(file,'utf8'));const errors=validateRegistry(data);if(errors.length){console.error('Open Evidence Registry validation FAILED');errors.forEach(e=>console.error(' - '+e));process.exit(1);}console.log('Open Evidence Registry validation PASS · '+data.records.length+' records · '+data.registry_version+' · '+data.status);}catch(error){console.error('Open Evidence Registry validation FAILED · '+error.message);process.exit(1);}
+const invokedPath=process.argv[1]?path.resolve(process.argv[1]):null;
+if(invokedPath===fileURLToPath(import.meta.url)){
+ const file=process.argv[2]?path.resolve(process.cwd(),process.argv[2]):defaultPath;
+ try{const data=JSON.parse(fs.readFileSync(file,'utf8'));const errors=validateRegistry(data);if(errors.length){console.error('Open Evidence Registry validation FAILED');errors.forEach(e=>console.error(' - '+e));process.exit(1);}console.log('Open Evidence Registry validation PASS · '+data.records.length+' records · '+data.registry_version+' · '+data.status);}catch(error){console.error('Open Evidence Registry validation FAILED · '+error.message);process.exit(1);}
+}
