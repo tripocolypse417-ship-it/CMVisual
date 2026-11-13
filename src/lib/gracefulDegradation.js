@@ -10,8 +10,9 @@ const rank = Object.fromEntries(FIELD_MODES.map((v,i)=>[v,i]));
 
 export function selectFieldMode(capabilities = {}) {
   const has = key => capabilities[key] === true;
-  const advancedSpatial = has('depth') || has('wifiRtt') || has('uwb') || has('thermal') || has('mmwave');
-  if (has('camera') && advancedSpatial) return 'FULL_MULTIMODAL';
+  // Hardware presence is not validation. Full multimodal mode is permitted only
+  // when the runtime has independently established a validated spatial capability.
+  if (has('camera') && has('advancedSpatialValidated')) return 'FULL_MULTIMODAL';
   if (has('camera') && has('imu')) return 'CAMERA_IMU';
   if (has('camera')) return 'CAMERA_ONLY';
   if (has('sensorData') || has('gnss') || has('wifiRtt') || has('uwb')) return 'SENSOR_MAP';
