@@ -2,7 +2,7 @@
 
 **WaveRadar OS is the product.** It is an evidence-first emergency situational-awareness and decision-support operating environment for firefighters, incident command, compatible sensors, field devices, and independent research and validation.
 
-This repository is the current canonical implementation and engineering workspace. The existing React/Vite + Capacitor application is a prototype/integration surface within the larger OS program; it is not itself the complete operating system.
+This repository is the intended canonical codebase for the WaveRadar OS program. The existing React/Vite + Capacitor application is a prototype/integration surface within the larger OS program; it is not itself the complete operating system. The current migration record still identifies Base44 as the primary working source, so source-of-truth status remains unresolved until the two trees are reconciled.
 
 ## Start here
 - [WaveRadar OS architecture](docs/WAVERADAR_OS_ARCHITECTURE.md)
@@ -22,9 +22,10 @@ This repository is the current canonical implementation and engineering workspac
 - **Replay & After-Action:** synchronized, reproducible reconstruction of incident evidence and model decisions.
 
 ## Source-of-truth boundaries
-- CMVisual is the designated canonical GitHub code repository.
-- The connected Base44 app sandbox is a separate working tree with a Base44 S3 origin and a separate private GitHub remote named WaveRadar. Its synchronization with CMVisual has not yet been proven.
-- Treat Base44 as a downstream prototype/deployment environment until source parity, migration and release synchronization are demonstrated.
+- **Target canonical code repository:** CMVisual.
+- **Current working source per MIGRATION.md:** the Base44 project.
+- The connected Base44 app sandbox is a separate working tree with a Base44 S3 origin and a separate private GitHub remote named WaveRadar. Its synchronization with CMVisual has not been proven.
+- The current source of truth is therefore unresolved. Preserve both trees and their data; do not blindly overwrite or synchronize either direction. Establish a file/schema/commit parity map before migration.
 
 ## Current implementation reality
 - The application uses React/Vite and Capacitor for Android packaging.
