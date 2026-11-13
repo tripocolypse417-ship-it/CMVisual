@@ -18,7 +18,7 @@ export default async function (req) {
       const check_size = String(body.check_size || '').trim().slice(0, 80);
       const message = String(body.message || '').trim().slice(0, 2000);
       if (!name || !email) return Response.json({ error: 'Name and email are required' }, { status: 400 });
-      if (name.length > 120 || email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+      if (name.length > 120 || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         return Response.json({ error: 'Valid name and email are required' }, { status: 400 });
       }
       const lead = await base44.asServiceRole.entities.InvestorLead.create({
