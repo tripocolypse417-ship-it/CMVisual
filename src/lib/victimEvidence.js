@@ -114,7 +114,6 @@ export function captureVictimScanReference(record, detection, context = {}, now 
   if (!record || !Array.isArray(record.events)) throw new Error('A valid victim record is required.');
   const trackId = safeText(detection?.trackId ?? detection?.id, 160);
   if (!trackId || trackId !== record.trackId) throw new Error('The selected scan must match the active victim track.');
-  if (record.events.length >= MAX_EVENTS_PER_RECORD) throw new Error('This session record reached its event limit; export it before continuing.');
 
   const numeric = (value) => value == null || value === '' ? null : (Number.isFinite(Number(value)) ? Number(value) : null);
   const event = {
