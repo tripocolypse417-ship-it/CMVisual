@@ -45,6 +45,9 @@ These are candidate modules for the OS architecture. Their presence does not est
 8. The GitHub repository is public. Treat source, docs, public artifacts and build outputs as externally visible; never place secrets, private operational data or sensitive test evidence in it.
 9. The Base44 sandbox contains large source backup archives in its public directory. Their presence and size are confirmed. The intended access policy, archive content completeness, checksum path and safe retention need a separate review before modifying or deleting them.
 10. Existing open PRs include architecture portability, validation integrity, native lifecycle, model/evidence safeguards and current status work. These must be triaged and reconciled, not overwritten or silently closed.
+11. The connected Base44 app sandbox is a separate working tree: its `origin` remote points to a Base44 S3 app repository, while a remote named `github` points to the private `tripocolypse417-ship-it/waveradar` repository. The requested canonical `tripocolypse417-ship-it/CMVisual` repository is a different, public GitHub repository. No verified commit ancestry or automated synchronization between these three locations was established. Do not assume a change in one is present in the others.
+12. The Base44 app sandbox contains two tracked recovery archives under its `public/` directory: 1,500,118,902 bytes and 750,000,008 bytes. Their SHA-256 hashes match the copies in the generated Android asset directory. The app sandbox's `dist/` and Android public asset directory each measured about 2.2 GB after build. The archive checksum manifest contains only the first archive and references an absolute `/tmp/` path. Both archives contain 2,165 tar members and include nested archive copies. A targeted filename scan did not identify obvious `.env`, key-store, private-key or credential-path entries; this is not a complete content/PII security audit.
+13. An isolated Vite build using a temporary alternate public directory containing only the manifest, icon and cinematic preview produced a 5.6 MB build and excluded both recovery archives. This demonstrates a viable build-size remediation, but the production Vite configuration has not yet been changed.
 
 ## 4. Historical evidence protection
 
@@ -65,6 +68,16 @@ Known historical validation baseline from prior project work must be re-read fro
 **Evidence:** React/Vite + Capacitor application; Base44 client/plugin are in the build path.  
 **Impact:** Portability, native lifecycle, offline operation and service-level security are not yet demonstrated as OS capabilities.  
 **Action:** Build WaveRadar Edge Runtime and provider-neutral core contracts before a broad UI rewrite.
+
+### P0 — Source-of-truth and repository topology are unresolved
+**Evidence:** the Base44 app sandbox uses a Base44 S3 `origin` and a separate private GitHub `waveradar` remote; the designated canonical CMVisual repository is public and distinct. No verified synchronization/ancestry was established. The private WaveRadar GitHub repository's visible root is a separate project record/backup/docs tree, not an established mirror of the app sandbox source.
+**Impact:** fixes, releases, evidence, native code and schemas can diverge across repositories; audit results from one tree cannot be assumed to describe another.
+**Action:** designate CMVisual as canonical source, map WaveRadar private repo and Base44 sandbox as explicit downstream/mirror/deployment roles, define one-way sync and release tags, and prove content/commit parity before any production migration.
+
+### P0 — Recovery archives inflate distributable builds
+**Evidence:** two tracked archives totaling approximately 2.25 GB are under the Base44 app sandbox's public directory. A build generated a 2.2 GB `dist/` tree. A temporary isolated public directory produced a 5.6 MB build without either archive.
+**Impact:** extreme APK/build size, avoidable storage and bandwidth cost, and unnecessary exposure of recovery materials as static web assets.
+**Action:** preserve both archives in a verified non-public recovery location; create a minimal web asset directory; point Vite's `publicDir` at that directory; refresh Capacitor assets and verify final APK size. Do not delete the original archives until independent recovery is verified.
 
 ### P1 — Base44 dependency is a portability constraint
 **Evidence:** Base44 SDK and Vite plugin are direct dependencies; base44 client is a central API module.  
@@ -105,6 +118,7 @@ Known historical validation baseline from prior project work must be re-read fro
 - No PR was merged or closed.
 - No historical evidence was changed.
 - No public archive was deleted.
+- No production Vite configuration was changed; the alternate-public-directory build was an isolated temporary test.
 - No app was deployed or distributed.
 
 ## 7. Required next audit passes
