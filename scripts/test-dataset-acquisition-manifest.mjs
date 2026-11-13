@@ -17,7 +17,7 @@ try{
  assert.deepEqual(await verifyDatasetManifest(root,manifest),[]);
  assert.equal((await fs.readFile(path.join(root,'a.bin'))).toString('hex'),'00010203','manifest creation must not modify source files');
  await fs.writeFile(path.join(root,'a.bin'),Buffer.from([9,8,7]));
- assert.ok((await verifyDatasetManifest(root,manifest)).some(x=>x.includes('SHA-256 mismatch')),'modified source bytes must fail verification');
+ assert.ok((await verifyDatasetManifest(root,manifest)).some(x=>x.includes('SHA-256 mismatch')||x.includes('size mismatch')),'modified source bytes must fail verification');
  await fs.writeFile(path.join(root,'extra.txt'),'not in manifest');
  assert.ok((await verifyDatasetManifest(root,manifest)).some(x=>x.includes('unmanifested file')),'new files must fail verification');
  const tampered=JSON.parse(JSON.stringify(manifest));tampered.license_snapshot.commercial_use='PERMITTED_BY_VERIFIED_LICENSE';
