@@ -137,16 +137,45 @@
             }
           },
           "training_eligibility": {
-            "type": "string"
+            "enum": [
+              "BLOCKED_PENDING_LICENSE_REVIEW",
+              "BLOCKED_PENDING_COMPONENT_LICENSE_REVIEW",
+              "BLOCKED_FOR_COMMERCIAL_USE_UNDER_CURRENT_TERMS",
+              "BLOCKED_PENDING_ACCESS_AND_LICENSE_REVIEW",
+              "ELIGIBLE_SUBJECT_TO_ATTRIBUTION_AND_COMPONENT_REVIEW",
+              "ELIGIBLE_SUBJECT_TO_VERSION_PINNING",
+              "ELIGIBLE_SUBJECT_TO_ODBL_COMPLIANCE_REVIEW",
+              "NOT_A_DATASET"
+            ]
           },
           "acquisition_status": {
-            "type": "string"
+            "enum": [
+              "NOT_ACQUIRED",
+              "ACQUIRED_PENDING_INTEGRITY_CHECK",
+              "ACQUIRED_HASHED",
+              "QUARANTINED",
+              "NOT_APPLICABLE"
+            ]
           },
           "ingestion_status": {
-            "type": "string"
+            "enum": [
+              "NOT_INGESTED",
+              "PARSER_PENDING",
+              "SCHEMA_VALIDATED",
+              "PROVENANCE_VALIDATED",
+              "QUARANTINED",
+              "NOT_APPLICABLE"
+            ]
           },
           "benchmark_status": {
-            "type": "string"
+            "enum": [
+              "NOT_BENCHMARKED",
+              "PROTOCOL_DRAFT",
+              "PREREGISTERED",
+              "RUN_COMPLETE_INTERNAL",
+              "INDEPENDENTLY_REVIEWED",
+              "NOT_APPLICABLE"
+            ]
           },
           "independent_validation_status": {
             "enum": [
