@@ -1,0 +1,552 @@
+{
+  "registry_id": "waveradar-open-evidence-registry",
+  "registry_version": "1.0.0",
+  "schema_version": "waveradar-open-evidence-registry-v1",
+  "reviewed_on": "2026-11-13",
+  "status": "RESEARCH_CANDIDATES_ONLY",
+  "policy": {
+    "no_dataset_is_preapproved_for_commercial_training": true,
+    "acquisition_requires_license_and_privacy_review": true,
+    "raw_dataset_files_must_not_be_committed_to_repository": true,
+    "benchmark_results_do_not_establish_field_or_life_safety_performance": true,
+    "evidence_classes_must_remain_separate": [
+      "MEASURED",
+      "DERIVED",
+      "INFERRED",
+      "PREDICTED",
+      "SIMULATED",
+      "HUMAN_ENTERED",
+      "UNKNOWN",
+      "UNAVAILABLE",
+      "INTEGRITY_VERIFIED",
+      "INDEPENDENTLY_VALIDATED"
+    ]
+  },
+  "records": [
+    {
+      "dataset_id": "wisard-visual-thermal-v1",
+      "name": "WiSARD / WiSAR Image Dataset",
+      "domain": "search_and_rescue_scene_perception",
+      "source_url": "https://sites.google.com/uw.edu/wisard/",
+      "access_status": "PUBLIC_DOWNLOAD",
+      "license_status": "UNVERIFIED",
+      "license_name": null,
+      "commercial_use": "UNKNOWN",
+      "version": "v1; verify exact archive revision",
+      "modalities": [
+        "visible_rgb",
+        "long_wave_infrared_thermal"
+      ],
+      "annotations": [
+        "person_labels",
+        "synchronized_visible_thermal_pairs"
+      ],
+      "population_or_scenario": "Aerial wilderness search-and-rescue imagery; 26,862 labeled visual images, 29,989 thermal images, and 15,453 synchronized pairs per project page.",
+      "ground_truth": "Human image annotations; not clinical injury labels.",
+      "wave_radar_uses": [
+        "visible_thermal_person_detection",
+        "cross_modal_detection_baselines",
+        "occlusion_and_visibility_research"
+      ],
+      "limitations": [
+        "Wilderness/aerial collection is not representative of indoor structural fires.",
+        "No clinically adjudicated injury outcomes.",
+        "License and downstream commercial rights require direct confirmation."
+      ],
+      "training_eligibility": "BLOCKED_PENDING_LICENSE_REVIEW",
+      "acquisition_status": "NOT_ACQUIRED",
+      "ingestion_status": "NOT_INGESTED",
+      "benchmark_status": "NOT_BENCHMARKED",
+      "independent_validation_status": "NOT_EVALUATED"
+    },
+    {
+      "dataset_id": "nomad-aerial-sar-2024",
+      "name": "NOMAD — Natural, Occluded, Multi-Scale Aerial Dataset",
+      "domain": "aerial_person_detection",
+      "source_url": "https://openaccess.thecvf.com/content/WACV2024/html/Bernal_NOMAD_A_Natural_Occluded_Multi-Scale_Aerial_Dataset_for_Emergency_Response_WACV_2024_paper.html",
+      "code_url": "https://github.com/artruss/nomad",
+      "access_status": "PUBLICATION_LINKED",
+      "license_status": "UNVERIFIED",
+      "license_name": null,
+      "commercial_use": "UNKNOWN",
+      "version": "WACV 2024 release; verify data package revision",
+      "modalities": [
+        "aerial_rgb_video"
+      ],
+      "annotations": [
+        "person_bounding_boxes",
+        "visibility_occlusion_levels"
+      ],
+      "population_or_scenario": "100 actors, 42,825 annotated frames, multiple aerial distances and visibility/occlusion conditions.",
+      "ground_truth": "Human bounding-box and visibility annotations; not medical ground truth.",
+      "wave_radar_uses": [
+        "aerial_victim_detection",
+        "occlusion_stratified_evaluation",
+        "drone_to_ground_domain_shift"
+      ],
+      "limitations": [
+        "Actor sequences are staged dataset scenarios, not live emergency incidents.",
+        "Does not establish clinical condition or indoor fireground performance.",
+        "Dataset license and downloadable package must be checked before acquisition."
+      ],
+      "training_eligibility": "BLOCKED_PENDING_LICENSE_REVIEW",
+      "acquisition_status": "NOT_ACQUIRED",
+      "ingestion_status": "NOT_INGESTED",
+      "benchmark_status": "NOT_BENCHMARKED",
+      "independent_validation_status": "NOT_EVALUATED"
+    },
+    {
+      "dataset_id": "ladi-civil-air-patrol",
+      "name": "Low Altitude Disaster Imagery (LADI)",
+      "domain": "aerial_disaster_scene_understanding",
+      "source_url": "https://registry.opendata.aws/ladi/",
+      "documentation_url": "https://github.com/LADI-Dataset/ladi-overview",
+      "access_status": "PUBLIC_DOWNLOAD",
+      "license_status": "VERIFIED",
+      "license_name": "CC BY 4.0",
+      "commercial_use": "PERMITTED_BY_VERIFIED_LICENSE",
+      "version": "2015–2023 collection; pin exact source snapshot",
+      "modalities": [
+        "low_altitude_oblique_rgb"
+      ],
+      "annotations": [
+        "human_and_machine_disaster_annotations"
+      ],
+      "population_or_scenario": "Civil Air Patrol low-altitude oblique airborne imagery collected for disaster response.",
+      "ground_truth": "Human and machine annotations; no clinical victim outcomes.",
+      "wave_radar_uses": [
+        "aerial_scene_context",
+        "damage_and_obstacle_context",
+        "cross_disaster_visual_domain_testing"
+      ],
+      "limitations": [
+        "Aerial disaster imagery does not establish indoor victim presence or injury.",
+        "Attribute source and verify any third-party components and dataset snapshot before redistribution."
+      ],
+      "training_eligibility": "ELIGIBLE_SUBJECT_TO_ATTRIBUTION_AND_COMPONENT_REVIEW",
+      "acquisition_status": "NOT_ACQUIRED",
+      "ingestion_status": "NOT_INGESTED",
+      "benchmark_status": "NOT_BENCHMARKED",
+      "independent_validation_status": "NOT_EVALUATED"
+    },
+    {
+      "dataset_id": "bright-multimodal-disaster",
+      "name": "BRIGHT — Multimodal Disaster Response Dataset",
+      "domain": "remote_sensing_building_damage",
+      "source_url": "https://github.com/ChenHongruixuan/BRIGHT",
+      "data_url": "https://doi.org/10.5281/zenodo.14619797",
+      "publication_url": "https://essd.copernicus.org/articles/17/6217/2025/essd-17-6217-2025.html",
+      "access_status": "PUBLIC_DOWNLOAD",
+      "license_status": "MIXED_COMPONENTS_REVIEW_REQUIRED",
+      "license_name": "Component-specific terms; repository code has Apache-2.0; source imagery may have separate terms",
+      "commercial_use": "UNKNOWN",
+      "version": "Multiple dated releases; pin specific Zenodo record and file manifest",
+      "modalities": [
+        "very_high_resolution_optical",
+        "synthetic_aperture_radar"
+      ],
+      "annotations": [
+        "building_damage_labels",
+        "building_instances_in_challenge_extensions"
+      ],
+      "population_or_scenario": "Disaster events across natural and human-made hazards; building damage mapping using optical and SAR imagery.",
+      "ground_truth": "Building damage labels and benchmark splits; not interior structural integrity or victim condition.",
+      "wave_radar_uses": [
+        "external_building_damage_context",
+        "disaster_scene_mapping",
+        "cross_event_domain_generalization"
+      ],
+      "limitations": [
+        "Cannot infer interior room safety, structural stability, or victim condition from these labels.",
+        "Some optical imagery cannot be redistributed by dataset maintainers; source-level component rights must be reviewed.",
+        "Do not infer dataset rights from the code repository license."
+      ],
+      "training_eligibility": "BLOCKED_PENDING_COMPONENT_LICENSE_REVIEW",
+      "acquisition_status": "NOT_ACQUIRED",
+      "ingestion_status": "NOT_INGESTED",
+      "benchmark_status": "NOT_BENCHMARKED",
+      "independent_validation_status": "NOT_EVALUATED"
+    },
+    {
+      "dataset_id": "mmodalfire-2026",
+      "name": "MmodalFire — Indoor Fire Video and Physical Sensing Dataset",
+      "domain": "indoor_fire_sensor_fusion",
+      "source_url": "https://www.nature.com/articles/s41597-026-06810-6",
+      "access_status": "PUBLICATION_LINKED",
+      "license_status": "UNVERIFIED",
+      "license_name": null,
+      "commercial_use": "UNKNOWN",
+      "version": "2026 publication; resolve exact Figshare record and version",
+      "modalities": [
+        "video",
+        "smoke_density_sensor",
+        "temperature_sensor",
+        "infrared_radiation",
+        "ultraviolet_radiation",
+        "inertial_data"
+      ],
+      "annotations": [
+        "experimental_fire_conditions",
+        "sensor_measurements",
+        "video"
+      ],
+      "population_or_scenario": "Controlled indoor combustion experiments across two laboratory locations, with video and physical sensing channels.",
+      "ground_truth": "Experimental sensor measurements and scenario metadata; not human injury outcomes.",
+      "wave_radar_uses": [
+        "fire_and_smoke_sensor_fusion",
+        "sensor_timing_and_dropout_research",
+        "controlled_fire_environment_baselines"
+      ],
+      "limitations": [
+        "Controlled laboratory conditions do not represent all structural fires or live rescue operations.",
+        "Sensor outputs require units, calibration, synchronization, and reference review.",
+        "Dataset license and exact data package must be verified."
+      ],
+      "training_eligibility": "BLOCKED_PENDING_LICENSE_REVIEW",
+      "acquisition_status": "NOT_ACQUIRED",
+      "ingestion_status": "NOT_INGESTED",
+      "benchmark_status": "NOT_BENCHMARKED",
+      "independent_validation_status": "NOT_EVALUATED"
+    },
+    {
+      "dataset_id": "ul-fsri-fire-investigation",
+      "name": "UL FSRI Fire Investigation Data Portal",
+      "domain": "full_scale_fire_dynamics",
+      "source_url": "https://fsri.org/programs/fire-investigation-data-portal",
+      "access_status": "PUBLIC_PORTAL",
+      "license_status": "UNVERIFIED",
+      "license_name": null,
+      "commercial_use": "UNKNOWN",
+      "version": "Portal and experiment-specific releases; identify individual experiment IDs",
+      "modalities": [
+        "temperature",
+        "fire_environment_sensors",
+        "photographs",
+        "video"
+      ],
+      "annotations": [
+        "full_scale_fire_experiment_metadata",
+        "ventilation_conditions",
+        "fire_patterns"
+      ],
+      "population_or_scenario": "Full-scale residential structure-fire experiments examining ventilation effects, fire patterns, and electrical-system damage.",
+      "ground_truth": "Instrumented experimental measurements and documented test conditions; not victim clinical outcomes.",
+      "wave_radar_uses": [
+        "fire_dynamics_model_baselines",
+        "environmental_sensor_validation_design",
+        "ventilation_and_heat_context"
+      ],
+      "limitations": [
+        "Experiment scope is specific; do not generalize to every building, fuel, or tactical condition.",
+        "Check rights and reuse terms for each downloadable artifact.",
+        "Not a substitute for calibrated WaveRadar field measurements."
+      ],
+      "training_eligibility": "BLOCKED_PENDING_LICENSE_REVIEW",
+      "acquisition_status": "NOT_ACQUIRED",
+      "ingestion_status": "NOT_INGESTED",
+      "benchmark_status": "NOT_BENCHMARKED",
+      "independent_validation_status": "NOT_EVALUATED"
+    },
+    {
+      "dataset_id": "mmwave-120ghz-vitals-2026",
+      "name": "120 GHz mmWave Vital Signals with Synchronized References",
+      "domain": "contactless_physiology_signal_processing",
+      "source_url": "https://www.nature.com/articles/s41597-026-07016-6",
+      "data_url": "https://doi.org/10.21227/wq68-sv85",
+      "code_url": "https://github.com/Rc-W024/VS_DATASET",
+      "access_status": "PUBLIC_DOWNLOAD",
+      "license_status": "UNVERIFIED",
+      "license_name": null,
+      "commercial_use": "UNKNOWN",
+      "version": "2026 dataset release; pin IEEE DataPort version and terms",
+      "modalities": [
+        "120_ghz_fmcw_mmwave",
+        "ecg",
+        "ppg",
+        "respiration_reference",
+        "blood_pressure_reference"
+      ],
+      "annotations": [
+        "synchronized_reference_signals",
+        "resting_and_apnea_conditions"
+      ],
+      "population_or_scenario": "24 healthy adult volunteers; 5,760 seconds of radar data across resting and apnea scenarios.",
+      "ground_truth": "Synchronized physiological reference instruments; healthy volunteers only.",
+      "wave_radar_uses": [
+        "radar_signal_processing",
+        "respiratory_signal_extraction_baselines",
+        "reference_alignment_and_uncertainty"
+      ],
+      "limitations": [
+        "Healthy-volunteer data do not establish performance in injured, unconscious, moving, smoke-exposed, or fireground victims.",
+        "Custom 120 GHz research radar is not equivalent to a phone or a different mmWave device.",
+        "No diagnosis or clinical deployment claim is supported."
+      ],
+      "training_eligibility": "BLOCKED_PENDING_LICENSE_REVIEW",
+      "acquisition_status": "NOT_ACQUIRED",
+      "ingestion_status": "NOT_INGESTED",
+      "benchmark_status": "NOT_BENCHMARKED",
+      "independent_validation_status": "NOT_EVALUATED"
+    },
+    {
+      "dataset_id": "m4human-mmwave-2026",
+      "name": "M4Human mmWave Human Motion Benchmark",
+      "domain": "mmwave_human_motion_tracking",
+      "source_url": "https://fanjunqiao.github.io/M4Human-site/",
+      "publication_url": "https://openaccess.thecvf.com/content/CVPR2026/html/Fan_M4Human_A_Large-Scale_Multimodal_mmWave_Radar_Benchmark_for_Human_Mesh_CVPR_2026_paper.html",
+      "access_status": "PUBLICATION_LINKED",
+      "license_status": "UNVERIFIED",
+      "license_name": null,
+      "commercial_use": "UNKNOWN",
+      "version": "CVPR 2026 release; verify current data access and terms",
+      "modalities": [
+        "mmwave_radar",
+        "rgb",
+        "depth",
+        "motion_capture"
+      ],
+      "annotations": [
+        "3d_meshes",
+        "global_trajectories",
+        "motion_capture_annotations"
+      ],
+      "population_or_scenario": "20 subjects, 50 motion classes and approximately 661,000 frames, including free-space motion.",
+      "ground_truth": "Marker-based motion-capture annotations; no clinical injury labels.",
+      "wave_radar_uses": [
+        "radar_human_motion_tracking",
+        "cross_modal_motion_fusion",
+        "occlusion_and_motion_robustness"
+      ],
+      "limitations": [
+        "Motion reconstruction is not victim identification or injury diagnosis.",
+        "Staged motion coverage is not equivalent to injured or incapacitated victim behavior.",
+        "Confirm data files and license before acquisition."
+      ],
+      "training_eligibility": "BLOCKED_PENDING_LICENSE_REVIEW",
+      "acquisition_status": "NOT_ACQUIRED",
+      "ingestion_status": "NOT_INGESTED",
+      "benchmark_status": "NOT_BENCHMARKED",
+      "independent_validation_status": "NOT_EVALUATED"
+    },
+    {
+      "dataset_id": "nemsis-trauma-pud-2023",
+      "name": "NEMSIS Trauma Public Use Dataset 2023",
+      "domain": "prehospital_ems_trauma_context",
+      "source_url": "https://nemsis.org/datasets/",
+      "terms_url": "https://nemsis.org/subset-terms-and-conditions/",
+      "access_status": "PUBLIC_REQUEST",
+      "license_status": "RESTRICTED_TERMS",
+      "license_name": "NEMSIS subset terms and conditions",
+      "commercial_use": "NONPROFIT_ONLY",
+      "version": "2023 Trauma Public Use Dataset; request current copy and documentation",
+      "modalities": [
+        "ems_activation_records",
+        "triage",
+        "symptoms",
+        "vitals",
+        "medications",
+        "procedures",
+        "transport_and_disposition"
+      ],
+      "annotations": [
+        "ems_impressions",
+        "triage_criteria",
+        "vital_signs",
+        "clinical_descriptors"
+      ],
+      "population_or_scenario": "EMS trauma activations and supplemental long-format clinical/operational records.",
+      "ground_truth": "Prehospital EMS records and impressions; not necessarily hospital-confirmed final diagnoses or complete population coverage.",
+      "wave_radar_uses": [
+        "prehospital_workflow_research",
+        "outcome_definition_design_only_if_terms_allow"
+      ],
+      "limitations": [
+        "Terms restrict use to specified not-for-profit purposes and prohibit sharing without advance written approval; not cleared for commercial WaveRadar training or redistribution.",
+        "Treat as non-public health data under the agreement.",
+        "Submission coverage varies by state and agency; EMS impressions are not equivalent to definitive diagnosis."
+      ],
+      "training_eligibility": "BLOCKED_FOR_COMMERCIAL_USE_UNDER_CURRENT_TERMS",
+      "acquisition_status": "NOT_ACQUIRED",
+      "ingestion_status": "NOT_INGESTED",
+      "benchmark_status": "NOT_BENCHMARKED",
+      "independent_validation_status": "NOT_EVALUATED"
+    },
+    {
+      "dataset_id": "who-dsec-standard-2026",
+      "name": "WHO Data Set for Emergency Care (DSEC)",
+      "domain": "emergency_care_data_standard",
+      "source_url": "https://www.who.int/publications/i/item/9789240114499",
+      "access_status": "STANDARD_ONLY",
+      "license_status": "UNVERIFIED",
+      "license_name": null,
+      "commercial_use": "NOT_APPLICABLE",
+      "version": "2026 publication; verify exact standard revision",
+      "modalities": [
+        "data_dictionary",
+        "emergency_care_data_elements"
+      ],
+      "annotations": [
+        "47_core_data_elements",
+        "31_extended_data_elements"
+      ],
+      "population_or_scenario": "Standardized data elements for emergency care presentations and prehospital/emergency-care workflows.",
+      "ground_truth": "Not a patient dataset; a data standard.",
+      "wave_radar_uses": [
+        "incident_and_ems_schema_alignment",
+        "handoff_data_contract_design",
+        "interoperability_mapping"
+      ],
+      "limitations": [
+        "Does not supply patient records, training examples, or clinical outcome labels.",
+        "Check WHO publication reuse terms before reproducing content."
+      ],
+      "training_eligibility": "NOT_A_DATASET",
+      "acquisition_status": "NOT_APPLICABLE",
+      "ingestion_status": "NOT_APPLICABLE",
+      "benchmark_status": "NOT_APPLICABLE",
+      "independent_validation_status": "NOT_APPLICABLE"
+    },
+    {
+      "dataset_id": "mimic-iv-ed",
+      "name": "MIMIC-IV-ED",
+      "domain": "hospital_emergency_care",
+      "source_url": "https://physionet.org/content/mimic-iv-ed/",
+      "access_status": "CREDENTIAL_REQUIRED",
+      "license_status": "RESTRICTED_TERMS",
+      "license_name": "PhysioNet credentialing and data use agreement",
+      "commercial_use": "UNKNOWN",
+      "version": "Pin PhysioNet release version before use",
+      "modalities": [
+        "emergency_department_vitals",
+        "triage",
+        "medications",
+        "diagnoses"
+      ],
+      "annotations": [
+        "hospital_ed_records",
+        "diagnoses",
+        "treatment_and_disposition"
+      ],
+      "population_or_scenario": "Deidentified emergency department stays from a hospital information system.",
+      "ground_truth": "Hospital-recorded diagnoses and care events; no fireground sensor synchronization.",
+      "wave_radar_uses": [
+        "hospital_side_baseline_research",
+        "clinical_timeline_method_design_only_after_access_and_terms_review"
+      ],
+      "limitations": [
+        "Credentialing and data-use requirements apply; commercial model use is not presumed permitted.",
+        "Hospital ED data are not prehospital rescue data and may not represent fireground populations.",
+        "No use until current access and license terms are reviewed."
+      ],
+      "training_eligibility": "BLOCKED_PENDING_ACCESS_AND_LICENSE_REVIEW",
+      "acquisition_status": "NOT_ACQUIRED",
+      "ingestion_status": "NOT_INGESTED",
+      "benchmark_status": "NOT_BENCHMARKED",
+      "independent_validation_status": "NOT_EVALUATED"
+    },
+    {
+      "dataset_id": "rsna-ratic",
+      "name": "RSNA Abdominal Traumatic Injury CT (RATIC)",
+      "domain": "hospital_trauma_imaging",
+      "source_url": "https://registry.opendata.aws/rsna-ratic/",
+      "publication_url": "https://pubs.rsna.org/doi/10.1148/ryai.240101",
+      "access_status": "CREDENTIAL_REQUIRED",
+      "license_status": "RESTRICTED_TERMS",
+      "license_name": "RSNA non-commercial use terms",
+      "commercial_use": "NONCOMMERCIAL_ONLY",
+      "version": "RSNA 2023 challenge dataset; pin current terms and exact files",
+      "modalities": [
+        "abdominal_ct_dicom"
+      ],
+      "annotations": [
+        "radiologist_injury_annotations",
+        "segmentations"
+      ],
+      "population_or_scenario": "4,274 abdominal CT studies contributed by 23 institutions across 14 countries.",
+      "ground_truth": "Radiologist-generated imaging annotations; hospital CT modality.",
+      "wave_radar_uses": [
+        "clinical_imaging_research_only_if_separately_governed",
+        "injury_label_taxonomy_study"
+      ],
+      "limitations": [
+        "Non-commercial use only under current terms; no commercial WaveRadar training or redistribution.",
+        "CT findings cannot be inferred from external thermal, RGB, radar, or phone sensors.",
+        "Hospital imaging data are not field triage ground truth."
+      ],
+      "training_eligibility": "BLOCKED_FOR_COMMERCIAL_USE_UNDER_CURRENT_TERMS",
+      "acquisition_status": "NOT_ACQUIRED",
+      "ingestion_status": "NOT_INGESTED",
+      "benchmark_status": "NOT_BENCHMARKED",
+      "independent_validation_status": "NOT_EVALUATED"
+    },
+    {
+      "dataset_id": "microsoft-global-building-footprints",
+      "name": "Microsoft Global ML Building Footprints",
+      "domain": "geospatial_building_context",
+      "source_url": "https://github.com/microsoft/GlobalMLBuildingFootprints",
+      "access_status": "PUBLIC_DOWNLOAD",
+      "license_status": "VERIFIED",
+      "license_name": "CDLA Permissive 2.0",
+      "commercial_use": "PERMITTED_BY_VERIFIED_LICENSE",
+      "version": "Use dated source release; record release and file manifest",
+      "modalities": [
+        "building_footprint_polygons"
+      ],
+      "annotations": [
+        "building_footprints"
+      ],
+      "population_or_scenario": "Global building-footprint geometries derived from satellite imagery.",
+      "ground_truth": "Geospatial footprint annotations; not interior floor plans, occupancy, or structural condition.",
+      "wave_radar_uses": [
+        "coarse_building_context",
+        "map_alignment",
+        "preincident_geospatial_context"
+      ],
+      "limitations": [
+        "Footprints do not provide room geometry, floor count certainty, structural integrity, occupancy, or interior route safety.",
+        "Validate local currency, geometry quality and completeness before operational use."
+      ],
+      "training_eligibility": "ELIGIBLE_SUBJECT_TO_VERSION_PINNING",
+      "acquisition_status": "NOT_ACQUIRED",
+      "ingestion_status": "NOT_INGESTED",
+      "benchmark_status": "NOT_BENCHMARKED",
+      "independent_validation_status": "NOT_EVALUATED"
+    },
+    {
+      "dataset_id": "openstreetmap",
+      "name": "OpenStreetMap",
+      "domain": "geospatial_transport_and_place_context",
+      "source_url": "https://www.openstreetmap.org/copyright",
+      "access_status": "PUBLIC_DOWNLOAD",
+      "license_status": "VERIFIED",
+      "license_name": "ODbL 1.0",
+      "commercial_use": "PERMITTED_WITH_ATTRIBUTION_AND_SHAREALIKE_REVIEW",
+      "version": "Use dated extracts and record extract timestamp/provider",
+      "modalities": [
+        "vector_geospatial_data"
+      ],
+      "annotations": [
+        "roads",
+        "paths",
+        "places",
+        "building_features_where_mapped"
+      ],
+      "population_or_scenario": "Community-maintained global geospatial database.",
+      "ground_truth": "Crowdsourced map data; coverage and verification vary by feature and location.",
+      "wave_radar_uses": [
+        "route_context",
+        "geospatial_display",
+        "preincident_map_context"
+      ],
+      "limitations": [
+        "ODbL attribution and share-alike obligations require legal review for derived databases and distribution.",
+        "Completeness and positional accuracy vary; not a certified fireground map or interior floor plan."
+      ],
+      "training_eligibility": "ELIGIBLE_SUBJECT_TO_ODBL_COMPLIANCE_REVIEW",
+      "acquisition_status": "NOT_ACQUIRED",
+      "ingestion_status": "NOT_INGESTED",
+      "benchmark_status": "NOT_BENCHMARKED",
+      "independent_validation_status": "NOT_EVALUATED"
+    }
+  ]
+}
