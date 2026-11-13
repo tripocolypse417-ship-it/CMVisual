@@ -28,6 +28,9 @@ jobs:
       - name: Audit canonical data contract
         run: npm run audit:data
 
+      - name: Validate open evidence registry
+        run: npm run audit:research-registry
+
       - name: Check JavaScript and JSX lint
         run: npm run lint
 
