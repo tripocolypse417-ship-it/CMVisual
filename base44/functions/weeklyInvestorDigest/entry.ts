@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { requireAdminOrCron } from '../_shared/auth.ts';
 
 const b64url = (str) => {
   const bytes = new TextEncoder().encode(str);
@@ -10,6 +11,8 @@ const b64url = (str) => {
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
+    const auth = await requireAdminOrCron(req, base44, 'WAVERADAR_DIGEST_CRON_SECRET');
+    if (auth.response) return auth.response;
     const { accessToken } = await base44.asServiceRole.connectors.getConnection('gmail');
     const authHeader = { Authorization: `Bearer ${accessToken}` };
 
