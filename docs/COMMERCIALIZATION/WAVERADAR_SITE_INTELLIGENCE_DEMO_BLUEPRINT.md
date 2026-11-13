@@ -192,3 +192,14 @@ Do not total scores when a critical disqualifier exists (no data rights, no spon
 ## 12. Known exclusions
 
 This blueprint does not authorize purchases, subscriptions, paid datasets, vendor contact, customer outreach, publication, legal commitments, deployment, merging, production data changes, medical/occupant analytics, drone control, RF transmission or operational use. It does not establish a customer, revenue, validated capability, independent certification or production-ready product.
+
+
+## 13. External evidence informing the pilot hypothesis
+
+These sources support testing a drone-plus-digital-workflow proposition; they do not establish WaveRadar capability or guarantee a buyer:
+- **Illinois Center for Transportation / FHWA, 2026:** [Synthesis of Capabilities, Opportunities, and Research Needs in UAS Technology for High-Precision Bridge Inspection](https://rosap.ntl.bts.gov/view/dot/93369). The report evaluates where camera-equipped UAS and reality-mapping can supplement bridge inspection, including difficult-to-access documentation, and recommends targeted pilots, quality assurance and careful scenario selection. It explicitly does not make UAS a universal replacement for hands-on inspection.
+- **U.S. DOT ITS Deployment Evaluation, August 31, 2026:** [UAS and advanced digital workflows for transportation infrastructure inspections](https://www.itskrs.its.dot.gov/2026-b02062). The New York State Thruway Authority prototype reports measured field-workflow comparisons and projected statewide effects. The projected savings are program-specific estimates, not a transferable WaveRadar ROI claim; any customer pilot must measure its own baseline and outcomes.
+- **FHWA National Bridge Inspection Standards Q&A:** [Use of UAS in bridge inspection](https://www.fhwa.dot.gov/bridge/nbis2022/qanda/08.cfm). UAS can supplement qualified inspections for suitable tasks, but cannot replace tactile examination and other required inspection methods.
+- **NISTIR 8387:** [Digital Evidence Preservation: Considerations for Evidence Handlers](https://www.nist.gov/publications/digital-evidence-preservation-considerations-evidence-handlers). Use as a foundation for evidence preservation design and handling procedures; hashing alone is not chain of custody or proof of truth.
+
+**Commercial implication:** The first buyer hypothesis should focus on organizing authorized inspection records and reducing evidence/report assembly friction—not autonomous defect diagnosis. The strongest pilot metric is a measured comparison of time, completeness, rework and traceability against the customer's current workflow, with the customer's own baseline and reviewer sign-off.
