@@ -9,7 +9,7 @@ const cases = [
   {
     name: 'camera + unvalidated experimental sensor',
     input: { camera: true, imu: true, mmwave: true, evidence: ['CAMERA', 'IMU', 'MMWAVE'] },
-    expect: 'FULL_MULTIMODAL',
+    expect: 'CAMERA_IMU',
   },
   {
     name: 'no live measurements',
@@ -32,6 +32,21 @@ const experimental = buildOperationalRuntime({
 });
 if (experimental.capabilityState['mmwave-range-motion'].operational) {
   throw new Error('Experimental mmWave capability must remain non-operational until validated.');
+}
+
+if (experimental.mode === 'FULL_MULTIMODAL') {
+  throw new Error('Unvalidated experimental hardware must not promote the runtime to FULL_MULTIMODAL.');
+}
+
+const validatedSpatial = buildOperationalRuntime({
+  camera: true,
+  imu: true,
+  wifiRtt: true,
+  evidence: ['CAMERA', 'IMU', 'WIFI_RTT'],
+  validation: { validatedCapabilities: ['wifi-rtt-range'] },
+});
+if (validatedSpatial.mode !== 'FULL_MULTIMODAL') {
+  throw new Error('A capability with eligible evidence and an explicit validation gate should enable FULL_MULTIMODAL.');
 }
 
 const stale = buildOperationalRuntime({
