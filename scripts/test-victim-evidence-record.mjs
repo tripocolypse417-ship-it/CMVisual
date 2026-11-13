@@ -58,6 +58,8 @@ assert.equal(summary.observationCount, 2);
 assert.equal(summary.scanReferenceCount, 1);
 assert.equal(summary.conflicts.length, 1);
 assert.equal(summary.conflicts[0].category, 'VISIBLE_BLEEDING');
+const later = appendVictimObservation(first, { category: 'VISIBLE_BLEEDING', status: 'NOT_OBSERVED', note: 'Later reassessment from another location.' }, '2026-11-13T10:20:00.000Z');
+assert.equal(summarizeVictimRecord(later).conflicts.length, 0, 'Observations outside the five-minute review window are not flagged as concurrent disagreement.');
 assert.equal(summary.notAssessed.length, VICTIM_CATEGORIES.length - 1);
 
 const handoff = buildVictimHandoff(conflicting);

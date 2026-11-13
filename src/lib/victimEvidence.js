@@ -1,6 +1,5 @@
 const VERSION = 'victim-evidence-record-v1';
 const STORAGE_KEY = 'waveradar.victimEvidence.session.v1';
-const MAX_EVENTS_PER_RECORD = 500;
 
 export const VICTIM_CATEGORIES = [
   { value: 'RESPIRATORY', label: 'Breathing / respiratory observation' },
@@ -67,7 +66,7 @@ export function createVictimRecord({ incidentId, selectedTrack, now = isoNow() }
   const trackId = safeText(selectedTrack?.trackId ?? selectedTrack?.id, 160);
   if (!trackId) throw new Error('A selected track is required to assign a victim record.');
   const victimId = makeId('victim');
-  const label = `VICTIM ${String(Date.now()).slice(-4)}`;
+  const label = `VICTIM ${victimId.slice(-4).toUpperCase()}`;
   return {
     schemaVersion: VERSION,
     victimId,
@@ -95,7 +94,6 @@ export function appendVictimObservation(record, input, now = isoNow()) {
   if (!VICTIM_STATUSES.some((item) => item.value === status)) throw new Error('Select a supported observation status.');
   const note = safeText(input?.note, 300);
   if (!note) throw new Error('Describe the observable finding or why it could not be assessed.');
-  if (record.events.length >= MAX_EVENTS_PER_RECORD) throw new Error('This session record reached its event limit; export it before continuing.');
 
   const event = {
     eventId: makeId('event'),
@@ -154,12 +152,11 @@ export function summarizeVictimRecord(record) {
     byCategory[category].push(event);
   }
   const conflicts = Object.entries(byCategory).flatMap(([category, rows]) => {
-    const recent = rows.filter((row) => {
-      const age = Date.now() - Date.parse(row.observedAt || '');
-      return (row.status === 'OBSERVED' || row.status === 'NOT_OBSERVED') && Number.isFinite(age) && age >= 0 && age <= 5 * 60 * 1000;
-    });
+    const recent = rows.filter((row) => row.status === 'OBSERVED' || row.status === 'NOT_OBSERVED');
+    const timestamps = recent.map((row) => Date.parse(row.observedAt || '')).filter(Number.isFinite);
+    const withinReviewWindow = timestamps.length > 1 && Math.max(...timestamps) - Math.min(...timestamps) <= 5 * 60 * 1000;
     const statuses = [...new Set(recent.map((row) => row.status))];
-    return statuses.length > 1 ? [{ category, eventIds: recent.map((row) => row.eventId), statuses }] : [];
+    return statuses.length > 1 && withinReviewWindow ? [{ category, eventIds: recent.map((row) => row.eventId), statuses }] : [];
   });
   const categoriesWithAssessment = new Set(observations.map((event) => event.category));
   const notAssessed = VICTIM_CATEGORIES.filter((category) => !categoriesWithAssessment.has(category.value)).map((category) => category.value);
