@@ -137,8 +137,9 @@ No paid model endpoint, hosted browser, proxy, captcha service, or cloud VM may 
 4. Port only workflows that genuinely require browser interaction.
 5. Validate each workflow in a disposable test account and isolated context.
 6. Add persistence only after credential, privacy, recovery, and cost controls pass review.
-7. Keep Super as an optional legacy integration during transition; do not delete account data or revoke access automatically.
-8. Remove Super-specific dependencies from WaveRadar runtime configuration only after replacement tests pass.
+7. Do not retain Super as an active optional fallback or runtime integration. WaveRadar workflows must not call Super.
+8. Inventory and remove Super-specific runtime configuration, SDKs, environment variables, extension requirements, and agent-session assumptions after verifying each replacement.
+9. Revoke the exposed Super credential through the issuing account dashboard; this repository change cannot perform that account action.
 
 ## 9. Acceptance criteria
 
@@ -162,4 +163,4 @@ No paid model endpoint, hosted browser, proxy, captcha service, or cloud VM may 
 
 The repository now contains a pinned MCP client configuration and an automated smoke test that starts Playwright MCP, discovers its tools, launches headless Chromium, navigates to a public test page, and verifies its accessibility snapshot. CI does not prove a real browser session on the user's phone or computer, provision a cloud server, connect authenticated website accounts, or prove persistent deployment. A persistent unattended browser still needs an always-available machine or hosted compute. The initial implementation should therefore use local/manual and ephemeral execution until a genuinely free persistent host is independently verified.
 
-**Operational rule:** WaveRadar must continue functioning when the browser runtime is unavailable. Browser automation is an optional adapter, never a single point of failure.
+**Operational rule:** WaveRadar must continue functioning when Super or the browser runtime is unavailable. Super is not an approved runtime dependency or fallback. Browser automation is an optional adapter, never a single point of failure. See [the Super-free control-plane decision](../architecture/WAVERADAR_SUPER_FREE_CONTROL_PLANE.md).
