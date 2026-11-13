@@ -35,6 +35,10 @@ child.stdout.on("data", (chunk) => {
   }
 });
 child.stderr.on("data", (chunk) => { stderr += chunk; });
+child.on("error", (error) => {
+  for (const { reject } of pending.values()) reject(error);
+  pending.clear();
+});
 
 function request(method, params = {}) {
   const id = nextId++;
@@ -42,7 +46,7 @@ function request(method, params = {}) {
     const timeout = setTimeout(() => {
       pending.delete(id);
       reject(new Error(`Timed out waiting for MCP ${method}`));
-    }, 30000);
+    }, 45000);
     pending.set(id, {
       resolve: (value) => { clearTimeout(timeout); resolve(value); },
       reject: (error) => { clearTimeout(timeout); reject(error); },
@@ -51,11 +55,20 @@ function request(method, params = {}) {
   });
 }
 
+async function callTool(name, args = {}) {
+  const result = await request("tools/call", { name, arguments: args });
+  if (result?.isError) {
+    const detail = (result.content ?? []).map((item) => item.text ?? "").join("\n");
+    throw new Error(`${name} failed: ${detail || "tool returned isError"}`);
+  }
+  return (result?.content ?? []).map((item) => item.text ?? "").join("\n");
+}
+
 try {
   const initialized = await request("initialize", {
     protocolVersion: "2025-06-18",
     capabilities: {},
-    clientInfo: { name: "waveradar-playwright-smoke-test", version: "1.0.0" },
+    clientInfo: { name: "waveradar-playwright-smoke-test", version: "1.1.0" },
   });
   if (!initialized?.serverInfo?.name) throw new Error("MCP initialize response did not identify the server");
 
@@ -71,7 +84,13 @@ try {
   const missing = required.filter((name) => !names.has(name));
   if (missing.length) throw new Error(`Missing expected browser tools: ${missing.join(", ")}`);
 
-  console.log(`PASS: Playwright MCP initialized (${initialized.serverInfo.name}); ${names.size} tools exposed; required tools present.`);
+  await callTool("browser_navigate", { url: "https://example.com" });
+  const snapshot = await callTool("browser_snapshot");
+  if (!snapshot.includes("Example Domain")) {
+    throw new Error("Browser snapshot did not contain the expected Example Domain page content");
+  }
+
+  console.log(`PASS: Playwright MCP initialized (${initialized.serverInfo.name}); ${names.size} tools exposed; browser navigation and accessibility snapshot verified.`);
 } catch (error) {
   console.error("FAIL:", error.message);
   if (stderr.trim()) console.error(stderr.trim().slice(-4000));
