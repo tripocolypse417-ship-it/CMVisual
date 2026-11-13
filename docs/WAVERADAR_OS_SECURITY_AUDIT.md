@@ -6,12 +6,17 @@
 
 ## 1. Executive findings
 
-### S1 — DetectionEvent access policy is inadequate in the last available scan
-The stale scan reported that the DetectionEvent entity had no explicit create/read RLS rules, leaving telemetry creation and reads open, and recommended owner/admin restrictions for update/delete. It marked the finding critical.
+### S1 — Live PinComment sharing is broader than the incident authorization model
+The current connected Base44 schema shows PinComment read and create rules as open (empty rules), with update/delete limited to the record creator. There is no explicit team/incident membership condition in those rules. This can allow users in the app to read or create comments outside their assigned incident/team scope, depending on the app's login boundary.
 
-**Required action:** verify that DetectionEvent still exists in the connected app and inspect its live schema. Before real incident data or multi-tenant use, enforce incident/tenant-scoped read and create rules, plus controlled update/delete. Do not assume a front-end role check protects records.
+**Required action:** define incident/team membership semantics and scope PinComment read/create accordingly before real incident data is used.
 
-### S2 — Privileged backend function source templates are unsafe to deploy unchanged
+### S2 — DetectionEvent stale-scan finding is partly superseded by live schema
+The historical 2026-08-19 scan reported no explicit DetectionEvent read rule. The current live schema now shows read, update and delete restricted to the record creator or admin. The create rule remains unset. The old critical read finding should not be treated as current, but the create path and tenant/incident scope still need review.
+
+**Required action:** keep owner/admin read/update/delete protections, add explicit incident/tenant-scoped creation policy, and verify cross-incident access tests.
+
+### S3 — Privileged backend function source templates are unsafe to deploy unchanged
 The last available scan identified high-severity authorization gaps in:
 - `exportSnapshotToDrive`: uses service-role access to fetch and export a snapshot without verifying caller identity or snapshot ownership.
 - `slackAlert`: can list channels and post arbitrary messages using the Slack connector without an in-function caller check.
@@ -21,20 +26,20 @@ The last available scan identified high-severity authorization gaps in:
 
 **Important deployment distinction:** a current Base44 platform API query returned zero deployed backend functions for the connected app. These are unsafe source templates / historical scan findings, not confirmed live endpoints in that app. Keep them undeployed until fixed and retested.
 
-### S3 — Core integration protection is not ready
-The last scan reported `core_integration_recommendation = would_be_blocked`. The app agent profile currently allows core integrations from client code. This indicates the current application still has integration coupling that must be mapped and moved behind authorized server-side operations before enabling integration protection.
+### S4 — Core integration protection needs a current review
+The stale scan reported `core_integration_recommendation = would_be_blocked`. The current app agent profile allows core integrations from client code. Confirm actual client-side Core integration call sites and move privileged operations behind authorized server-side functions before enabling integration protection. Do not rely on the stale recommendation as a current result.
 
-### S4 — External federation needs endpoint and peer trust controls
+### S5 — External federation needs endpoint and peer trust controls
 The inspected federated-world client is opt-in but accepts a configurable endpoint and sends spatial/track metadata such as device/session identifiers, coordinates, speed, timestamps and source. The inspected request path does not itself establish peer authentication, signed payload integrity, replay protection, tenant/incident authorization or an endpoint allowlist.
 
 **Required action:** require HTTPS/WSS outside explicit local development, authenticated peer identity, signed/versioned envelopes, replay windows, tenant/incident policy, retention limits and explicit operator consent. Ingestion must remain separate from control of external devices.
 
-### S5 — Marketing library contains unsupported capability claims
+### S6 — Marketing library contains unsupported capability claims
 The Facebook promotional source contains statements implying phone-only, no-special-hardware through-wall or facility-wide detection and broad no-cloud/no-server guarantees. These are not established by the evidence baseline.
 
 **Required action:** quarantine these posts. Only publish claims tied to documented test conditions, supported hardware, measured results and independent validation. Distinguish prototype, inference, simulation and validated capability.
 
-### S6 — Security headers need review
+### S7 — Security headers need review
 The historical scan recommended preventing iframe embedding. Verify the current published app's headers and set an appropriate anti-framing policy unless a documented embedding use case requires otherwise.
 
 ## 2. Current scan limitations
@@ -45,6 +50,8 @@ The historical scan recommended preventing iframe embedding. Verify the current 
 - Dependency vulnerability list: empty in that historical result; this is not a current dependency audit.
 - Hardcoded secret list: empty in that historical result; this is not proof that secrets are absent.
 - The current app API reports zero deployed backend functions. This does not erase source-template risks or prove that other environments have no functions.
+- Current live Base44 schemas: 14 of 15 have an explicit RLS object; PinComment has open read/create rules; DetectionEvent has creator/admin read/update/delete rules but no explicit create rule; the User schema exposes a custom role field and requires a separate privilege-escalation review.
+- Current app API reports a header recommendation to prevent iframe embedding. This recommendation is computed from current app settings, unlike the stale scan findings.
 
 A fresh scan was not started because the endpoint runs a background language-model review and the project constraint is no upfront paid spend. Re-run when confirmed free/included and after code changes.
 
