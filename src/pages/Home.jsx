@@ -77,6 +77,7 @@ import useOpportunisticFusion from '../hooks/useOpportunisticFusion';
 import useRuntimeCapacityMonitor from '../hooks/useRuntimeCapacityMonitor';
 import useEvidenceBundle from '../hooks/useEvidenceBundle';
 import useSituationPicture from '../hooks/useSituationPicture';
+import VictimAssessmentPanel from '../components/VictimAssessmentPanel';
 
 const CMVISUAL_SAFE_MODE = false;
 
@@ -751,6 +752,7 @@ export default function Home() {
 
         {/* Evidence layer: validated, auditable activity assessment built from current inputs. */}
         <EvidenceAssessmentPanel assessment={evidence} color={color} />
+        <VictimAssessmentPanel selectedDetection={selectedDetection} incidentId={sessionIdRef.current} />
         <AIAnalystPanel analysis={aiAnalysis} selectedTarget={selectedDetection} color={color} />
         <OneTruthSurface situationPicture={situationPicture} selectedDetection={selectedDetection} color={color} />
         <SpeculativeOutcomePanel
