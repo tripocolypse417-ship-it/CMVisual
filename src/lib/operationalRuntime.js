@@ -35,13 +35,19 @@ function normalizeCapabilities(input = {}) {
 /**
  * Capability eligibility is stricter than hardware presence:
  * experimental capabilities remain visible but cannot become operational
- * evidence until a validation gate is satisfied.
+ * evidence until a trusted validation authority is integrated.
+ *
+ * IMPORTANT: this is client/runtime code. A caller-supplied
+ * validation.validatedCapabilities list is untrusted input and MUST NOT
+ * promote a degraded capability to operational. Validation records must be
+ * verified by a trusted server-side authority before a future adapter can
+ * expose them to life-safety workflows.
  */
 export function buildOperationalRuntime(input = {}) {
   const capabilities = normalizeCapabilities(input);
   const evidence = Array.isArray(input.evidence) ? input.evidence.map(v => String(v).toUpperCase()) : [];
   const validation = input.validation || {};
-  const validated = new Set(
+  const claimedValidated = new Set(
     Array.isArray(validation.validatedCapabilities)
       ? validation.validatedCapabilities.map(v => String(v).toLowerCase())
       : []
@@ -61,11 +67,15 @@ export function buildOperationalRuntime(input = {}) {
 
   const capabilityState = Object.fromEntries(capabilityIds.map(id => {
     const result = evaluateCapability(id, evidence);
-    const validationPassed = validated.has(id);
+    // No client-provided validation claim is authoritative. DEGRADED
+    // capabilities remain non-operational until server-verified attestation
+    // and independent evidence checks exist.
+    const validationPassed = false;
     return [id, {
       ...result,
-      operational: Boolean(result.eligible && (result.status !== 'DEGRADED' || validationPassed)),
+      operational: Boolean(result.eligible && result.status !== 'DEGRADED'),
       validationPassed,
+      validationClaimIgnored: claimedValidated.has(id),
     }];
   }));
 
