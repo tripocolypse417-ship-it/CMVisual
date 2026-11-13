@@ -113,8 +113,8 @@ export async function verifyDatasetManifest(rootDir,manifest){
   }catch{errors.push('missing file: '+file.path);}
  }
  try{
-  const actualFiles=await collectFiles(path.resolve(rootDir));
-  for(const file of actualFiles)if(!seen.has(file.path))errors.push('unmanifested file: '+file.path);
+  const actualPaths=await collectPaths(path.resolve(rootDir));
+  for(const filePath of actualPaths)if(!seen.has(filePath))errors.push('unmanifested file: '+filePath);
  }catch(error){errors.push(error.message);}
  const total=manifest.files.reduce((sum,file)=>sum+(Number(file.size_bytes)||0),0);
  if(manifest.file_count!==manifest.files.length)errors.push('file_count does not match files array');
