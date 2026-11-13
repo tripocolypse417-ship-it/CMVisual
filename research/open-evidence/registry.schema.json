@@ -1,6 +1,5 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://waveradar.invalid/schemas/open-evidence-registry-v1.schema.json",
   "title": "WaveRadar Open Evidence Registry v1",
   "type": "object",
   "additionalProperties": false,
@@ -62,7 +61,8 @@
           "acquisition_status",
           "ingestion_status",
           "benchmark_status",
-          "independent_validation_status"
+          "independent_validation_status",
+          "last_primary_source_check"
         ],
         "properties": {
           "dataset_id": {
@@ -149,7 +149,15 @@
             "type": "string"
           },
           "independent_validation_status": {
-            "type": "string"
+            "enum": [
+              "NOT_EVALUATED",
+              "NOT_APPLICABLE",
+              "COMPLETED"
+            ]
+          },
+          "last_primary_source_check": {
+            "type": "string",
+            "format": "date"
           }
         },
         "additionalProperties": true
