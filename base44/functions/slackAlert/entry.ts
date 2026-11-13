@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { requireAdmin } from '../_shared/auth.ts';
 
 function formatEvent(event) {
   const type = (event.event_type || 'alert').toUpperCase();
@@ -9,12 +10,15 @@ function formatEvent(event) {
   const mov = event.moving ? ' · MOVING' : '';
   const spd = event.speed != null ? ` · ${Number(event.speed).toFixed(2)} m/s` : '';
   const mode = event.scan_mode ? ` · ${event.scan_mode.toUpperCase()}` : '';
-  return `🛰️ *WaveRadar Sensor Event*\n*${type}* — ${ttype}${mode}\nDistance: ${dist} · Bearing: ${brg} · Signal: ${inten}${mov}${spd}\n${event.summary || ''}`;
+  const summary = String(event.summary || '').replace(/[&<>]/g, '').slice(0, 800);
+  return `🛰️ *WaveRadar Sensor Event*\n*${type}* — ${ttype}${mode}\nDistance: ${dist} · Bearing: ${brg} · Signal: ${inten}${mov}${spd}\n${summary}`;
 }
 
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
+    const auth = await requireAdmin(base44);
+    if (auth.response) return auth.response;
     const body = await req.json().catch(() => ({}));
     const { action, channel, event } = body;
 
@@ -31,7 +35,12 @@ export default async function(req) {
     }
 
     if (action === 'post') {
-      if (!channel || !event) return Response.json({ error: 'channel and event required' }, { status: 400 });
+      if (!channel || typeof channel !== 'string' || channel.length > 100 || !event || typeof event !== 'object') {
+        return Response.json({ error: 'valid channel and event required' }, { status: 400 });
+      }
+      const allowedChannels = (Deno.env.get('WAVERADAR_SLACK_ALLOWED_CHANNELS') || '').split(',').map(value => value.trim()).filter(Boolean);
+      if (!allowedChannels.length) return Response.json({ error: 'Slack posting is disabled until an allowed-channel list is configured' }, { status: 503 });
+      if (!allowedChannels.includes(channel)) return Response.json({ error: 'Channel is not approved for WaveRadar alerts' }, { status: 403 });
       const res = await fetch('https://slack.com/api/chat.postMessage', {
         method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },

@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { requireAdminOrCron } from '../_shared/auth.ts';
 import { jsPDF } from 'npm:jspdf@4.2.1';
 
 const b64url = (str) => {
@@ -144,7 +145,8 @@ function buildPdf(events, periodStart, periodEnd) {
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const body = await req.json().catch(() => ({}));
+    const auth = await requireAdminOrCron(req, base44, 'WAVERADAR_DIGEST_CRON_SECRET');
+    if (auth.response) return auth.response;
     const { accessToken } = await base44.asServiceRole.connectors.getConnection('gmail');
     const authHeader = { Authorization: `Bearer ${accessToken}` };
 
@@ -156,14 +158,9 @@ export default async function (req) {
     const senderEmail = admin?.email;
     if (!senderEmail) return Response.json({ error: 'No admin user found to send the digest' }, { status: 500 });
 
-    // Recipients = the team (all registered users), unless a test address is supplied.
-    let recipients;
-    if (body.test_to) {
-      recipients = [body.test_to];
-    } else {
-      recipients = (users || []).map((u) => u.email).filter(Boolean);
-      if (recipients.length === 0) recipients = [senderEmail];
-    }
+    // Incident telemetry is sent only to the designated administrator. A
+    // caller cannot override recipients with a request-body email address.
+    const recipients = [senderEmail];
 
     // Detection events from the last 7 days.
     const now = new Date();
