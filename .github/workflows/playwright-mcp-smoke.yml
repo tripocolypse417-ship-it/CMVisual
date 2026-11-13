@@ -6,7 +6,8 @@ on:
     paths:
       - ".mcp.json"
       - "scripts/test-playwright-mcp.mjs"
-      - "package.json"\n      - "docs/engineering/WAVERADAR_FREE_BROWSER_RUNTIME.md"
+      - "package.json"
+      - "docs/engineering/WAVERADAR_FREE_BROWSER_RUNTIME.md"
       - ".github/workflows/playwright-mcp-smoke.yml"
 
 permissions:
