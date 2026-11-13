@@ -152,7 +152,8 @@ if(invoked===fileURLToPath(import.meta.url)){
    const output=path.resolve(args.output||'');
    if(!args.output)throw new Error('--output is required');
    const relative=path.relative(path.resolve(args.root),output);
-   const outputIsInside=relative===''||(!relative.startsWith('..'+path.sep)&&relative!=='..'&&!path.isAbsolute(relative));\n   if(outputIsInside)throw new Error('manifest output must be outside dataset root so it is not included in its own hash inventory');
+   const outputIsInside=relative===''||(!relative.startsWith('..'+path.sep)&&relative!=='..'&&!path.isAbsolute(relative));
+   if(outputIsInside)throw new Error('manifest output must be outside dataset root so it is not included in its own hash inventory');
    await fs.mkdir(path.dirname(output),{recursive:true});
    await fs.writeFile(output,JSON.stringify(manifest,null,2)+'\n',{flag:'wx'});
    console.log('Dataset manifest created · '+manifest.dataset_id+' · '+manifest.file_count+' files · '+manifest.manifest_sha256);
