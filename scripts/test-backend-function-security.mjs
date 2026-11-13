@@ -14,7 +14,7 @@ const [exportSnapshot, slack, facebook, detectionDigest, investorDigest, investo
 
 assert.match(exportSnapshot, /base44\.auth\.me\(\)/, 'snapshot export must authenticate');
 assert.match(exportSnapshot, /snapshot\.created_by_id === user\.id/, 'snapshot export must verify ownership');
-assert.match(exportSnapshot, /sharedEmails\.includes\(user\.email\)/, 'snapshot export must honor explicit sharing');
+assert.match(exportSnapshot, /sharedEmails\.includes\(String\(user\.email\)\.toLowerCase\(\)\)/, 'snapshot export must honor case-insensitive explicit sharing');
 assert.match(slack, /requireAdmin\(base44\)/, 'Slack actions must require admin');
 assert.match(slack, /WAVERADAR_SLACK_ALLOWED_CHANNELS/, 'Slack posting must use an allowlist');
 assert.match(facebook, /requireAdminOrCron\(req, base44, 'WAVERADAR_PROMO_CRON_SECRET'\)/, 'campaign tick must authenticate cron/admin');
