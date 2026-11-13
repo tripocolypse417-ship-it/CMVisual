@@ -28,10 +28,10 @@ The connected Base44 track manager stamps trail points with `Date.now()`. That i
 The backtest creates multiple horizons/windows from a bounded track history. These comparisons can overlap and share the same source points. A count of 12 comparisons is not equivalent to 12 independent tracks, incidents, buildings or physical trials. The UI's prior “training samples” and “learned gain” wording risks overstating the evidence.
 
 ### M4 — Persisted learning state lacks a durable per-track cursor
-Aggregate accumulators are persisted in local storage, while the per-track “learned through” cursor is held in an in-memory ref. If a previously seen trail is reloaded or replayed, the same comparisons may be counted again. This is a conditional duplication risk that needs an explicit session/dataset identity and idempotent sample keys.
+Aggregate accumulators are persisted in local storage, while the per-track “learned through” cursor is held in an in-memory ref. If a previously seen trail is reloaded or replayed, the same comparisons may be counted again. This is a conditional duplication risk that needs an explicit session/dataset identity and idempotent sample keys. The current global storage key also allows parameter totals to carry across unrelated incident/site contexts.
 
 ### M5 — Environmental baseline is not site/incident scoped
-The baseline hook groups samples by weekday/weekend and broad time-of-day buckets. It does not receive an explicit site, building, incident or device context. A device moved between buildings or operating contexts can mix unlike occupancy/motion distributions.
+The baseline hook groups samples by weekday/weekend and broad time-of-day buckets. It does not receive an explicit site, building, incident or session context. A device moved between buildings or operating contexts can mix unlike occupancy/motion distributions. It also treats a missing mean-speed value as numeric zero in its current ingestion path, which can contaminate the motion baseline.
 
 ### M6 — Local storage is not a governed training-data registry
 Local browser storage has no immutable dataset manifest, external reviewer, label provenance, independent reference, retention policy or reproducible export. It is acceptable for a local experimental heuristic, not a validated training pipeline.
