@@ -125,8 +125,7 @@ export default async function(req) {
     // Page discovery and manual publishing are administrator-only.
     const auth = await requireAdmin(base44);
     if (auth.response) return auth.response;
-    const user = auth.user;
-
+    
     const { accessToken: userToken } = await base44.asServiceRole.connectors.getConnection('facebook_pages');
     if (!userToken) return Response.json({ error: 'Facebook not connected' }, { status: 400 });
 
