@@ -39,6 +39,21 @@ function manifestDigest(manifest){
  const {manifest_sha256,...unsigned}=manifest;
  return digest(JSON.stringify(unsigned,null,2)+'\n');
 }
+async function collectPaths(rootDir,currentDir=rootDir,paths=[]){
+ const entries=await fs.readdir(currentDir,{withFileTypes:true});
+ entries.sort((a,b)=>a.name.localeCompare(b.name));
+ for(const entry of entries){
+  const absolute=path.join(currentDir,entry.name),stat=await fs.lstat(absolute);
+  if(stat.isSymbolicLink())throw new Error('symlinks are not permitted in dataset acquisition manifests: '+absolute);
+  if(stat.isDirectory())await collectPaths(rootDir,absolute,paths);
+  else if(stat.isFile()){
+   const relative=safeRelativePath(path.relative(rootDir,absolute));
+   if(!relative)throw new Error('unsafe relative path: '+absolute);
+   paths.push(relative);
+  }else throw new Error('unsupported filesystem entry: '+absolute);
+ }
+ return paths;
+}
 export async function buildDatasetManifest(options={}){
  const rootDir=path.resolve(options.rootDir||'');
  const datasetId=String(options.datasetId||'');
@@ -130,7 +145,7 @@ if(invoked===fileURLToPath(import.meta.url)){
    const output=path.resolve(args.output||'');
    if(!args.output)throw new Error('--output is required');
    const relative=path.relative(path.resolve(args.root),output);
-   if(!relative.startsWith('..')&&!path.isAbsolute(relative))throw new Error('manifest output must be outside dataset root so it is not included in its own hash inventory');
+   const outputIsInside=relative===''||(!relative.startsWith('..'+path.sep)&&relative!=='..'&&!path.isAbsolute(relative));\n   if(outputIsInside)throw new Error('manifest output must be outside dataset root so it is not included in its own hash inventory');
    await fs.mkdir(path.dirname(output),{recursive:true});
    await fs.writeFile(output,JSON.stringify(manifest,null,2)+'\n',{flag:'wx'});
    console.log('Dataset manifest created · '+manifest.dataset_id+' · '+manifest.file_count+' files · '+manifest.manifest_sha256);
