@@ -1,6 +1,6 @@
 # WaveRadar OS — Free, Open Browser Automation Runtime
 
-**Decision status:** Proposed implementation architecture; pending review and deployment.
+**Decision status:** Implemented as repository configuration and a CI smoke test; runtime execution on a user-controlled host remains pending.
 **Replaces:** Super Chrome Extension / paid Super browser access as the default browser-automation dependency.
 **Primary project:** Microsoft Playwright MCP
 **Optional semantic-action layer:** Stagehand
@@ -60,14 +60,14 @@ The browser runtime is a subordinate execution capability, not the master orches
 
 ### A. Local development / manual work
 
-Run Playwright MCP through a compatible MCP client:
+Run Playwright MCP through a compatible MCP client using the repository-root `.mcp.json`:
 
 ```json
 {
   "mcpServers": {
     "playwright": {
       "command": "npx",
-      "args": ["@playwright/mcp@latest", "--headless"]
+      "args": ["@playwright/mcp@0.0.85", "--headless"]
     }
   }
 }
@@ -142,8 +142,10 @@ No paid model endpoint, hosted browser, proxy, captcha service, or cloud VM may 
 
 ## 9. Acceptance criteria
 
-- [ ] Clean install on a supported Node.js 20+ environment.
-- [ ] Playwright MCP launches headless Chromium without installing a Chrome extension.
+- [x] Repository configuration pins Playwright MCP 0.0.85 and runs headless without extension mode.
+- [x] CI smoke test verifies MCP initialization and required browser tools are exposed.
+- [ ] Clean install and browser launch on a user-controlled Node.js 20+ environment.
+- [ ] Playwright MCP launches headless Chromium without installing a Chrome extension on a user-controlled host.
 - [ ] Navigation, accessibility snapshot, click, form fill, and extraction pass deterministic tests.
 - [ ] Persistent and isolated session behavior is tested and documented.
 - [ ] No Super subscription, API key, credit balance, or extension is required.
@@ -157,6 +159,6 @@ No paid model endpoint, hosted browser, proxy, captcha service, or cloud VM may 
 
 ## 10. Current limitations
 
-This change records the architecture decision and migration path; it does not install software on the user's phone or computer, provision a cloud server, connect authenticated website accounts, or prove deployment. A persistent unattended browser still needs an always-available machine or hosted compute. The initial implementation should therefore use local/manual and ephemeral execution until a genuinely free persistent host is independently verified.
+The repository now contains a pinned MCP client configuration and an automated protocol/tool-discovery smoke test. CI can verify that the server starts and exposes the expected browser tools; it does not prove a real browser session on the user's phone or computer, provision a cloud server, connect authenticated website accounts, or prove deployment. A persistent unattended browser still needs an always-available machine or hosted compute. The initial implementation should therefore use local/manual and ephemeral execution until a genuinely free persistent host is independently verified.
 
 **Operational rule:** WaveRadar must continue functioning when the browser runtime is unavailable. Browser automation is an optional adapter, never a single point of failure.
