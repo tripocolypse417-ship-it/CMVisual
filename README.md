@@ -1,66 +1,52 @@
-# WaveRadar / CMVisual
+# WaveRadar OS
 
-WaveRadar is an early-stage, evidence-first spatial-awareness prototype. This repository contains the React/Vite application and Capacitor Android build workflow used to create phone-installable debug APKs.
+**WaveRadar OS is the product.** It is an evidence-first emergency situational-awareness and decision-support operating environment for firefighters, incident command, compatible sensors, field devices, and independent research and validation.
 
-## Current status — 2026-10-30
+This repository is the current canonical implementation and engineering workspace. The existing React/Vite + Capacitor application is a prototype/integration surface within the larger OS program; it is not itself the complete operating system.
 
-- **Android CI:** Build 234 succeeded on the research-validation-institute branch and produced a WaveRadar-debug-apk artifact. It is a debug APK, not a production-signed release. The old runner-generated debug signing key was not preserved, so this artifact is not guaranteed to update an APK already installed on a phone. See docs/android/DEBUG_SIGNING_AND_UPDATE.md and PR #33 for persistent-key support.
-- **Android device verification:** Installation and update behavior on the target Moto G Play have not yet been verified. Do not uninstall an installed copy until local-only data has been backed up or confirmed server-side.
-- **WaveRadar Core:** Hosted separately at https://waveradar-20.hatchable.site.
-- **Independent Validation Lab:** Separate hosted service at https://waveradar.hatchable.site. It now has invitation-only tester access, a separate independent-reviewer workspace, server-computed evidence SHA-256 digests, and database-enforced append-only evidence/audit/review records. The project visibility is currently personal; external visitors will see the hosting platform's sign-in wall until the owner changes project visibility to public in project Settings. The application itself remains invitation-only.
-- **Initial research protocols:** The Validation Lab contains two draft protocols: KIT Wi-Fi BFI/CSI human-presence feasibility and a fresh Android Native Sensor baseline for the Moto G Play 2024. No testers, reviewers, or assignments have been registered yet.
-- **Independent Research & Validation Institute:** The program charter and implementation plan are in docs/research-validation-institute/CHARTER_AND_IMPLEMENTATION_PLAN.md.
-- **Backend portability is unfinished:** This repository still uses Base44 SDK integrations for authentication, entities, and backend functions. The hosted WaveRadar Core APIs are not yet a full replacement for those dependencies.
-- **Physical validation remains pending:** On 2026-10-30, WaveRadar Core diagnostics reported 4,021 observations, zero integrity-verified observations, eight registered devices, and zero validated devices. These historical observations remain preserved but are not validation proof. A new physical baseline must use new sessions and independent ground truth.
-- **No through-wall or life-safety claims:** Do not describe the current phone-only workflow as validated through-wall sensing, radar, or an operational life-safety system. Any such capability requires compatible external sensing hardware and independent ground-truth testing.
+## Start here
+- [WaveRadar OS architecture](docs/WAVERADAR_OS_ARCHITECTURE.md)
+- [Model lifecycle and governed continual learning](docs/WAVERADAR_OS_MODEL_GOVERNANCE.md)
+- [Current-state engineering audit](docs/WAVERADAR_OS_CURRENT_STATE_AND_AUDIT.md)
+- [Implementation roadmap](docs/WAVERADAR_OS_IMPLEMENTATION_ROADMAP.md)
+- [Migration notes](MIGRATION.md)
+- [Android build workflow](.github/workflows/build-android.yml)
 
-## Run locally
+## Product subsystems
+- **WaveRadar Edge Runtime:** Android/Linux device services, sensor lifecycle, secure local evidence capture, offline queueing, device health and update safety.
+- **WaveRadar Core:** provider-neutral evidence, time, spatial, fusion, world-model and model-runtime contracts.
+- **WIS Command:** chief/dispatch interface, building intelligence, incident map, evidence-backed alerts and crew/device context.
+- **Firefighter Field/HUD:** low-cognitive-load helmet/phone interface with explicit data quality and uncertainty.
+- **Guardian X:** integrated firefighter suit and powered full-body exoskeleton program; actuation remains outside the initial OS release until separately engineered and independently validated.
+- **Research & Validation Lab:** independent protocols, ground truth, model evaluation, reviewer workflow and audit.
+- **Replay & After-Action:** synchronized, reproducible reconstruction of incident evidence and model decisions.
 
-Requirements: Node.js 22, Java 21 for Android builds, and Android SDK/Gradle tooling for local APK packaging.
+## Current implementation reality
+- The application uses React/Vite and Capacitor for Android packaging.
+- Android package ID is com.waveradar.app; inspected configuration reports version 1.0 / version code 1.
+- Base44 SDK and Vite plugin dependencies remain in the current application path. Portability is unfinished.
+- Existing sensor, spatial, evidence, prediction, replay and validation modules are retained as candidate OS components; their presence does not prove operational readiness.
+- Physical sensor accuracy, through-wall sensing, spatial reconstruction and life-safety performance remain unvalidated until supported by independent ground truth and controlled field evaluation.
+- Historical evidence is preserved. Never convert unverified records into validation proof.
 
-    npm install
-    npm run audit:data
-    npm run build
-    npm run dev
+## Engineering rules
+1. Preserve raw evidence, provenance, timestamps, quality and uncertainty.
+2. Keep measured, derived, inferred, predicted, simulated, human-entered and unavailable states distinct.
+3. A registered device is not necessarily validated; permission is not sample arrival; sample arrival is not valid timing or spatial pose.
+4. Do not train or update models directly from unreviewed live operational data.
+5. Model releases require frozen datasets, independent evaluation, staged deployment and rollback.
+6. No model receives autonomous incident-command authority or controls Guardian X actuation.
+7. No claim of certification, accuracy, lives saved, deployment, grant award, customer or partnership without documentary evidence.
+8. Treat public repository content and public artifacts as public. Never commit secrets, personal data, sensitive incident records or signing keys.
+9. Preserve the zero-upfront-budget constraint: prioritize free/local tooling, open standards and partner/institutional validation.
 
-## Build Android
+## Development
+The current package scripts include npm run build, npm run lint and npm run typecheck. There is currently no dedicated test script in the inspected package manifest. A green build or lint result does not establish native sensor correctness, spatial accuracy, model safety or field readiness.
 
-The GitHub Actions workflow .github/workflows/build-android.yml builds the web bundle, generates the Capacitor Android project, installs the repository's native sensor bridge, synchronizes plugins/assets, and runs Gradle to produce a debug APK.
+## Standards and assurance references
+- NIST AI RMF: https://www.nist.gov/itl/ai-risk-management-framework
+- NIST SSDF: https://csrc.nist.gov/Projects/ssdf/publications
+- ISO 22320:2018 incident management: https://www.iso.org/standard/67851.html
+- NFPA 1970 (2025 edition): https://www.nfpa.org/codes-and-standards/nfpa-1970-standard-development/1970
 
-To build locally after configuring Android tooling:
-
-    npm run audit:data
-    npm run build
-    npx cap add android
-    npx cap sync android
-    cd android
-    ./gradlew assembleDebug --no-daemon
-
-The workflow copies the native sensor bridge from native/android/ and adds the required Android permissions. If regenerating the Android project, follow the workflow so these native files and permissions are included.
-
-For consistent update signatures across CI runs, configure the GitHub Actions secret WAVERADAR_DEBUG_KEYSTORE_BASE64 as described in docs/android/DEBUG_SIGNING_AND_UPDATE.md. Do not commit a keystore to this public repository.
-
-## Download the latest published debug APK
-
-[Latest WaveRadar Android release](https://github.com/tripocolypse417-ship-it/CMVisual/releases/latest)
-
-GitHub Actions artifacts are also available from the workflow run page. Android may require permission to install an APK from the browser. Install only if you understand this is a debug build; do not use it as safety-critical equipment.
-
-## Evidence and safety rules
-
-- Preserve the difference between MEASURED, DERIVED, INFERRED, PREDICTED, SIMULATED, UNKNOWN, and UNAVAILABLE.
-- A MEASURED provenance label is not an integrity verdict or proof of truth.
-- Never use synthetic showcase data as physical validation evidence.
-- Camera-only detections are not through-wall detections.
-- Raw accelerometer/gyroscope data does not by itself establish spatial position.
-- Do not claim accuracy, lives saved, certifications, customers, government partnerships, grants, or operational deployments without evidence.
-- Keep validation results tied to the specific device, configuration, environment, and test envelope.
-- Treat external sensing, spatial reconstruction, prediction, and team-alert reliability as unvalidated until tested.
-
-## Technology and licensing
-
-Open-source dependencies must be reviewed by exact version and license. ORB-SLAM3 is GPLv3; do not include it in a proprietary distributed build without an explicit GPL-compliance or commercial-licensing decision. OpenCV 4.5.0+ is Apache 2.0 according to the official OpenCV license page.
-
-## Ownership and contributions
-
-The project owner retains control of project direction and repository changes. Before accepting external contributions or adding dependencies, record the license, provenance, and any implications for commercial distribution.
+These are engineering alignment references, not a claim of compliance or certification. See the architecture and model-governance documents for scope and caveats.
