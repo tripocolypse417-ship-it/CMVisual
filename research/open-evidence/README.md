@@ -41,6 +41,20 @@ The JSON registry is the version-controlled source of candidate metadata. It doe
 
 The seed records prioritize scene capture, fire sensing, physiology, prehospital/hospital context and geospatial building context. Unknown license and access states are preserved where rights were not established. NEMSIS subset terms limit use to specified not-for-profit purposes and restrict onward sharing; it is not cleared for commercial WaveRadar training. RATIC is noncommercial-only under current terms. BRIGHT has component-specific imagery terms; do not infer data rights from its Apache-2.0 code repository. LADI is identified as CC BY 4.0 by the AWS Registry of Open Data. Microsoft Global ML Building Footprints identifies CDLA Permissive 2.0. OpenStreetMap is ODbL 1.0 and requires attribution and share-alike review.
 
+## Acquisition manifest and integrity verification
+
+The acquisition-manifest utility is local-only: it does not download data or send files anywhere. It reads a dataset directory, computes SHA-256 and byte size for every regular file, captures the source/version/license snapshot, and writes a manifest outside the dataset directory. It rejects symlinks and non-HTTPS source URLs. The verification mode checks the exact file set, byte sizes, SHA-256 digests, and manifest metadata digest; it detects changed, missing, or extra files.
+
+Example (use only after access and license review):
+
+    node scripts/dataset-acquisition-manifest.mjs --root /path/to/dataset --dataset-id wisard-visual-thermal-v1 --source-url https://sites.google.com/uw.edu/wisard/ --version v1-archive-identifier --license-name "verified source license" --license-status VERIFIED --commercial-use UNKNOWN --reviewed-on 2026-11-13 --retrieved-at 2026-11-13T12:00:00.000Z --output /path/outside/dataset/acquisition-manifest.json
+
+Verify later:
+
+    node scripts/dataset-acquisition-manifest.mjs --verify /path/to/acquisition-manifest.json --root /path/to/dataset
+
+The manifest records integrity and metadata state; it does not prove authenticity, lawful access, sensor truth, scientific quality, or clinical validity. Preserve source files unchanged and retain the manifest with the acquisition record.
+
 ## Validation
 
 Run:
