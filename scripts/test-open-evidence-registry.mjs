@@ -8,7 +8,7 @@ const registry=JSON.parse(fs.readFileSync(path.resolve(here,'../research/open-ev
 const schema=JSON.parse(fs.readFileSync(path.resolve(here,'../research/open-evidence/registry.schema.json'),'utf8'));
 for(const [field,key] of [['access_status','access_status'],['license_status','license_status'],['commercial_use','commercial_use'],['training_eligibility','training_eligibility'],['acquisition_status','acquisition_status'],['ingestion_status','ingestion_status'],['benchmark_status','benchmark_status'],['independent_validation_status','independent_validation_status']]){
  const allowed=schema.properties.records.items.properties[key]?.enum;
- assert.ok(Array.isArray(allowed),schema enum missing for +key);
+ assert.ok(Array.isArray(allowed),'schema enum missing for '+key);
  for(const record of registry.records)assert.ok(allowed.includes(record[field]),'schema enum does not cover '+field+'='+record[field]);
 }
 assert.deepEqual(validateRegistry(registry),[],'seed registry must pass all gates');
