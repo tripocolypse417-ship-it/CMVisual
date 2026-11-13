@@ -115,7 +115,7 @@ Known historical validation baseline from prior project work must be re-read fro
 - Connected Base44 app main: `npm run build` PASS and `npm run lint` PASS; `npm run typecheck` FAIL with many component/prop/type errors.
 - Connected Base44 app main still has no test script.
 - No connected physical Android device or independent sensor reference was used in this run.
-- No main-branch source was changed; targeted source fixes are isolated on the CMVisual overhaul branch.
+- No CMVisual GitHub main-branch source was changed; targeted source fixes are isolated on the CMVisual overhaul branch. A partial, unsynchronized port of the timestamp/spatial-ingress fixes is present in the connected Base44 working app; its build/tests have not yet been rerun after those edits.
 - No PR was merged or closed.
 - No historical evidence was changed.
 - No public archive was deleted.
