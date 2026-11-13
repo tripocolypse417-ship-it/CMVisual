@@ -5,6 +5,7 @@ const plugin = await readFile(new URL('../native/android/WaveRadarRangingPlugin.
 const workflow = await readFile(new URL('../.github/workflows/build-android.yml', import.meta.url), 'utf8');
 const wrapper = await readFile(new URL('../src/lib/nativeRanging.js', import.meta.url), 'utf8');
 const bridge = await readFile(new URL('../src/hooks/useSensorBridge.js', import.meta.url), 'utf8');
+const capabilityModel = await readFile(new URL('../src/hooks/useSensorCapabilityModel.js', import.meta.url), 'utf8');
 
 // The permission alias must complete through a real Capacitor permission callback.
 assert.match(plugin, /requestPermissionForAlias\("ranging", call, "rangingPermissionCallback"\);/);
@@ -38,5 +39,8 @@ assert.match(wrapper, /measurementTimestampElapsedRealtimeMs/);
 assert.match(wrapper, /confidence: null/);
 assert.match(bridge, /d\.angle != null && Number\.isFinite\(Number\(d\.angle\)\)/);
 assert.match(bridge, /d\.distance != null && Number\.isFinite\(Number\(d\.distance\)\)/);
+assert.match(capabilityModel, /measurement\?\.evidenceClass === 'MEASURED'/);
+assert.match(capabilityModel, /externalDetectionAvailable && geoAvailable/);
+assert.match(capabilityModel, /cameraAvailable && externalDetectionAvailable/);
 
 console.log('Wi-Fi RTT evidence contract checks passed (static source checks only; device validation remains required).');
