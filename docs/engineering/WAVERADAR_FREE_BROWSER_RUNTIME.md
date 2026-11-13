@@ -67,7 +67,7 @@ Run Playwright MCP through a compatible MCP client using the repository-root `.m
   "mcpServers": {
     "playwright": {
       "command": "npx",
-      "args": ["@playwright/mcp@0.0.85", "--headless"]
+      "args": ["--yes", "@playwright/mcp@0.0.85", "--headless"]
     }
   }
 }
