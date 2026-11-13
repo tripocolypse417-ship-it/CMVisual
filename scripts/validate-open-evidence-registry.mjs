@@ -9,6 +9,7 @@ const COMMERCIAL=new Set(['PERMITTED_BY_VERIFIED_LICENSE','PERMITTED_WITH_ATTRIB
 const ACQUISITION=new Set(['NOT_ACQUIRED','ACQUIRED_PENDING_INTEGRITY_CHECK','ACQUIRED_HASHED','QUARANTINED','NOT_APPLICABLE']);
 const INGESTION=new Set(['NOT_INGESTED','PARSER_PENDING','SCHEMA_VALIDATED','PROVENANCE_VALIDATED','QUARANTINED','NOT_APPLICABLE']);
 const BENCHMARK=new Set(['NOT_BENCHMARKED','PROTOCOL_DRAFT','PREREGISTERED','RUN_COMPLETE_INTERNAL','INDEPENDENTLY_REVIEWED','NOT_APPLICABLE']);
+const INDEPENDENT=new Set(['NOT_EVALUATED','NOT_APPLICABLE','COMPLETED']);
 const TRAINING=new Set(['BLOCKED_PENDING_LICENSE_REVIEW','BLOCKED_PENDING_COMPONENT_LICENSE_REVIEW','BLOCKED_FOR_COMMERCIAL_USE_UNDER_CURRENT_TERMS','BLOCKED_PENDING_ACCESS_AND_LICENSE_REVIEW','ELIGIBLE_SUBJECT_TO_ATTRIBUTION_AND_COMPONENT_REVIEW','ELIGIBLE_SUBJECT_TO_VERSION_PINNING','ELIGIBLE_SUBJECT_TO_ODBL_COMPLIANCE_REVIEW','NOT_A_DATASET']);
 export function validateRegistry(registry){
  const errors=[];
@@ -25,9 +26,11 @@ export function validateRegistry(registry){
  registry.records.forEach((r,i)=>{
   const at='records['+i+']';
   if(!r||typeof r!=='object'||Array.isArray(r)){errors.push(at+' must be an object');return;}
-  for(const key of ['dataset_id','name','domain','source_url','access_status','license_status','commercial_use','modalities','annotations','ground_truth','limitations','training_eligibility','acquisition_status','ingestion_status','benchmark_status','independent_validation_status'])if(r[key]===undefined||r[key]===null||r[key]==='')errors.push(at+'.'+key+' is required');
+  for(const key of ['dataset_id','name','domain','source_url','last_primary_source_check','access_status','license_status','commercial_use','modalities','annotations','ground_truth','limitations','training_eligibility','acquisition_status','ingestion_status','benchmark_status','independent_validation_status'])if(r[key]===undefined||r[key]===null||r[key]==='')errors.push(at+'.'+key+' is required');
   if(typeof r.dataset_id==='string'){if(!/^[a-z0-9][a-z0-9-]+$/.test(r.dataset_id))errors.push(at+'.dataset_id must be a stable lowercase slug');if(seen.has(r.dataset_id))errors.push('duplicate dataset_id: '+r.dataset_id);seen.add(r.dataset_id);}
   try{const u=new URL(r.source_url);if(u.protocol!=='https:')errors.push(at+'.source_url must use HTTPS');}catch{errors.push(at+'.source_url must be a valid absolute URL');}
+  if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(String(r.last_primary_source_check||''))||Number.isNaN(Date.parse(r.last_primary_source_check)))errors.push(at+'.last_primary_source_check must be a valid YYYY-MM-DD date');
+  if(!INDEPENDENT.has(r.independent_validation_status))errors.push(at+'.independent_validation_status is not recognized');
   if(!ACCESS.has(r.access_status))errors.push(at+'.access_status is not recognized');if(!LICENSE.has(r.license_status))errors.push(at+'.license_status is not recognized');if(!COMMERCIAL.has(r.commercial_use))errors.push(at+'.commercial_use is not recognized');if(!TRAINING.has(r.training_eligibility))errors.push(at+'.training_eligibility is not recognized');if(!ACQUISITION.has(r.acquisition_status))errors.push(at+'.acquisition_status is not recognized');if(!INGESTION.has(r.ingestion_status))errors.push(at+'.ingestion_status is not recognized');if(!BENCHMARK.has(r.benchmark_status))errors.push(at+'.benchmark_status is not recognized');
   if(!Array.isArray(r.modalities)||r.modalities.length===0)errors.push(at+'.modalities must be a non-empty array');if(!Array.isArray(r.annotations))errors.push(at+'.annotations must be an array');if(!Array.isArray(r.limitations)||r.limitations.length===0)errors.push(at+'.limitations must document at least one limitation');
   if(r.license_status!=='VERIFIED'&&r.commercial_use==='PERMITTED_BY_VERIFIED_LICENSE')errors.push(at+' cannot claim verified commercial permission when license_status is not VERIFIED');
