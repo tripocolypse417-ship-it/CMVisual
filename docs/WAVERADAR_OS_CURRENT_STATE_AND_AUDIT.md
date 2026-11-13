@@ -1,12 +1,12 @@
 # WaveRadar OS — Current State and Initial Engineering Audit
 
 **Audit snapshot:** 2026-11-13  
-**Scope inspected:** canonical public repository `tripocolypse417-ship-it/CMVisual` and connected Base44 app sandbox.  
-**Method:** source inventory, manifest/configuration review, repository/branch/PR metadata, fresh build/lint/typecheck execution and recovery artifact inspection. This is an initial architecture audit, not a full line-by-line security or safety certification.
+**Scope inspected:** CMVisual public GitHub repository, connected Base44 app sandbox, and private WaveRadar GitHub repository metadata.  
+**Method:** 381 of 386 selected text files downloaded for static inventory; 343 source/config files scanned (~34,934 lines), entity schema inventory, native bridge inspection, test execution, isolated build/lint/typecheck, repository topology and recovery artifact inspection. Five workflow files with spaces in their names were not downloaded by the raw-file scan. This is a broad initial engineering audit, not a complete line-by-line security, privacy or safety certification.
 
 ## 1. Product identity correction
 
-The intended product is WaveRadar OS. The current implementation is a React/Vite web application packaged for Android through Capacitor, with Base44 SDK/plugin dependencies. It is not yet an independently deployable operating system or portable edge runtime.
+The intended product is WaveRadar OS. The current implementation is a React/Vite web application packaged for Android through Capacitor, with Base44 SDK/plugin dependencies. It is not yet an independently deployable operating system or portable edge runtime. MIGRATION.md explicitly calls the Base44 project the primary working source; CMVisual is the intended target canonical repository, but source parity has not been proven.
 
 The current Android app configuration reports:
 - Application ID: `com.waveradar.app`
@@ -40,11 +40,14 @@ These are candidate modules for the OS architecture. Their presence does not est
 3. `package.json` includes Base44 SDK/plugin as direct dependencies.
 4. `src/App.jsx` composes the current React application, route tree, authentication and lazy-loaded pages.
 5. The Android app is a Capacitor wrapper around the web build, not yet a native service-first field runtime.
-6. The package manifest exposes build, lint and typecheck scripts but no dedicated test script in the inspected manifest.
-7. Current native app version is 1.0 / versionCode 1 in the inspected Gradle file; release/update strategy requires a deliberate versioning plan.
-8. The GitHub repository is public. Treat source, docs, public artifacts and build outputs as externally visible; never place secrets, private operational data or sensitive test evidence in it.
-9. The Base44 sandbox contains large source backup archives in its public directory. Their presence and size are confirmed. The intended access policy, archive content completeness, checksum path and safe retention need a separate review before modifying or deleting them.
-10. Existing open PRs include architecture portability, validation integrity, native lifecycle, model/evidence safeguards and current status work. These must be triaged and reconciled, not overwritten or silently closed.
+6. CMVisual now has an aggregate `npm test` script on the overhaul branch. The connected Base44 app manifest still has no test script.
+7. CMVisual contains 108 entity schema files, including six versioned/duplicate-name families. The connected Base44 app currently exposes 15 live schemas. These counts are not proof that all 108 definitions are deployed.
+8. Only 7 of the 108 CMVisual entity schema files contain an explicit RLS marker. This is an authorization-review gap, not proof of a vulnerability; platform defaults and backend enforcement require verification.
+9. A static scan found 99 Base44 SDK/entity/function references, 64 local/session-storage references and 14 direct fetch call sites across the selected source files. No hard-coded credential pattern matched a simple regex scan; this is not a secret audit.
+10. The Android app configuration reports version 1.0 / versionCode 1 in the connected Base44 sandbox; release/update strategy requires a deliberate versioning plan.
+11. The GitHub CMVisual repository is public. Treat source, docs, public artifacts and build outputs as externally visible; never place secrets, private operational data or sensitive test evidence in it.
+12. The Base44 sandbox contains large source backup archives in its public directory. Their presence and size are confirmed. The intended access policy, archive content completeness, checksum path and safe retention need a separate review before modifying or deleting them.
+13. Existing open PRs include architecture portability, validation integrity, native lifecycle, model/evidence safeguards and current status work. These must be triaged and reconciled, not overwritten or silently closed.
 11. The connected Base44 app sandbox is a separate working tree: its `origin` remote points to a Base44 S3 app repository, while a remote named `github` points to the private `tripocolypse417-ship-it/waveradar` repository. The requested canonical `tripocolypse417-ship-it/CMVisual` repository is a different, public GitHub repository. No verified commit ancestry or automated synchronization between these three locations was established. Do not assume a change in one is present in the others.
 12. The Base44 app sandbox contains two tracked recovery archives under its `public/` directory: 1,500,118,902 bytes and 750,000,008 bytes. Their SHA-256 hashes match the copies in the generated Android asset directory. The app sandbox's `dist/` and Android public asset directory each measured about 2.2 GB after build. The archive checksum manifest contains only the first archive and references an absolute `/tmp/` path. Both archives contain 2,165 tar members and include nested archive copies. A targeted filename scan did not identify obvious `.env`, key-store, private-key or credential-path entries; this is not a complete content/PII security audit.
 13. An isolated Vite build using a temporary alternate public directory containing only the manifest, icon and cinematic preview produced a 5.6 MB build and excluded both recovery archives. This demonstrates a viable build-size remediation, but the production Vite configuration has not yet been changed.
@@ -89,15 +92,15 @@ Known historical validation baseline from prior project work must be re-read fro
 **Impact:** Browser lifecycle, permissions, background execution and Android service behavior may differ from the assumed sensor capability.  
 **Action:** Audit each adapter against Android lifecycle, permission, sample, timestamp, calibration, pose and recovery evidence.
 
-### P1 — Test coverage contract is incomplete
-**Evidence:** No test script in inspected package manifest. Existing test tooling and CI coverage were not fully established.  
-**Impact:** Build/lint/typecheck alone cannot verify critical behavior.  
-**Action:** Define test architecture and coverage map before changing core behavior; add contract, unit, integration, native-device and safety tests in scoped changes.
+### P1 — Test coverage remains incomplete
+**Evidence:** The CMVisual overhaul branch now has an aggregate test command and eight passing test groups. The connected Base44 app still has no test script. Current automated checks cover contracts, runtime invariants, arrays, validation queue/evidence, native source contracts, sensor frame boundaries and prediction calibration.  
+**Impact:** There are still no demonstrated end-to-end, Android physical-device, multi-device, offline recovery, performance, security penetration or independent physical ground-truth suites.  
+**Action:** Keep the current tests; add integration tests, device matrix, test fixtures, hardware-in-loop procedures and independent physical validation.
 
-### P1 — Public recovery archives require governance review
-**Evidence:** two large archives and a checksum file exist under the public directory; the checksum references a different path in the inspected sandbox, so verification failed in that location.  
-**Impact:** Recovery reliability and public artifact exposure are unclear.  
-**Action:** Establish canonical backup location, verify checksums against the correct artifact, scan full archive contents for secrets/PII, document access policy and retention. Do not delete archives until independent recovery is proven.
+### P1 — Recovery archive integrity and privacy require governance review
+**Evidence:** the two archives have matching copies in the generated Android asset directory, but the checksum manifest references only one archive and an absolute temporary path. A targeted path scan found no obvious environment files or private-key paths; it is not a full content/PII review.  
+**Impact:** recovery verification is incomplete and archive exposure is uncertain.  
+**Action:** establish a canonical private/offline backup location, verify both archives, scan full contents for secrets/PII, document access and retention. Do not delete the original archives until independent recovery is proven.
 
 ### P2 — Android release/version management is immature
 **Evidence:** versionCode 1 and versionName 1.0 in inspected app config.  
@@ -109,16 +112,17 @@ Known historical validation baseline from prior project work must be re-read fro
 - Repository access and write permissions were confirmed.
 - Current main branch and open PR inventory were retrieved.
 - Source and configuration files were inspected.
-- npm run build: PASS (exit 0) in the connected Base44 sandbox on 2026-11-13.
-- npm run lint: PASS (exit 0) in the connected Base44 sandbox on 2026-11-13.
-- npm run typecheck: FAIL (exit 2) with a large existing TypeScript error set across components/pages, including React component prop contracts, React Leaflet types, MFA components, sensor graph props, wall-vision types and command-deck CSS properties. It has not yet been proven whether each error predates recent changes.
-- npm run confirms there is no dedicated test script in the inspected package manifest.
-- These are source-level checks only; no connected physical Android device or independent sensor reference was used in this run.
-- No production source was rewritten in this initial audit.
+- CMVisual overhaul branch: `npm test` PASS (8 test groups, including data-contract, operational-runtime, array-boundary, physical-validation queue/evidence, native lifecycle source contract, sensor-frame and prediction-calibration tests).
+- CMVisual overhaul branch: `npm run build` PASS and `npm run lint` PASS using the connected sandbox's installed dependencies. Build output measured 5.5 MB.
+- CMVisual overhaul branch: `npm run typecheck` FAIL. The run used the Base44 sandbox's node_modules rather than a dependency installation resolved for CMVisual; it produced both third-party Leaflet typing errors and application type errors. Treat the canonical typecheck result as INCONCLUSIVE until dependencies are installed from the target repo's own manifest/lock state.
+- Connected Base44 app main: `npm run build` PASS and `npm run lint` PASS; `npm run typecheck` FAIL with many component/prop/type errors.
+- Connected Base44 app main still has no test script.
+- No connected physical Android device or independent sensor reference was used in this run.
+- No main-branch source was changed; targeted source fixes are isolated on the CMVisual overhaul branch.
 - No PR was merged or closed.
 - No historical evidence was changed.
 - No public archive was deleted.
-- No production Vite configuration was changed; the alternate-public-directory build was an isolated temporary test.
+- No production Vite configuration was changed; the 5.5 MB CMVisual build is separate from the 2.2 GB Base44 sandbox build caused by recovery archives in its public directory.
 - No app was deployed or distributed.
 
 ## 7. Required next audit passes
