@@ -57,7 +57,8 @@
       "acquisition_status": "NOT_ACQUIRED",
       "ingestion_status": "NOT_INGESTED",
       "benchmark_status": "NOT_BENCHMARKED",
-      "independent_validation_status": "NOT_EVALUATED"
+      "independent_validation_status": "NOT_EVALUATED",
+      "last_primary_source_check": "2026-11-13"
     },
     {
       "dataset_id": "nomad-aerial-sar-2024",
@@ -93,7 +94,8 @@
       "acquisition_status": "NOT_ACQUIRED",
       "ingestion_status": "NOT_INGESTED",
       "benchmark_status": "NOT_BENCHMARKED",
-      "independent_validation_status": "NOT_EVALUATED"
+      "independent_validation_status": "NOT_EVALUATED",
+      "last_primary_source_check": "2026-11-13"
     },
     {
       "dataset_id": "ladi-civil-air-patrol",
@@ -127,7 +129,8 @@
       "acquisition_status": "NOT_ACQUIRED",
       "ingestion_status": "NOT_INGESTED",
       "benchmark_status": "NOT_BENCHMARKED",
-      "independent_validation_status": "NOT_EVALUATED"
+      "independent_validation_status": "NOT_EVALUATED",
+      "last_primary_source_check": "2026-11-13"
     },
     {
       "dataset_id": "bright-multimodal-disaster",
@@ -165,7 +168,8 @@
       "acquisition_status": "NOT_ACQUIRED",
       "ingestion_status": "NOT_INGESTED",
       "benchmark_status": "NOT_BENCHMARKED",
-      "independent_validation_status": "NOT_EVALUATED"
+      "independent_validation_status": "NOT_EVALUATED",
+      "last_primary_source_check": "2026-11-13"
     },
     {
       "dataset_id": "mmodalfire-2026",
@@ -206,7 +210,8 @@
       "acquisition_status": "NOT_ACQUIRED",
       "ingestion_status": "NOT_INGESTED",
       "benchmark_status": "NOT_BENCHMARKED",
-      "independent_validation_status": "NOT_EVALUATED"
+      "independent_validation_status": "NOT_EVALUATED",
+      "last_primary_source_check": "2026-11-13"
     },
     {
       "dataset_id": "ul-fsri-fire-investigation",
@@ -245,7 +250,8 @@
       "acquisition_status": "NOT_ACQUIRED",
       "ingestion_status": "NOT_INGESTED",
       "benchmark_status": "NOT_BENCHMARKED",
-      "independent_validation_status": "NOT_EVALUATED"
+      "independent_validation_status": "NOT_EVALUATED",
+      "last_primary_source_check": "2026-11-13"
     },
     {
       "dataset_id": "mmwave-120ghz-vitals-2026",
@@ -286,7 +292,8 @@
       "acquisition_status": "NOT_ACQUIRED",
       "ingestion_status": "NOT_INGESTED",
       "benchmark_status": "NOT_BENCHMARKED",
-      "independent_validation_status": "NOT_EVALUATED"
+      "independent_validation_status": "NOT_EVALUATED",
+      "last_primary_source_check": "2026-11-13"
     },
     {
       "dataset_id": "m4human-mmwave-2026",
@@ -326,7 +333,8 @@
       "acquisition_status": "NOT_ACQUIRED",
       "ingestion_status": "NOT_INGESTED",
       "benchmark_status": "NOT_BENCHMARKED",
-      "independent_validation_status": "NOT_EVALUATED"
+      "independent_validation_status": "NOT_EVALUATED",
+      "last_primary_source_check": "2026-11-13"
     },
     {
       "dataset_id": "nemsis-trauma-pud-2023",
@@ -369,7 +377,8 @@
       "acquisition_status": "NOT_ACQUIRED",
       "ingestion_status": "NOT_INGESTED",
       "benchmark_status": "NOT_BENCHMARKED",
-      "independent_validation_status": "NOT_EVALUATED"
+      "independent_validation_status": "NOT_EVALUATED",
+      "last_primary_source_check": "2026-11-13"
     },
     {
       "dataset_id": "who-dsec-standard-2026",
@@ -404,7 +413,8 @@
       "acquisition_status": "NOT_APPLICABLE",
       "ingestion_status": "NOT_APPLICABLE",
       "benchmark_status": "NOT_APPLICABLE",
-      "independent_validation_status": "NOT_APPLICABLE"
+      "independent_validation_status": "NOT_APPLICABLE",
+      "last_primary_source_check": "2026-11-13"
     },
     {
       "dataset_id": "mimic-iv-ed",
@@ -442,7 +452,8 @@
       "acquisition_status": "NOT_ACQUIRED",
       "ingestion_status": "NOT_INGESTED",
       "benchmark_status": "NOT_BENCHMARKED",
-      "independent_validation_status": "NOT_EVALUATED"
+      "independent_validation_status": "NOT_EVALUATED",
+      "last_primary_source_check": "2026-11-13"
     },
     {
       "dataset_id": "rsna-ratic",
@@ -477,7 +488,8 @@
       "acquisition_status": "NOT_ACQUIRED",
       "ingestion_status": "NOT_INGESTED",
       "benchmark_status": "NOT_BENCHMARKED",
-      "independent_validation_status": "NOT_EVALUATED"
+      "independent_validation_status": "NOT_EVALUATED",
+      "last_primary_source_check": "2026-11-13"
     },
     {
       "dataset_id": "microsoft-global-building-footprints",
@@ -510,7 +522,8 @@
       "acquisition_status": "NOT_ACQUIRED",
       "ingestion_status": "NOT_INGESTED",
       "benchmark_status": "NOT_BENCHMARKED",
-      "independent_validation_status": "NOT_EVALUATED"
+      "independent_validation_status": "NOT_EVALUATED",
+      "last_primary_source_check": "2026-11-13"
     },
     {
       "dataset_id": "openstreetmap",
@@ -546,7 +559,8 @@
       "acquisition_status": "NOT_ACQUIRED",
       "ingestion_status": "NOT_INGESTED",
       "benchmark_status": "NOT_BENCHMARKED",
-      "independent_validation_status": "NOT_EVALUATED"
+      "independent_validation_status": "NOT_EVALUATED",
+      "last_primary_source_check": "2026-11-13"
     }
   ]
 }
