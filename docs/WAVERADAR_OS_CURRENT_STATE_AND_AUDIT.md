@@ -2,7 +2,7 @@
 
 **Audit snapshot:** 2026-11-13  
 **Scope inspected:** canonical public repository `tripocolypse417-ship-it/CMVisual` and connected Base44 app sandbox.  
-**Method:** source inventory, manifest/configuration review, repository/branch/PR metadata, existing build/lint/typecheck attempts and recovery artifact inspection. This is an initial architecture audit, not a full line-by-line security or safety certification.
+**Method:** source inventory, manifest/configuration review, repository/branch/PR metadata, fresh build/lint/typecheck execution and recovery artifact inspection. This is an initial architecture audit, not a full line-by-line security or safety certification.
 
 ## 1. Product identity correction
 
@@ -96,7 +96,11 @@ Known historical validation baseline from prior project work must be re-read fro
 - Repository access and write permissions were confirmed.
 - Current main branch and open PR inventory were retrieved.
 - Source and configuration files were inspected.
-- Existing build/lint/typecheck attempts were initiated; the exact command outputs must be recorded in the current run report before any pass/fail assertion.
+- npm run build: PASS (exit 0) in the connected Base44 sandbox on 2026-11-13.
+- npm run lint: PASS (exit 0) in the connected Base44 sandbox on 2026-11-13.
+- npm run typecheck: FAIL (exit 2) with a large existing TypeScript error set across components/pages, including React component prop contracts, React Leaflet types, MFA components, sensor graph props, wall-vision types and command-deck CSS properties. It has not yet been proven whether each error predates recent changes.
+- npm run confirms there is no dedicated test script in the inspected package manifest.
+- These are source-level checks only; no connected physical Android device or independent sensor reference was used in this run.
 - No production source was rewritten in this initial audit.
 - No PR was merged or closed.
 - No historical evidence was changed.
