@@ -39,7 +39,22 @@ Record the following without altering or deleting historical evidence:
 
 Do not conduct accuracy or injury-diagnosis claims from this installation test. Sensor presence and sample arrival are not physical-ground-truth validation. A separate calibrated reference instrument and documented protocol are required.
 
-## 4. Optional USB/ADB route
+## 4. Interpreting native sensor diagnostics
+
+For each sensor, the native diagnostic snapshot reports separate fields:
+
+| State | Meaning |
+|---|---|
+| `unsupported` | Android returned no default sensor of this type |
+| `supported_not_registered` | Sensor exists, but listener registration did not succeed |
+| `registered_no_sample` | Listener registered, but no sample has arrived in this process |
+| `sample_received` | At least one sample has arrived; inspect its age and timestamp before treating it as current |
+
+The listed accelerometer, gyroscope, magnetometer, rotation-vector, gravity, pressure, light, and proximity sensors do not require a runtime permission on this Android bridge. The explicit `not_required` permission state must not be confused with hardware support or successful registration. A fresh sample is still not an accuracy measurement.
+
+`sampleAgeMs` uses Android's monotonic sensor clock, and `sampleTimestampElapsedRealtimeNs` preserves the sensor event's monotonic timestamp. Compare freshness within that clock domain; do not treat it as a UTC wall-clock timestamp. Device name/vendor/range/resolution and reporting metadata are diagnostic descriptors, not proof of calibration.
+
+## 5. Optional USB/ADB route
 
 If Android Platform Tools are already available on a computer:
 
@@ -51,11 +66,11 @@ adb logcat -d -t 2000
 
 Confirm the device appears as `device` (not `unauthorized`) before installing. Do not enable USB debugging on a shared or untrusted computer. The final command captures recent logs; review and redact personal information before sharing them.
 
-## 5. Rollback
+## 6. Rollback
 
 If the app fails to launch or causes unexpected behavior, uninstall the test build through Android Settings > Apps. This does not validate or invalidate prior sensor records. Preserve any app-generated diagnostic export before uninstalling, if one is available.
 
-## 6. What this test establishes
+## 7. What this test establishes
 
 A successful install and launch establish basic package compatibility on that device only. They do not establish sensor accuracy, spatial tracking accuracy, thermal/radar performance, victim-detection performance, medical diagnostic validity, or field readiness.
 

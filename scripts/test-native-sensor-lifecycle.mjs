@@ -17,4 +17,15 @@ assert.match(source, /status\.put\("registered", registeredSensorTypes\.contains
 assert.match(source, /status\.put\("hasSampleHistory", latest\.containsKey\(type\)\);/);
 assert.match(source, /o\.put\("sensorRegistration", sensorRegistration\);/);
 
+
+assert.match(source, /status\.put\("permissionRequired", false\);/);
+assert.match(source, /status\.put\("permissionState", "not_required"\);/);
+assert.match(source, /status\.put\("sampleReceived", hasSample\);/);
+assert.match(source, /status\.put\("sampleAgeMs", sampleAgeMs\);/);
+assert.match(source, /status\.put\("sampleTimestampElapsedRealtimeNs", sampleElapsedNs\);/);
+assert.match(source, /"supported_not_registered"/);
+assert.match(source, /"registered_no_sample"/);
+assert.match(source, /"sample_received"/);
+assert.match(source, /status\.put\("vendor", sensor\.getVendor\(\)\);/);
+
 console.log('Native sensor lifecycle source-contract checks passed (physical-device validation still required).');
