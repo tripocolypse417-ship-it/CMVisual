@@ -112,7 +112,7 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
     addMeasurement(measurements, Sensor.TYPE_PROXIMITY, "proximity");
     out.put("measurements", measurements);
     out.put("lastSensorAt", lastSensorTimestamp == 0L ? null : lastSensorTimestamp);
-    out.put("evidenceClass", "MEASURED");
+    out.put("evidenceClass", measurements.length() > 0 ? "MEASURED" : "UNKNOWN");
     out.put("provenance", "Android SensorManager");
     call.resolve(out);
   }
