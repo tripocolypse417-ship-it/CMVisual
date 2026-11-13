@@ -47,7 +47,6 @@ export function buildOperationalRuntime(input = {}) {
       : []
   );
 
-  const mode = selectFieldMode(capabilities);
   const capabilityIds = [
     'visual-detection',
     'visual-tracking',
@@ -68,6 +67,14 @@ export function buildOperationalRuntime(input = {}) {
       validationPassed,
     }];
   }));
+
+  // Promote the display mode only when sensor evidence exists AND an eligible
+  // spatial capability has passed its explicit validation gate.
+  const advancedSpatialValidated = [
+    capabilityState['wifi-rtt-range'],
+    capabilityState['depth-mapping'],
+  ].some(state => state?.operational === true);
+  const mode = selectFieldMode({ ...capabilities, advancedSpatialValidated });
 
   const advancedPresent = ADVANCED_EVIDENCE.some(v => evidence.includes(v));
   const measuredCount = Number(input.measuredCount || 0);
