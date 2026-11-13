@@ -10,6 +10,7 @@ This repository is the intended canonical codebase for the WaveRadar OS program.
 - [Current AI/model and self-learning audit](docs/WAVERADAR_OS_MODEL_AUDIT.md)
 - [Open PR consolidation register](docs/WAVERADAR_OS_PR_CONSOLIDATION.md)
 - [Security and authorization audit](docs/WAVERADAR_OS_SECURITY_AUDIT.md)
+- [Privileged-function hardening PR #70](https://github.com/tripocolypse417-ship-it/CMVisual/pull/70)
 - [Current-state engineering audit](docs/WAVERADAR_OS_CURRENT_STATE_AND_AUDIT.md)
 - [Implementation roadmap](docs/WAVERADAR_OS_IMPLEMENTATION_ROADMAP.md)
 - [Migration notes](MIGRATION.md)
