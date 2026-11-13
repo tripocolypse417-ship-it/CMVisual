@@ -15,6 +15,7 @@
     "test:physical-validation-queue": "node scripts/test-physical-validation-queue.mjs",
     "test:physical-validation-evidence": "node scripts/test-physical-validation-evidence.mjs",
     "test:native-sensor-lifecycle": "node scripts/test-native-sensor-lifecycle.mjs",
+    "test:wifi-rtt-evidence": "node scripts/test-wifi-rtt-evidence.mjs",
     "test:playwright-mcp": "node scripts/test-playwright-mcp.mjs"
   },
   "dependencies": {
