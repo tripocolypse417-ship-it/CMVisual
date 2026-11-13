@@ -6,11 +6,12 @@
 
 ## 1. Queue snapshot
 
-- 32 open pull requests were present at the snapshot.
-- All 32 reported mergeable at GitHub metadata level.
-- 28 were drafts; 4 were non-draft (#27, #26, #11, #8).
-- Mergeable does not mean tested, safe, current, independent or ready to deploy.
-- No existing PR was merged or closed during this audit.
+- 33 open pull requests were present at the updated snapshot, including overhaul PRs #69 and #70.
+- 29 are drafts; 4 are non-draft (#27, #26, #11, #8).
+- PR #69 reports mergeable/clean and its three GitHub checks (android-debug, quality, runtime-audit) passed at the last check.
+- PR #70 reports mergeable but its quality and android-debug checks are still in progress; runtime-audit passed.
+- Mergeability does not mean tested, safe, current, independent or ready to deploy. The remaining 31 PRs have not had their full mergeability/check status independently refreshed in this audit.
+- No PR was merged or closed during this audit.
 
 ## 2. Workstream register
 
@@ -66,7 +67,8 @@
 **Consolidation direction:** one master WaveRadar program register with workstream owners, dependencies, evidence gates, funding status and concise reports. Do not treat a local runner or status workflow as proof of autonomous cloud execution.
 
 ### F. Current overhaul
-- **#69 — WaveRadar OS architecture and overhaul baseline.** Adds target OS architecture, model governance, current/model audits, roadmap, sensor-time/spatial-ingress corrections and regression tests. Draft; no production deployment or main-branch merge.
+- **#69 — WaveRadar OS architecture and overhaul baseline.** Adds target OS architecture, model governance, current/model/security audits, roadmap, sensor-time/spatial-ingress corrections and regression tests. Draft; GitHub reports clean mergeability and all three CI checks passed. No production deployment or main-branch merge.
+- **#70 — WaveRadar OS backend security hardening and marketing safety.** Adds authorization gates for privileged function templates, approved Slack channels, cron secrets, snapshot ownership checks, safer digest recipients, bounded public lead input and evidence-gated promotional copy. Draft; GitHub reports mergeable, with quality/android-debug checks still running.
 
 ## 3. Immediate review order
 
