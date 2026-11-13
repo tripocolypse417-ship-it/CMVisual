@@ -21,6 +21,11 @@ This repository is the current canonical implementation and engineering workspac
 - **Research & Validation Lab:** independent protocols, ground truth, model evaluation, reviewer workflow and audit.
 - **Replay & After-Action:** synchronized, reproducible reconstruction of incident evidence and model decisions.
 
+## Source-of-truth boundaries
+- CMVisual is the designated canonical GitHub code repository.
+- The connected Base44 app sandbox is a separate working tree with a Base44 S3 origin and a separate private GitHub remote named WaveRadar. Its synchronization with CMVisual has not yet been proven.
+- Treat Base44 as a downstream prototype/deployment environment until source parity, migration and release synchronization are demonstrated.
+
 ## Current implementation reality
 - The application uses React/Vite and Capacitor for Android packaging.
 - Android package ID is com.waveradar.app; inspected configuration reports version 1.0 / version code 1.
@@ -28,6 +33,7 @@ This repository is the current canonical implementation and engineering workspac
 - Existing sensor, spatial, evidence, prediction, replay and validation modules are retained as candidate OS components; their presence does not prove operational readiness.
 - Physical sensor accuracy, through-wall sensing, spatial reconstruction and life-safety performance remain unvalidated until supported by independent ground truth and controlled field evaluation.
 - Historical evidence is preserved. Never convert unverified records into validation proof.
+- The connected Base44 sandbox currently contains multi-gigabyte recovery archives in its public asset directory; this must be corrected in that environment without deleting the protected recovery copies.
 
 ## Engineering rules
 1. Preserve raw evidence, provenance, timestamps, quality and uncertainty.
