@@ -9,6 +9,7 @@ This repository is the intended canonical codebase for the WaveRadar OS program.
 - [Model lifecycle and governed continual learning](docs/WAVERADAR_OS_MODEL_GOVERNANCE.md)
 - [Current AI/model and self-learning audit](docs/WAVERADAR_OS_MODEL_AUDIT.md)
 - [Open PR consolidation register](docs/WAVERADAR_OS_PR_CONSOLIDATION.md)
+- [Security and authorization audit](docs/WAVERADAR_OS_SECURITY_AUDIT.md)
 - [Current-state engineering audit](docs/WAVERADAR_OS_CURRENT_STATE_AND_AUDIT.md)
 - [Implementation roadmap](docs/WAVERADAR_OS_IMPLEMENTATION_ROADMAP.md)
 - [Migration notes](MIGRATION.md)
