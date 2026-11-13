@@ -169,3 +169,62 @@ Never mark a task complete because a plan was written, a task was queued, a prev
 - Scope limitation: sessionStorage prototype only; no encrypted durable persistence, secure cross-device incident service, raw sensor-media retention, helmet/Chief Command/Lab adapter, clinical decision support, physical handset testing, clinical review or independent ground-truth validation.
 - No PR merged, deployment made, external outreach sent, purchase made or real patient data used.
 - Task status: WR-TASK-021 = IN_PROGRESS, not COMPLETE.
+
+
+## 11. Live repository reconciliation — 2026-11-13 18:10 UTC
+
+This section supersedes older “last check” statements above where the live GitHub state differs. It does not alter the historical Core/Lab snapshots in Section 6.
+
+### 11.1 Pull-request state and CI
+
+A fresh GitHub read found PRs #68–#74 all **OPEN, DRAFT, NOT MERGED, and reported mergeable** at inspection time. All listed checks below were completed successfully on the inspected head SHAs:
+
+| PR | Scope | Head SHA (short) | Latest inspected checks |
+|---|---|---|---|
+| #68 | Engineering backlog / drone interoperability / partner research | `22ed76c` | quality PASS; runtime-audit PASS; android-debug PASS |
+| #69 | WaveRadar OS architecture and baseline | `7c339f3` | quality PASS; runtime-audit PASS; android-debug PASS |
+| #70 | Backend security hardening and marketing controls | `15c7ca8` | quality PASS; runtime-audit PASS; android-debug PASS; backend-security-contracts PASS (two completed runs observed) |
+| #71 | Master program control register | `5276ead` | Documentation-only PR; no merge or release authorization implied |
+| #72 | Responder-led victim evidence foundation | `770dfc6` | quality PASS; runtime-audit PASS; android-debug PASS |
+| #73 | Test-gated open evidence registry | `dee2bc8` | quality PASS; runtime-audit PASS; android-debug PASS |
+| #74 | Institute independence and validation governance | `e1a1f9b` | quality PASS; runtime-audit PASS; android-debug PASS |
+
+CI PASS means only that the configured jobs passed on those exact commits. It does not establish physical handset behavior, scientific validity, independent review, security completeness, production signing, or operational readiness. Recheck status before any later merge decision because branch heads and checks can change.
+
+### 11.2 Branch ancestry and conflict controls
+
+Pairwise GitHub commit comparisons show these are **parallel, diverged branches**, not one cleanly stacked PR chain:
+
+- #68 versus #69: diverged (33 commits unique to #68; 40 unique to #69); both touch `README.md`.
+- #68 versus #70: diverged (33 versus 15); no shared changed paths in the inspected comparison.
+- #69 versus #70: diverged (40 versus 15); no shared changed paths in the inspected comparison.
+- #71 versus #72: diverged (2 versus 5); distinct changed paths in the inspected comparison.
+- #72 versus #73: diverged (5 versus 29); both modify `.github/workflows/quality-checks.yml` and `package.json` — resolve these together before integration.
+- #73 versus #74: diverged (29 versus 1); distinct changed paths in the inspected comparison.
+
+The pairwise comparisons are not proof that the PRs are conflict-free against a future integration branch. Do not merge by PR number or assume “#68 then #69” is a valid stack. First select a canonical integration base, preserve each branch's unique commits, reconcile overlapping workflow/package/README changes, then run the full checks on the combined candidate. Obtain human review of security-sensitive changes before merge.
+
+### 11.3 Current blocker refinements
+
+- WR-TASK-002 remains IN_PROGRESS: CI is green for #68–#70, but no merge order is approved and branch ancestry/overlap needs reconciliation. PRs remain drafts.
+- WR-TASK-003 remains BLOCKED: no authorized Android handset session or independent physical ground-truth setup was available in this run.
+- WR-TASK-004 remains BLOCKED: no calibrated reference system, preregistered confirmatory protocol, or independent reviewer was demonstrated.
+- WR-TASK-006 remains BLOCKED: the prior Lab inventory still has no eligible non-QA evidence, active non-conflicted reviewer, or active non-QA protocol in the evidence currently available. A green repository check does not change Lab eligibility.
+- WR-TASK-008 remains BLOCKED: Base44 SDK dependencies remain in the repository; a passing build is not provider portability or data-parity evidence.
+- WR-TASK-013 remains IN_PROGRESS: PR #70's security-contract workflow passes, but independent code review, live authorization regression, and deployment-boundary verification remain required.
+- WR-TASK-015 remains IN_PROGRESS: the drone register is research documentation; no live vendor adapter, aircraft feed, or validated aerial measurement is established.
+- WR-TASK-019 remains BLOCKED: persistent signing key and install/update compatibility on the actual handset remain unverified.
+- WR-TASK-021 remains IN_PROGRESS: PR #72's Android CI now passes on `770dfc6`, superseding the earlier “build still running” note. The implementation still uses browser `sessionStorage`; it is not encrypted durable storage, not a cross-device incident service, and not clinically validated.
+
+### 11.4 Integration decision
+
+Recommended review sequence (not an automatic merge instruction):
+1. Review #69 architecture/contracts as the baseline proposal.
+2. Review #70 security changes against the actual privileged-function call sites and authorization model.
+3. Reconcile #68 backlog/README changes with #69's README and architecture descriptions.
+4. Integrate #72 victim evidence and #73 research registry together at the workflow/package level, preserving each test command exactly once.
+5. Incorporate #74 institute governance and #71 control register after factual status refresh.
+6. Run combined quality, type, runtime, backend-security, Android debug, dependency/license, secret scanning, and migration/rollback checks on the final integration candidate.
+7. Keep all PRs draft until a qualified reviewer has reviewed the exact combined diff. Do not merge, deploy, publish, or claim physical validation based on this sequence.
+
+No historical observations were edited, reclassified, deleted, or used as new validation evidence in this reconciliation. No external outreach, purchase, deployment, merge, or production mutation was performed.
