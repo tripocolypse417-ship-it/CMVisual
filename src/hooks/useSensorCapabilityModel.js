@@ -31,7 +31,19 @@ export default function useSensorCapabilityModel({
     const motionAvailable = !!sensors?.hasSensors;
     const headingAvailable = motionAvailable && Number.isFinite(Number(sensors?.heading));
     const cameraAvailable = !!cameraActive;
-    const externalAvailable = !!sensorBridge?.connected && Array.isArray(sensorBridge?.lastFrame?.detections);
+    const externalDetections = Array.isArray(sensorBridge?.lastFrame?.detections)
+      ? sensorBridge.lastFrame.detections
+      : [];
+    const externalMeasurements = Array.isArray(sensorBridge?.lastFrame?.measurements)
+      ? sensorBridge.lastFrame.measurements
+      : [];
+    const measuredExternalRangeCount = externalMeasurements.filter(measurement =>
+      measurement?.evidenceClass === 'MEASURED' &&
+      Number.isFinite(Number(measurement.distanceM))
+    ).length;
+    const externalDetectionAvailable = !!sensorBridge?.connected && externalDetections.length > 0;
+    const externalAvailable = !!sensorBridge?.connected &&
+      (externalDetectionAvailable || measuredExternalRangeCount > 0);
     const acousticAvailable = !!(acoustic?.available || acoustic?.active || acoustic?.status === 'READY' || acoustic?.status === 'LIVE');
     const geoAvailable = !!geo?.pos;
     const batteryAvailable = battery?.level != null || battery?.supported === true;
@@ -63,7 +75,7 @@ export default function useSensorCapabilityModel({
     previousHeadingRef.current = { heading, at: now };
 
     const cameraTrackCount = Array.isArray(cameraDetections) ? cameraDetections.length : 0;
-    const externalTrackCount = Array.isArray(sensorBridge?.lastFrame?.detections) ? sensorBridge.lastFrame.detections.length : 0;
+    const externalTrackCount = externalDetections.length;
     const bridgeLatencyMs = Number(sensorBridge?.bridgeStats?.lastLatencyMs);
     const bridgeHz = Number(sensorBridge?.bridgeStats?.hz);
 
@@ -94,8 +106,8 @@ export default function useSensorCapabilityModel({
     const derivationPaths = [
       { id: 'camera-imu-motion', inputs: ['camera', 'imu'], output: 'stabilized-visual-motion', status: cameraAvailable && motionAvailable ? 'AVAILABLE' : 'INSUFFICIENT DATA' },
       { id: 'camera-heading-world', inputs: ['camera', 'heading'], output: 'heading-referenced-visual-observation', status: cameraAvailable && headingAvailable ? 'AVAILABLE' : 'INSUFFICIENT DATA' },
-      { id: 'external-geo-frame', inputs: ['external-range', 'geolocation'], output: 'geo-referenced-external-observation', status: externalAvailable && geoAvailable ? 'AVAILABLE' : 'INSUFFICIENT DATA' },
-      { id: 'multi-source-corroboration', inputs: ['camera', 'external-range'], output: 'cross-sensor-corroboration', status: cameraAvailable && externalAvailable ? 'AVAILABLE' : 'INSUFFICIENT DATA' },
+      { id: 'external-geo-frame', inputs: ['external-range', 'geolocation'], output: 'geo-referenced-external-observation', status: externalDetectionAvailable && geoAvailable ? 'AVAILABLE' : 'INSUFFICIENT DATA' },
+      { id: 'multi-source-corroboration', inputs: ['camera', 'external-range'], output: 'cross-sensor-corroboration', status: cameraAvailable && externalDetectionAvailable ? 'AVAILABLE' : 'INSUFFICIENT DATA' },
       { id: 'temporal-change', inputs: ['camera', 'imu', 'external-range'], output: 'temporal-change-model', status: cameraAvailable || motionAvailable || externalAvailable ? 'AVAILABLE' : 'INSUFFICIENT DATA' },
     ];
 
