@@ -175,11 +175,41 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
 
   private void addSensorRegistration(JSObject target, int type, String name) {
     Sensor sensor = sensorManager == null ? null : sensorManager.getDefaultSensor(type);
+    boolean supported = sensor != null;
+    boolean registered = registeredSensorTypes.contains(type);
+    boolean hasSample = latest.containsKey(type);
+    Long sampleElapsedNs = sensorTimestamps.get(type);
+    Long sampleAgeMs = sampleElapsedNs == null
+      ? null
+      : Math.max(0L, (SystemClock.elapsedRealtimeNanos() - sampleElapsedNs) / 1000000L);
+
     JSObject status = new JSObject();
-    status.put("supported", sensor != null);
-    status.put("registered", registeredSensorTypes.contains(type));
-    // A prior sample may be stale; this flag indicates history only, not freshness.
-    status.put("hasSampleHistory", latest.containsKey(type));
+    status.put("supported", supported);
+    status.put("registered", registered);
+    // These Android motion/environment sensors do not require a runtime permission.
+    // This is deliberately separate from device support and registration.
+    status.put("permissionRequired", false);
+    status.put("permissionState", "not_required");
+    status.put("hasSampleHistory", hasSample);
+    status.put("sampleReceived", hasSample);
+    status.put("sampleAgeMs", sampleAgeMs);
+    status.put("sampleTimestampElapsedRealtimeNs", sampleElapsedNs);
+    status.put("accuracy", sensorAccuracies.containsKey(type) ? sensorAccuracies.get(type) : null);
+    status.put("state", !supported ? "unsupported"
+      : !registered ? "supported_not_registered"
+      : !hasSample ? "registered_no_sample"
+      : "sample_received");
+    if (sensor != null) {
+      status.put("name", sensor.getName());
+      status.put("vendor", sensor.getVendor());
+      status.put("version", sensor.getVersion());
+      status.put("reportingMode", sensor.getReportingMode());
+      status.put("wakeUp", sensor.isWakeUpSensor());
+      status.put("maxRange", sensor.getMaximumRange());
+      status.put("resolution", sensor.getResolution());
+      status.put("minDelayUs", sensor.getMinDelay());
+      status.put("powerMa", sensor.getPower());
+    }
     target.put(name, status);
   }
 
