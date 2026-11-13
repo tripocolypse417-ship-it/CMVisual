@@ -35,22 +35,17 @@ These are candidate modules for the OS architecture. Their presence does not est
 
 ## 3. Confirmed structural constraints
 
-1. `src/api/base44Client.js` imports and constructs the Base44 SDK client.
-2. `vite.config.js` imports the Base44 Vite plugin and enables its integration hooks.
-3. `package.json` includes Base44 SDK/plugin as direct dependencies.
-4. `src/App.jsx` composes the current React application, route tree, authentication and lazy-loaded pages.
-5. The Android app is a Capacitor wrapper around the web build, not yet a native service-first field runtime.
-6. CMVisual now has an aggregate `npm test` script on the overhaul branch. The connected Base44 app manifest still has no test script.
-7. CMVisual contains 108 entity schema files, including six versioned/duplicate-name families. The connected Base44 app currently exposes 15 live schemas. These counts are not proof that all 108 definitions are deployed.
-8. Only 7 of the 108 CMVisual entity schema files contain an explicit RLS marker. This is an authorization-review gap, not proof of a vulnerability; platform defaults and backend enforcement require verification.
-9. A static scan found 99 Base44 SDK/entity/function references, 64 local/session-storage references and 14 direct fetch call sites across the selected source files. No hard-coded credential pattern matched a simple regex scan; this is not a secret audit.
-10. The Android app configuration reports version 1.0 / versionCode 1 in the connected Base44 sandbox; release/update strategy requires a deliberate versioning plan.
-11. The GitHub CMVisual repository is public. Treat source, docs, public artifacts and build outputs as externally visible; never place secrets, private operational data or sensitive test evidence in it.
-12. The Base44 sandbox contains large source backup archives in its public directory. Their presence and size are confirmed. The intended access policy, archive content completeness, checksum path and safe retention need a separate review before modifying or deleting them.
-13. Existing open PRs include architecture portability, validation integrity, native lifecycle, model/evidence safeguards and current status work. These must be triaged and reconciled, not overwritten or silently closed.
-11. The connected Base44 app sandbox is a separate working tree: its `origin` remote points to a Base44 S3 app repository, while a remote named `github` points to the private `tripocolypse417-ship-it/waveradar` repository. The requested canonical `tripocolypse417-ship-it/CMVisual` repository is a different, public GitHub repository. No verified commit ancestry or automated synchronization between these three locations was established. Do not assume a change in one is present in the others.
-12. The Base44 app sandbox contains two tracked recovery archives under its `public/` directory: 1,500,118,902 bytes and 750,000,008 bytes. Their SHA-256 hashes match the copies in the generated Android asset directory. The app sandbox's `dist/` and Android public asset directory each measured about 2.2 GB after build. The archive checksum manifest contains only the first archive and references an absolute `/tmp/` path. Both archives contain 2,165 tar members and include nested archive copies. A targeted filename scan did not identify obvious `.env`, key-store, private-key or credential-path entries; this is not a complete content/PII security audit.
-13. An isolated Vite build using a temporary alternate public directory containing only the manifest, icon and cinematic preview produced a 5.6 MB build and excluded both recovery archives. This demonstrates a viable build-size remediation, but the production Vite configuration has not yet been changed.
+1. CMVisual's application imports the Base44 SDK and Vite plugin; Base44-specific persistence, authentication and server-function calls remain in the application path.
+2. MIGRATION.md identifies the Base44 project as the current primary working source. CMVisual is the intended target canonical repository, but the Base44 app sandbox, private WaveRadar GitHub remote and public CMVisual repository have no verified commit/schema parity.
+3. The connected Base44 app sandbox uses a Base44 S3 origin and a private GitHub remote named WaveRadar. This is distinct from the public CMVisual repository. Changes in one tree must not be assumed to exist in another.
+4. CMVisual contains 108 entity schema files, including six versioned/duplicate-name families. The connected Base44 app currently exposes 15 live schemas. Neither count proves deployment parity.
+5. Only 7 of the 108 CMVisual entity schema files contain an explicit RLS marker. This is an authorization-review gap, not proof of a vulnerability; platform defaults and backend enforcement require verification.
+6. A static scan found 99 Base44 SDK/entity/function references, 64 local/session-storage references and 14 direct fetch call sites across the selected source files. No hard-coded credential pattern matched a simple regex scan; this is not a secret audit.
+7. The connected Base44 Android app reports package ID `com.waveradar.app`, version code 1 and version name 1.0.
+8. The Base44 sandbox contains two recovery archives under its public directory: 1,500,118,902 bytes and 750,000,008 bytes. Matching copies exist in generated Android public assets. The app sandbox's dist and Android public asset directory each measured approximately 2.2 GB after build.
+9. The archive checksum manifest references only the first archive and an absolute temporary path. Both archives contain 2,165 tar members and nested archive copies. A targeted filename scan found no obvious .env, key-store, private-key or credential-path entries; this is not a complete content/PII security audit.
+10. A temporary isolated Vite build using only the manifest, icon and cinematic preview produced a 5.6 MB output and excluded both recovery archives. The production Base44 Vite configuration has not yet been changed.
+11. Existing open PRs include architecture portability, validation integrity, native lifecycle, model/evidence safeguards and current status work. They must be triaged and reconciled, not overwritten or silently closed.
 
 ## 4. Historical evidence protection
 
