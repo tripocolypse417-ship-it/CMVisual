@@ -171,20 +171,20 @@ Never mark a task complete because a plan was written, a task was queued, a prev
 - Task status: WR-TASK-021 = IN_PROGRESS, not COMPLETE.
 
 
-## 11. Live repository reconciliation — 2026-11-13 18:10 UTC
+## 11. Live repository reconciliation — 2026-11-13 17:58 UTC
 
 This section supersedes older “last check” statements above where the live GitHub state differs. It does not alter the historical Core/Lab snapshots in Section 6.
 
 ### 11.1 Pull-request state and CI
 
-A fresh GitHub read found PRs #68–#74 all **OPEN, DRAFT, NOT MERGED, and reported mergeable** at inspection time. All listed checks below were completed successfully on the inspected head SHAs:
+A fresh GitHub read found PRs #68–#74 all **OPEN, DRAFT, NOT MERGED, and reported mergeable** at inspection time. The checks below reflect the exact inspected head SHAs and their status at 17:58 UTC:
 
 | PR | Scope | Head SHA (short) | Latest inspected checks |
 |---|---|---|---|
 | #68 | Engineering backlog / drone interoperability / partner research | `22ed76c` | quality PASS; runtime-audit PASS; android-debug PASS |
 | #69 | WaveRadar OS architecture and baseline | `7c339f3` | quality PASS; runtime-audit PASS; android-debug PASS |
 | #70 | Backend security hardening and marketing controls | `15c7ca8` | quality PASS; runtime-audit PASS; android-debug PASS; backend-security-contracts PASS (two completed runs observed) |
-| #71 | Master program control register | `5276ead` | Documentation-only PR; no merge or release authorization implied |
+| #71 | Master program control register (updated by this closeout) | `4190df5` | quality IN_PROGRESS; runtime-audit IN_PROGRESS; android-debug IN_PROGRESS |
 | #72 | Responder-led victim evidence foundation | `770dfc6` | quality PASS; runtime-audit PASS; android-debug PASS |
 | #73 | Test-gated open evidence registry | `dee2bc8` | quality PASS; runtime-audit PASS; android-debug PASS |
 | #74 | Institute independence and validation governance | `e1a1f9b` | quality PASS; runtime-audit PASS; android-debug PASS |
