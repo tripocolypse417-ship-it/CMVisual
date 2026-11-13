@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 const here=path.dirname(fileURLToPath(import.meta.url));
 const MANIFEST_VERSION='waveradar-dataset-acquisition-manifest-v1';
 const HASH='sha256';
+const LICENSE_STATUS=new Set(['VERIFIED','UNVERIFIED','RESTRICTED_TERMS','MIXED_COMPONENTS_REVIEW_REQUIRED','NOT_APPLICABLE']);
+const COMMERCIAL_USE=new Set(['PERMITTED_BY_VERIFIED_LICENSE','PERMITTED_WITH_ATTRIBUTION_AND_SHAREALIKE_REVIEW','ELIGIBLE_SUBJECT_TO_ATTRIBUTION_AND_COMPONENT_REVIEW','ELIGIBLE_SUBJECT_TO_ODBL_COMPLIANCE_REVIEW','UNKNOWN','NONCOMMERCIAL_ONLY','NONPROFIT_ONLY','NOT_APPLICABLE']);
 
 function digest(value){return crypto.createHash(HASH).update(value).digest('hex');}
 async function hashFile(filePath){
@@ -70,6 +72,10 @@ export async function buildDatasetManifest(options={}){
  if(parsed.protocol!=='https:')throw new Error('sourceUrl must be a valid HTTPS URL');
  if(!datasetVersion)throw new Error('datasetVersion is required; use an explicit source version or documented unknown value');
  if(!licenseName||!licenseStatus||!commercialUse)throw new Error('licenseName, licenseStatus and commercialUse are required');
+ if(!LICENSE_STATUS.has(licenseStatus))throw new Error('licenseStatus is not a recognized registry state');
+ if(!COMMERCIAL_USE.has(commercialUse))throw new Error('commercialUse is not a recognized registry state');
+ if(licenseStatus!=='VERIFIED'&&commercialUse==='PERMITTED_BY_VERIFIED_LICENSE')throw new Error('unverified or restricted licenses cannot claim verified commercial permission');
+ if(licenseStatus==='UNVERIFIED'&&!['UNKNOWN','NOT_APPLICABLE'].includes(commercialUse))throw new Error('unverified license must keep commercialUse UNKNOWN or NOT_APPLICABLE');
  if(!/^\d{4}-\d{2}-\d{2}$/.test(reviewedOn)||Number.isNaN(Date.parse(reviewedOn))||new Date(reviewedOn).toISOString().slice(0,10)!==reviewedOn)throw new Error('reviewedOn must be a valid YYYY-MM-DD date');
  if(!isValidDate(retrievedAt))throw new Error('retrievedAt must be a valid ISO-8601 timestamp');
  const rootStat=await fs.stat(rootDir);if(!rootStat.isDirectory())throw new Error('rootDir must be a directory');
@@ -136,6 +142,7 @@ if(invoked===fileURLToPath(import.meta.url)){
  try{
   const args=parseArgs(process.argv.slice(2));
   if(args.verify){
+   if(!args.root)throw new Error('--root is required with --verify');
    const manifest=JSON.parse(await fs.readFile(path.resolve(args.verify),'utf8'));
    const errors=await verifyDatasetManifest(path.resolve(args.root||''),manifest);
    if(errors.length){console.error('Dataset manifest verification FAILED');errors.forEach(e=>console.error(' - '+e));process.exit(1);}
