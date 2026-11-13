@@ -17,7 +17,7 @@ export function validateRegistry(registry){
  if(registry.registry_id!=='waveradar-open-evidence-registry')errors.push('registry_id must identify the canonical WaveRadar registry');
  if(registry.schema_version!=='waveradar-open-evidence-registry-v1')errors.push('unsupported schema_version');
  if(registry.status!=='RESEARCH_CANDIDATES_ONLY')errors.push('registry status must remain RESEARCH_CANDIDATES_ONLY');
- if(!/^\d+\\.\d+\\.\d+$/.test(String(registry.registry_version||'')))errors.push('registry_version must be semantic version');
+ if(!/^\d+\.\d+\.\d+$/.test(String(registry.registry_version||'')))errors.push('registry_version must be semantic version');
  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(registry.reviewed_on||''))||Number.isNaN(Date.parse(registry.reviewed_on))||new Date(registry.reviewed_on).toISOString().slice(0,10)!==registry.reviewed_on)errors.push('reviewed_on must be a valid YYYY-MM-DD date');
  const policy=registry.policy||{};
  for(const key of ['no_dataset_is_preapproved_for_commercial_training','acquisition_requires_license_and_privacy_review','raw_dataset_files_must_not_be_committed_to_repository','benchmark_results_do_not_establish_field_or_life_safety_performance'])if(policy[key]!==true)errors.push('policy.'+key+' must be true');
