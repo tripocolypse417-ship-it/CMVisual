@@ -146,7 +146,8 @@ No paid model endpoint, hosted browser, proxy, captcha service, or cloud VM may 
 - [x] CI smoke test verifies MCP initialization and required browser tools are exposed.
 - [ ] Clean install and browser launch on a user-controlled Node.js 20+ environment.
 - [ ] Playwright MCP launches headless Chromium without installing a Chrome extension on a user-controlled host.
-- [x] CI verifies a real headless Chromium navigation to `https://example.com` and confirms the accessibility snapshot contains the expected page content.\n- [ ] Deterministic click, form-fill, and extraction workflows pass dedicated tests.
+- [x] CI verifies a real headless Chromium navigation to `https://example.com` and confirms the accessibility snapshot contains the expected page content.
+- [ ] Deterministic click, form-fill, and extraction workflows pass dedicated tests.
 - [ ] Persistent and isolated session behavior is tested and documented.
 - [ ] No Super subscription, API key, credit balance, or extension is required.
 - [ ] No paid hosted browser or paid model is called by default.
