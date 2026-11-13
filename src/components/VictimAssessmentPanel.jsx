@@ -25,7 +25,7 @@ function downloadHandoff(record) {
   anchor.href = url;
   anchor.download = `waveradar-${record.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-evidence.json`;
   anchor.click();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export default function VictimAssessmentPanel({ selectedDetection, incidentId }) {
@@ -35,8 +35,9 @@ export default function VictimAssessmentPanel({ selectedDetection, incidentId })
   const [status, setStatus] = useState('UNABLE_TO_ASSESS');
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
+  const [storageWarning, setStorageWarning] = useState(false);
 
-  useEffect(() => { saveVictimRecords(records); }, [records]);
+  useEffect(() => { setStorageWarning(!saveVictimRecords(records)); }, [records]);
 
   const activeRecord = useMemo(
     () => records.find((record) => record.victimId === activeVictimId) || null,
@@ -58,7 +59,7 @@ export default function VictimAssessmentPanel({ selectedDetection, incidentId })
     }
     try {
       const record = createVictimRecord({ incidentId, selectedTrack: selectedDetection });
-      setRecords((current) => [record, ...current].slice(0, 40));
+      setRecords((current) => [record, ...current]);
       setActiveVictimId(record.victimId);
       setError('');
     } catch (e) { setError(e.message); }
@@ -170,6 +171,7 @@ export default function VictimAssessmentPanel({ selectedDetection, incidentId })
         </div>
       )}
 
+      {storageWarning && <div role="status" className="mt-2 rounded-md border border-amber-300/25 bg-amber-300/5 p-2 font-mono text-[9px] text-amber-100">Browser session storage is unavailable or full. Export this record now; it may not survive navigation or reload.</div>}
       {error && <div role="alert" className="mt-2 rounded-md border border-amber-300/25 bg-amber-300/5 p-2 font-mono text-[9px] text-amber-100">{error}</div>}
 
       <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-300/20 bg-amber-300/5 p-2">

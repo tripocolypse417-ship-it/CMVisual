@@ -28,6 +28,9 @@ jobs:
       - name: Audit canonical data contract
         run: npm run audit:data
 
+      - name: Test victim evidence record and handoff contract
+        run: npm run test:victim-evidence
+
       - name: Check JavaScript and JSX lint
         run: npm run lint
 

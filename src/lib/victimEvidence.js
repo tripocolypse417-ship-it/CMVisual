@@ -1,6 +1,5 @@
 const VERSION = 'victim-evidence-record-v1';
 const STORAGE_KEY = 'waveradar.victimEvidence.session.v1';
-const MAX_RECORDS = 40;
 const MAX_EVENTS_PER_RECORD = 500;
 
 export const VICTIM_CATEGORIES = [
@@ -25,6 +24,8 @@ const ALLOWED_EVIDENCE_CLASSES = new Set([
   'HUMAN_ENTERED', 'UNKNOWN', 'UNAVAILABLE',
 ]);
 
+const safeStorage = () => { try { return globalThis.sessionStorage; } catch { return null; } };
+const safeTimestamp = (value, fallback) => { const parsed = Date.parse(value || ''); return Number.isFinite(parsed) ? new Date(parsed).toISOString() : fallback; };
 const safeText = (value, max = 300) => String(value ?? '').trim().slice(0, max);
 const isoNow = () => new Date().toISOString();
 const makeId = (prefix) => {
@@ -36,7 +37,7 @@ const normalizeClass = (value) => {
   return ALLOWED_EVIDENCE_CLASSES.has(normalized) ? normalized : 'UNKNOWN';
 };
 
-export function loadVictimRecords(storage = globalThis.sessionStorage) {
+export function loadVictimRecords(storage = safeStorage()) {
   try {
     const parsed = JSON.parse(storage?.getItem(STORAGE_KEY) || '[]');
     if (!Array.isArray(parsed)) return [];
@@ -45,16 +46,17 @@ export function loadVictimRecords(storage = globalThis.sessionStorage) {
       typeof record.victimId === 'string' &&
       typeof record.trackId === 'string' &&
       Array.isArray(record.events)
-    ).slice(0, MAX_RECORDS);
+    );
   } catch {
     return [];
   }
 }
 
-export function saveVictimRecords(records, storage = globalThis.sessionStorage) {
+export function saveVictimRecords(records, storage = safeStorage()) {
   if (!Array.isArray(records)) return false;
   try {
-    storage?.setItem(STORAGE_KEY, JSON.stringify(records.slice(0, MAX_RECORDS)));
+    if (!storage) return false;
+    storage.setItem(STORAGE_KEY, JSON.stringify(records));
     return true;
   } catch {
     return false;
@@ -120,7 +122,7 @@ export function captureVictimScanReference(record, detection, now = isoNow()) {
   const event = {
     eventId: makeId('event'),
     eventType: 'SCAN_REFERENCE',
-    observedAt: safeText(detection?.observedAt ?? detection?.timestamp, 64) || now,
+    observedAt: safeTimestamp(detection?.observedAt ?? detection?.timestamp, now),
     recordedAt: isoNow(),
     evidenceClass: normalizeClass(detection?.evidenceClass ?? detection?.evidence_class),
     source: safeText(detection?.source, 100) || 'UNKNOWN',
@@ -152,7 +154,10 @@ export function summarizeVictimRecord(record) {
     byCategory[category].push(event);
   }
   const conflicts = Object.entries(byCategory).flatMap(([category, rows]) => {
-    const recent = rows.filter((row) => row.status === 'OBSERVED' || row.status === 'NOT_OBSERVED');
+    const recent = rows.filter((row) => {
+      const age = Date.now() - Date.parse(row.observedAt || '');
+      return (row.status === 'OBSERVED' || row.status === 'NOT_OBSERVED') && Number.isFinite(age) && age >= 0 && age <= 5 * 60 * 1000;
+    });
     const statuses = [...new Set(recent.map((row) => row.status))];
     return statuses.length > 1 ? [{ category, eventIds: recent.map((row) => row.eventId), statuses }] : [];
   });
