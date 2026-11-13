@@ -16,13 +16,16 @@ try{
  assert.ok(manifest.files.every(x=>/^[a-f0-9]{64}$/.test(x.sha256)));
  assert.deepEqual(await verifyDatasetManifest(root,manifest),[]);
  assert.equal((await fs.readFile(path.join(root,'a.bin'))).toString('hex'),'00010203','manifest creation must not modify source files');
- await fs.writeFile(path.join(root,'a.bin'),Buffer.from([9,8,7]));
+ await fs.writeFile(path.join(root,'a.bin'),Buffer.from([9,8,7,6]));
  assert.ok((await verifyDatasetManifest(root,manifest)).some(x=>x.includes('SHA-256 mismatch')||x.includes('size mismatch')),'modified source bytes must fail verification');
  await fs.writeFile(path.join(root,'extra.txt'),'not in manifest');
  assert.ok((await verifyDatasetManifest(root,manifest)).some(x=>x.includes('unmanifested file')),'new files must fail verification');
+ await fs.rm(path.join(root,'nested','b.txt'));
+ assert.ok((await verifyDatasetManifest(root,manifest)).some(x=>x.includes('missing file')),'missing source files must fail verification');
  const tampered=JSON.parse(JSON.stringify(manifest));tampered.license_snapshot.commercial_use='PERMITTED_BY_VERIFIED_LICENSE';
  assert.ok((await verifyDatasetManifest(root,tampered)).some(x=>x.includes('manifest digest mismatch')),'manifest metadata changes must fail integrity check');
  await assert.rejects(()=>buildDatasetManifest({...options,sourceUrl:'http://example.org/data'}),/HTTPS/);
  await assert.rejects(()=>buildDatasetManifest({...options,reviewedOn:'2026-02-31'}),/YYYY-MM-DD/);
+ await assert.rejects(()=>buildDatasetManifest({...options,commercialUse:'PERMITTED_BY_VERIFIED_LICENSE'}),/unverified or restricted licenses/);
  console.log('Dataset acquisition manifest regression tests: PASS');
 }finally{await fs.rm(temp,{recursive:true,force:true});}
