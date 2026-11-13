@@ -40,12 +40,14 @@ These are candidate modules for the OS architecture. Their presence does not est
 3. The connected Base44 app sandbox uses a Base44 S3 origin and a private GitHub remote named WaveRadar. This is distinct from the public CMVisual repository. Changes in one tree must not be assumed to exist in another.
 4. CMVisual contains 108 entity schema files, including six versioned/duplicate-name families. The connected Base44 app currently exposes 15 live schemas. Neither count proves deployment parity.
 5. Only 7 of the 108 CMVisual entity schema files contain an explicit RLS marker. This is an authorization-review gap, not proof of a vulnerability; platform defaults and backend enforcement require verification.
-6. A static scan found 99 Base44 SDK/entity/function references, 64 local/session-storage references and 14 direct fetch call sites across the selected source files. No hard-coded credential pattern matched a simple regex scan; this is not a secret audit.
-7. The connected Base44 Android app reports package ID `com.waveradar.app`, version code 1 and version name 1.0.
-8. The Base44 sandbox contains two recovery archives under its public directory: 1,500,118,902 bytes and 750,000,008 bytes. Matching copies exist in generated Android public assets. The app sandbox's dist and Android public asset directory each measured approximately 2.2 GB after build.
-9. The archive checksum manifest references only the first archive and an absolute temporary path. Both archives contain 2,165 tar members and nested archive copies. A targeted filename scan found no obvious .env, key-store, private-key or credential-path entries; this is not a complete content/PII security audit.
-10. A temporary isolated Vite build using only the manifest, icon and cinematic preview produced a 5.6 MB output and excluded both recovery archives. The production Base44 Vite configuration has not yet been changed.
-11. Existing open PRs include architecture portability, validation integrity, native lifecycle, model/evidence safeguards and current status work. They must be triaged and reconciled, not overwritten or silently closed.
+6. The connected Base44 app currently exposes 15 live schemas; 14 have an explicit RLS object. PinComment has open read/create rules; DetectionEvent has creator/admin read/update/delete rules but no explicit create rule; the User schema exposes a custom role field requiring privilege-escalation review.
+7. A static scan found 99 Base44 SDK/entity/function references, 64 local/session-storage references and 14 direct fetch call sites across the selected source files. No hard-coded credential pattern matched a simple regex scan; this is not a secret audit.
+8. The connected Base44 Android app reports package ID `com.waveradar.app`, version code 1 and version name 1.0.
+9. The Base44 sandbox contains two recovery archives under its public directory: 1,500,118,902 bytes and 750,000,008 bytes. Matching copies exist in generated Android public assets. The app sandbox's dist and Android public asset directory each measured approximately 2.2 GB after build.
+10. The archive checksum manifest references only the first archive and an absolute temporary path. Both archives contain 2,165 tar members and nested archive copies. A targeted filename scan found no obvious .env, key-store, private-key or credential-path entries; this is not a complete content/PII security audit.
+11. A temporary isolated Vite build using only the manifest, icon and cinematic preview produced a 5.6 MB output and excluded both recovery archives. The production Base44 Vite configuration has not yet been changed.
+12. The latest available Base44 security scan is dated 2026-08-19 and is marked out of date; static-code analysis was disabled. It is not a current clean scan. The current connected app API reports zero deployed backend functions.
+13. Existing open PRs include architecture portability, validation integrity, native lifecycle, model/evidence safeguards and current status work. They must be triaged and reconciled, not overwritten or silently closed.
 
 ## 4. Historical evidence protection
 
