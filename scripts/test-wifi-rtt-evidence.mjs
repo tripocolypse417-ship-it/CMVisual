@@ -3,6 +3,8 @@ import { readFile } from 'node:fs/promises';
 
 const plugin = await readFile(new URL('../native/android/WaveRadarRangingPlugin.java', import.meta.url), 'utf8');
 const workflow = await readFile(new URL('../.github/workflows/build-android.yml', import.meta.url), 'utf8');
+const wrapper = await readFile(new URL('../src/lib/nativeRanging.js', import.meta.url), 'utf8');
+const bridge = await readFile(new URL('../src/hooks/useSensorBridge.js', import.meta.url), 'utf8');
 
 // The permission alias must complete through a real Capacitor permission callback.
 assert.match(plugin, /requestPermissionForAlias\("ranging", call, "rangingPermissionCallback"\);/);
@@ -29,5 +31,12 @@ for (const permission of [
 ]) {
   assert.ok(workflow.includes(permission), `Missing manifest permission: ${permission}`);
 }
+
+// A range-only Wi-Fi RTT observation has no bearing. Null must not be coerced to 0 degrees.
+assert.match(wrapper, /m\.angle != null && Number\.isFinite\(Number\(m\.angle\)\)/);
+assert.match(wrapper, /measurementTimestampElapsedRealtimeMs/);
+assert.match(wrapper, /confidence: null/);
+assert.match(bridge, /d\.angle != null && Number\.isFinite\(Number\(d\.angle\)\)/);
+assert.match(bridge, /d\.distance != null && Number\.isFinite\(Number\(d\.distance\)\)/);
 
 console.log('Wi-Fi RTT evidence contract checks passed (static source checks only; device validation remains required).');
