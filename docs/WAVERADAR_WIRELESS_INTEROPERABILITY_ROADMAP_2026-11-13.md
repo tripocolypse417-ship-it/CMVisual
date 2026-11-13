@@ -198,3 +198,34 @@ The wireless integration is not complete until:
 ---
 
 **Decision:** WaveRadar adopts a standards-first, capability-discovered, vendor-neutral radio architecture. Immediate implementation priority is Android Ranging API + backward-compatible Wi-Fi RTT, followed by UWB and Bluetooth Channel Sounding where endpoint support exists. Wi-Fi CSI/802.11bf and network-native ISAC remain separate research tracks until independent evidence justifies promotion.
+
+
+## 11. Additional 2026 wireless watchlist
+
+These technologies should be tracked as complementary adapters and future research, not as prerequisites for the first deployable WaveRadar OS:
+
+- **Wi-Fi HaLow (IEEE 802.11ah):** evaluate for low-power, longer-range environmental and infrastructure telemetry. Its low-rate IoT role complements Wi-Fi 6/7; it is not a video, voice, or high-rate sensor backbone. Add only through compatible gateway hardware and regional spectrum checks.
+- **Wi-Fi 8 / IEEE 802.11bn:** track ultra-high-reliability coordination, multi-AP operation, and peer/robotics use cases. As of the current IEEE working-group status, 802.11bn remains a draft/ballot work item. Do not base field architecture, procurement, or safety claims on draft capabilities.
+- **Ambient Power Communications / IEEE 802.11bp work:** monitor the emerging standardisation work for ultra-low-power ambient-powered communication. Potential role is wake-up/status messaging for tags and passive/energy-harvesting sensors; not a dependable primary link until interoperable products and field performance exist.
+- **Bluetooth Core 6.3:** track the 2026 feature updates to Channel Sounding, including improved phase-aligned tone transfer and PHY-specific RTT accuracy reporting. The adapter should negotiate actual endpoint capabilities and preserve method-specific quality metadata; never assume all Bluetooth 6.x radios implement every optional feature.
+- **Cellular ISAC / 6G:** continue research on network-native sensing and multi-site RF reflections, but require access to the actual network-side sensing interface, specialised infrastructure, independent ground truth, and legal/agency approval. A standard phone connection does not expose cellular radar data.
+- **LEO NTN and public-safety multi-hop relay:** treat as resilient backhaul/coverage options when a provider or agency exposes a supported service. Preserve local operations during satellite/network loss; do not assume satellite availability inside structures.
+- **Integrated mmWave and SDR:** keep as distinct hardware-backed sensor/research modalities. Do not infer them from Wi-Fi/Bluetooth chip presence, and do not transmit experimental waveforms without explicit spectrum authority.
+
+### Priority order for the first integrated wireless stack
+
+1. **Transport and failover first:** Ethernet/USB, Wi-Fi, cellular, and supported Bluetooth LE data links with local-first buffering and priority queues.
+2. **Standards-based ranging second:** Android Ranging API where available, legacy Wi-Fi RTT/FTM where supported, then compatible UWB and Bluetooth Channel Sounding peers.
+3. **Low-power sensor reach third:** gateway-backed LoRaWAN and Wi-Fi HaLow only when actual nodes and regional gateway infrastructure are available.
+4. **Research sensing fourth:** 802.11bf CSI/BFI, dedicated mmWave radar, passive RF, and cellular ISAC remain separately labeled research streams until independently validated.
+5. **Future reliability fifth:** Wi-Fi 8, ambient power communications, 6G/NTN and advanced multi-hop capabilities are tracked for future adoption without creating present-day dependencies.
+
+The unified adapter contract must report discovered hardware, standard/version, actual endpoint compatibility, permissions, session status, sample arrival, freshness, clock quality, link quality, security state, and validation state separately. A source that is connected but cannot provide a usable measurement is not an operational sensor.
+
+### Additional source references
+
+- IEEE 802.11 working-group status, including TGbn Wi-Fi 8 and TGbp Ambient Power Communications: https://grouper.ieee.org/groups/802/11/
+- Wireless Broadband Alliance Wi-Fi 8 program: https://wballiance.com/wi-fi-8/
+- Bluetooth SIG Core 6.3 feature update (May 6, 2026): https://www.bluetooth.com/blog/just-released-bluetooth-core-6-3/
+- Bluetooth SIG Channel Sounding capabilities and security: https://www.bluetooth.com/learn-about-bluetooth/feature-enhancements/channel-sounding/
+- NIST 802.11bf evaluation under packet loss and timing jitter: https://www.nist.gov/publications/open-source-framework-ieee-80211bf-evaluation-under-lossy-and-jittery-conditions/
