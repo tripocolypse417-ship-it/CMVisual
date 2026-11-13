@@ -38,7 +38,7 @@ const PROMO_POSTS = [
     id: 'research-partners',
     message: `WaveRadar is looking for independent research, fire-service and sensor-technology partners to help evaluate emergency situational-awareness tools with rigorous, reproducible methods. Prototype status and limitations are disclosed; validation comes before operational claims.\n\n#WaveRadar #ResearchPartners #FireService`
   }
-];;
+];
 
 // Resolve the Page access token for a given pageId from the connected user account.
 async function resolvePageToken(userToken, pageId) {
