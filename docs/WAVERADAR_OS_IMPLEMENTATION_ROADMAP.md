@@ -4,15 +4,18 @@
 **Constraint:** no paid infrastructure or services are required to start; no deployment or purchase is authorized by this plan.
 
 ## Phase 0 — Protect and reconcile the baseline
-- Preserve current main, all open PRs, data, model artifacts, public archives and recovery points.
-- Inventory every app entity, backend function, SDK import, API route, sensor adapter, native permission and data write.
+- Preserve CMVisual, the Base44 working source, private WaveRadar repository, hosted Core/Lab, all open PRs, data, model artifacts, public archives and recovery points.
+- Reconcile source identity and parity: CMVisual is the target canonical repository; MIGRATION.md currently identifies Base44 as the primary working source; the private WaveRadar GitHub remote is a third tree.
+- Inventory every live entity, repository schema, deployed backend function, SDK import, API route, sensor adapter, native permission and data write. Current Base44 app reports 15 live schemas and zero deployed backend functions; CMVisual contains 108 schema files.
+- Verify live RLS, especially open PinComment read/create rules, DetectionEvent create policy, and User role-field protections.
 - Establish a read-only data export and verified restore procedure.
-- Resolve archive checksum/path discrepancy and inspect complete archive contents for sensitive material before deciding on retention or access.
-- Triage open PRs by dependency, evidence and conflict; do not merge blindly.
+- Move the 2.25 GB recovery archives out of public build assets only after independent private/offline recovery and complete content/privacy review; never delete the original during migration.
+- Refresh stale security findings when a scan is confirmed included at no cost.
+- Triage the 33 open PRs by dependency, evidence and conflict; do not merge blindly.
 **Exit:** source/data inventory, recoverable backup, PR dependency map and confirmed baseline.
 
 ## Phase 1 — Define WaveRadar OS contracts
-- Freeze versioned observation, provenance, time, coordinate-frame, device capability, evidence, inference, alert and model-output contracts.
+- Freeze versioned observation, source-capture-time, receipt-time, provenance, coordinate-frame, range-only/spatially-aligned, device capability, evidence, inference, alert and model-output contracts.
 - Define service interfaces and failure semantics.
 - Establish a shared event/evidence envelope and schema compatibility policy.
 - Add contract tests and sample fixtures.
@@ -47,6 +50,7 @@
 - Establish model registry, dataset manifests, model cards, training/evaluation jobs and signed artifact promotion.
 - Reproduce published baselines before claiming improvement.
 - Build separate perception, localization, fusion, world-state and prediction pipelines.
+- Separate same-stream self-supervised adaptation from independent ground-truth evaluation; no live operational stream may update production models automatically.
 - Add calibration, OOD detection, abstention, subgroup analysis, drift monitoring and resource budgets.
 - Keep candidate models in offline evaluation and shadow mode before limited pilots.
 **Exit:** independent validation reports for each intended use and operating envelope.
