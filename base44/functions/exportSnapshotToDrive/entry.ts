@@ -24,7 +24,7 @@ async function getOrCreateFolder(accessToken) {
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const user = await base44.auth.me().catch(() => null);
     if (!user) return Response.json({ error: 'Authentication required' }, { status: 401 });
     const body = await req.json().catch(() => ({}));
     const snapshotId = body.snapshot_id;
@@ -32,11 +32,12 @@ export default async function(req) {
 
     const snapshot = await base44.asServiceRole.entities.Snapshot.get(snapshotId);
     if (!snapshot) return Response.json({ error: 'Snapshot not found' }, { status: 404 });
-    const sharedEmails = Array.isArray(snapshot.shared_emails)
+    const sharedEmails = (Array.isArray(snapshot.shared_emails)
       ? snapshot.shared_emails
-      : String(snapshot.shared_emails || '').split(',').map((value) => value.trim()).filter(Boolean);
+      : String(snapshot.shared_emails || '').split(',').map((value) => value.trim()).filter(Boolean))
+      .map((value) => String(value).toLowerCase());
     const isOwner = snapshot.created_by_id === user.id;
-    const isShared = Boolean(user.email) && sharedEmails.includes(user.email);
+    const isShared = Boolean(user.email) && sharedEmails.includes(String(user.email).toLowerCase());
     if (user.role !== 'admin' && !isOwner && !isShared) {
       return Response.json({ error: 'You are not authorized to export this snapshot' }, { status: 403 });
     }
