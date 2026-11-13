@@ -17,6 +17,7 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
+import com.getcapacitor.annotation.PermissionCallback;
 import com.getcapacitor.PluginMethod;
 
 import java.util.ArrayList;
@@ -46,6 +47,9 @@ public class WaveRadarRangingPlugin extends Plugin {
     boolean available = rttManager != null && rttManager.isAvailable();
     out.put("wifiRtt", feature);
     out.put("available", available);
+    out.put("fineLocationPermission", hasAndroidPermission(Manifest.permission.ACCESS_FINE_LOCATION));
+    out.put("nearbyWifiPermission", android.os.Build.VERSION.SDK_INT < 33 ||
+      hasAndroidPermission(Manifest.permission.NEARBY_WIFI_DEVICES));
     out.put("androidApi", android.os.Build.VERSION.SDK_INT);
     out.put("dataClass", "CAPABILITY_STATUS");
     out.put("provenance", "Android WifiRttManager");
@@ -54,10 +58,18 @@ public class WaveRadarRangingPlugin extends Plugin {
 
   @PluginMethod
   public void requestPermissions(PluginCall call) {
-    if (android.os.Build.VERSION.SDK_INT >= 33) {
-      requestPermissionForAlias("ranging", call, "android.permission.NEARBY_WIFI_DEVICES");
+    requestPermissionForAlias("ranging", call, "rangingPermissionCallback");
+  }
+
+  @PermissionCallback
+  private void rangingPermissionCallback(PluginCall call) {
+    boolean fineLocation = hasAndroidPermission(Manifest.permission.ACCESS_FINE_LOCATION);
+    boolean nearbyWifi = android.os.Build.VERSION.SDK_INT < 33 ||
+      hasAndroidPermission(Manifest.permission.NEARBY_WIFI_DEVICES);
+    if (fineLocation && nearbyWifi) {
+      call.resolve();
     } else {
-      requestPermissionForAlias("ranging", call, "android.permission.ACCESS_FINE_LOCATION");
+      call.reject("Wi-Fi RTT requires the location and nearby Wi-Fi permissions for this Android version");
     }
   }
 
@@ -118,25 +130,33 @@ public class WaveRadarRangingPlugin extends Plugin {
       @Override
       public void onRangingResults(@NonNull List<RangingResult> results) {
         JSArray measurements = new JSArray();
-        long timestamp = System.currentTimeMillis();
+        long receivedAtEpochMs = System.currentTimeMillis();
         for (RangingResult result : results) {
           JSObject item = new JSObject();
           item.put("source", "wifi-rtt");
           item.put("technology", "IEEE_802.11_RTT");
-          item.put("timestamp", timestamp);
-          item.put("evidenceClass", "MEASURED");
+          item.put("receivedAtEpochMs", receivedAtEpochMs);
+          item.put("timestampClockDomain", "ANDROID_ELAPSED_REALTIME_SINCE_BOOT");
           item.put("status", result.getStatus());
           if (result.getStatus() == RangingResult.STATUS_SUCCESS) {
+            item.put("measurementTimestampElapsedRealtimeMs", result.getRangingTimestampMillis());
+            item.put("evidenceClass", "MEASURED");
             item.put("distanceM", result.getDistanceMm() / 1000.0);
             item.put("uncertaintyM", result.getDistanceStdDevMm() / 1000.0);
+            item.put("uncertaintyType", "DISTANCE_STANDARD_DEVIATION");
+            item.put("numAttemptedMeasurements", result.getNumAttemptedMeasurements());
+            item.put("numSuccessfulMeasurements", result.getNumSuccessfulMeasurements());
+            item.put("rssiDbm", result.getRssi());
+          } else {
+            // Failed result fields are invalid; preserve the failure without inventing a measurement.
+            item.put("evidenceClass", "UNAVAILABLE");
           }
           if (result.getMacAddress() != null) item.put("responder", result.getMacAddress().toString());
           measurements.put(item);
         }
         JSObject out = new JSObject();
-        out.put("timestamp", timestamp);
+        out.put("receivedAtEpochMs", receivedAtEpochMs);
         out.put("measurements", measurements);
-        out.put("evidenceClass", "MEASURED");
         out.put("provenance", "Android WifiRttManager");
         call.resolve(out);
       }
