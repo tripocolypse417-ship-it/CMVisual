@@ -2,7 +2,7 @@
 
 **Status:** Proposed target architecture; implementation is partial and must be verified component by component.  
 **Owner:** WaveRadar program  
-**Canonical code repository:** `CMVisual`  
+**Target canonical code repository:** `CMVisual` (current working source remains Base44 per MIGRATION.md until parity is proven)  
 **Architecture principle:** WaveRadar OS is the product. CMVisual is a current implementation/research codebase, not the product definition.
 
 ## 1. Product definition
