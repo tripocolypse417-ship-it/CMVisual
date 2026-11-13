@@ -167,3 +167,17 @@ A subsystem is not production-ready until it has:
 - Signed release record and named accountable owner.
 
 Passing a software build is not evidence of sensor accuracy, spatial accuracy, firefighter safety or operational effectiveness.
+
+## 10. Standards and assurance alignment
+
+Use the following as a living compliance crosswalk, not as a claim of certification:
+- NIST AI RMF 1.0: use GOVERN, MAP, MEASURE and MANAGE as lifecycle governance. NIST states the framework is being revised and on 2026-04-07 published a concept note for a Trustworthy AI in Critical Infrastructure profile. Track that profile as it develops.
+- NIST SP 800-218 Rev. 1 / SSDF 1.2: the 2025-12-17 publication was an initial public draft, not a final standard in the source reviewed. Track its status and use finalized SP 800-218 v1.1 as the finalized baseline until a final revision is published.
+- ISO 22320:2018: current edition confirmed by ISO in 2024; use as an incident-management and multi-organization coordination reference.
+- NFPA 1970 (2025 edition): current consolidated standard for protective ensembles and associated emergency-service equipment in its scope. Guardian X PPE/exoskeleton integration needs a separate standards applicability and certification assessment.
+
+References:
+- NIST AI RMF: https://www.nist.gov/itl/ai-risk-management-framework
+- NIST SP 800-218 publications: https://csrc.nist.gov/Projects/ssdf/publications
+- ISO 22320:2018: https://www.iso.org/standard/67851.html
+- NFPA 1970: https://www.nfpa.org/codes-and-standards/nfpa-1970-standard-development/1970
