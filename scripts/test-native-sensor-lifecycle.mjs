@@ -12,9 +12,9 @@ assert.match(source, /registerListener\(this, sensor, SensorManager\.SENSOR_DELA
 assert.match(source, /private void unregisterSensors\(\)[\s\S]*?registeredSensorTypes\.clear\(\);/);
 assert.match(source, /public void handleOnPause\(\)\s*\{\s*unregisterSensors\(\);/);
 assert.match(source, /public void handleOnResume\(\)\s*\{\s*super\.handleOnResume\(\);\s*registerSensors\(\);/);
-assert.match(source, /status\.put\("supported", sensor != null\);/);
-assert.match(source, /status\.put\("registered", registeredSensorTypes\.contains\(type\)\);/);
-assert.match(source, /status\.put\("hasSampleHistory", latest\.containsKey\(type\)\);/);
+assert.match(source, /boolean supported = sensor != null;/);
+assert.match(source, /boolean registered = registeredSensorTypes\.contains\(type\);/);
+assert.match(source, /boolean hasSample = latest\.containsKey\(type\);/);
 assert.match(source, /o\.put\("sensorRegistration", sensorRegistration\);/);
 
 
