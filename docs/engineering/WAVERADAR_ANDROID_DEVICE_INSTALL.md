@@ -54,6 +54,8 @@ The listed accelerometer, gyroscope, magnetometer, rotation-vector, gravity, pre
 
 `sampleAgeMs` uses Android's monotonic sensor clock, and `sampleTimestampElapsedRealtimeNs` preserves the sensor event's monotonic timestamp. Compare freshness within that clock domain; do not treat it as a UTC wall-clock timestamp. Device name/vendor/range/resolution and reporting metadata are diagnostic descriptors, not proof of calibration.
 
+Each measurement in `getSnapshot` also includes `timestampElapsedRealtimeNs` and `timestampClockDomain: ANDROID_ELAPSED_REALTIME`, preserving the original Android event timestamp. The legacy `timestamp` field remains for compatibility, but is explicitly an estimated wall-clock value (`timestampWallClockEstimated: true`) derived from the snapshot wall clock minus monotonic sample age. Do not treat that estimate as the original event time or as a synchronized UTC timestamp.
+
 ## 5. Optional USB/ADB route
 
 If Android Platform Tools are already available on a computer:
