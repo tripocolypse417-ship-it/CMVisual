@@ -339,6 +339,8 @@ export default function UnifiedSpatialWorkspace({
               {targetSummary.map((d) => {
                 const isSelected = sameTrack(selectedDetection, d);
                 const isLocked = String(lockedTrackId) === String(d.trackId ?? d.id);
+                const distanceM = d.distanceM == null ? null : Number(d.distanceM);
+                const trackSpeed = d.trackSpeed == null ? null : Number(d.trackSpeed);
                 const tone = d.type === 'human' ? '#00ff88' : d.type === 'animal' ? '#00ccff' : d.type === 'object' ? '#ffaa00' : '#ff4466';
                 return (
                   <div key={d.id} className="min-w-[190px] rounded-lg border p-1.5" style={{ borderColor: isLocked ? '#00ff88aa' : isSelected ? `${tone}90` : `${tone}25`, background: isLocked ? 'rgba(0,255,136,0.10)' : isSelected ? `${tone}16` : 'rgba(255,255,255,0.03)' }}>
@@ -349,8 +351,8 @@ export default function UnifiedSpatialWorkspace({
                       </div>
                       <div className="mt-1 flex items-center gap-2 font-mono text-[7px] text-white/65">
                         <span>{d.moving ? 'MOVING' : d.moving === false ? 'STILL' : 'MOTION —'}</span>
-                        <span>{d.distanceM == null ? 'RANGE —' : `${d.distanceM.toFixed(1)}m`}</span>
-                        <span>{d.trackSpeed == null ? 'SPEED —' : `${d.trackSpeed.toFixed(1)}m/s`}</span>
+                        <span>{distanceM == null || !Number.isFinite(distanceM) ? 'RANGE —' : `${distanceM.toFixed(1)}m`}</span>
+                        <span>{trackSpeed == null || !Number.isFinite(trackSpeed) ? 'SPEED —' : `${trackSpeed.toFixed(1)}m/s`}</span>
                       </div>
                       <div className="mt-0.5 font-mono text-[6px] text-white/40 truncate">{d.source || 'LOCAL INPUT'}</div>
                     </button>
@@ -376,7 +378,7 @@ export default function UnifiedSpatialWorkspace({
             <span className="flex h-3 w-3 shrink-0 rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,255,180,0.9)]" />
             <div className="min-w-0">
               <div className="font-mono text-[9px] font-bold tracking-wider text-emerald-200">{lockedCurrent?.displayId || lockedCurrent?.label || lockedCurrent?.type?.toUpperCase() || 'TARGET'} · {lockedStale ? 'LAST KNOWN TRACK — STALE' : 'TRACK LOCKED'}</div>
-              <div className="font-mono text-[7px] text-white/55">{lockedStale ? 'No current measurement. Last known position is not a live location.' : 'Following the selected sensor track · position updates only when new measurements arrive.'}</div>
+              <div className="font-mono text-[7px] text-white/55">{lockedStale ? 'No current measurement. Last known position is not a live location.' : 'Following the selected observation track · updates only when new observations arrive.'}</div>
             </div>
             <button type="button" onClick={() => onToggleTrackLock?.(lockedCurrent || { id: lockedTrackId })} className="min-h-[40px] rounded-lg border border-emerald-200/30 px-3 font-mono text-[8px] text-emerald-100">UNLOCK</button>
           </div>
