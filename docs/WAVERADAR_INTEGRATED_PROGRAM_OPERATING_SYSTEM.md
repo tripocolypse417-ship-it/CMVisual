@@ -8,6 +8,62 @@ WaveRadar owns system requirements, interfaces, provenance, evidence custody, in
 
 Use the least expensive credible route first: public data, published protocols, donated/in-kind equipment, university capstones and research collaborations, shared facilities, then paid specialist testing only when funding exists. Never represent a facility, partner, dataset, grant, or test as secured until documentary evidence confirms it.
 
+## 1A. Universal sensor and positioning architecture
+
+**Design decision:** WaveRadar uses a vendor-neutral sensor/evidence contract with replaceable platform and hardware adapters. Google ARCore, Apple ARKit, Android SensorManager, any single handset, browser API, cloud host, or radio vendor is an optional provider—not the system foundation. “Works across devices” means the software can discover and safely use each device's actual capabilities; it does not mean every device has identical sensors or accuracy.
+
+### Provider boundary
+
+Adapters may be implemented for:
+- Android native sensors and optional ARCore world tracking/depth where the device and installed services support them;
+- Apple Core Motion and optional ARKit world tracking;
+- desktop/Linux/Windows sensor and camera interfaces where available;
+- GNSS/GPS, Wi-Fi RTT, UWB, BLE and other lawful radio/ranging sources;
+- RGB/thermal cameras, external radar/mmWave, environmental instruments, helmet/vehicle gateways, and read-only drone/robot telemetry.
+
+Each provider must be independently discoverable, permission-gated, versioned, replaceable, and disableable. A missing provider must not prevent map, evidence review, or replay functions from operating. No provider may silently substitute simulated or inferred data for a missing physical measurement.
+
+### Common observation contract
+
+Every provider emits a versioned observation envelope containing, when applicable:
+- source, device, sensor, provider, firmware, and adapter identity;
+- raw measurement or immutable raw-record reference, units, coordinate frame, and measurement method;
+- source timestamp and clock domain, separate server-receipt timestamp, and any wall-clock estimate explicitly labelled as estimated;
+- calibration state, sensor accuracy/quality metadata, freshness/age, uncertainty, and known limitations;
+- permission/consent state, collection context, provenance, rights status, integrity/hash, and evidence class;
+- schema version, sequence/dropout information, and explicit unavailable/error state.
+
+Keep these states separate: **hardware supported → permission granted → provider registered → sample received → sample fresh → calibrated → integrity checked → independently validated**. A positive state at one layer never implies the next. “Registered” is not “measuring”; “sample received” is not “accurate”; “available” is not “validated.”
+
+### Time, spatial frames, and fusion
+
+Preserve source monotonic time and its clock domain. Store server receipt time independently. Do not rewrite source time, infer an exact receipt time from a wall-clock estimate, or backfill missing historical timestamps. For “as known then” replay, include a record only when its receipt/ingestion time is available and within the replay cutoff; legacy records without that field remain time-uncertain and are excluded from strict knowledge-time reconstruction.
+
+All positions and ranges must declare coordinate frame, units, origin, and transformation provenance. Fusion is permitted only when sources are time-aligned and their uncertainty/quality is carried forward. Relative motion must remain relative; GNSS must retain its actual outdoor uncertainty; a range-only provider must not be rendered as a bearing or a precise point. Drift and uncertainty must grow when independent corrections are unavailable.
+
+### Graceful degradation and claim boundaries
+
+- Camera plus IMU can support a VIO attempt only when a real camera/IMU pipeline produces time-stamped pose estimates; sensor presence alone is not pose.
+- ARCore/ARKit pose is usable only when the platform reports active tracking and the provider's status is preserved.
+- GNSS-only mode provides an outdoor fix with source accuracy/uncertainty, not indoor room localization.
+- Motion-only mode provides relative movement context and must expose drift.
+- UWB/Wi-Fi RTT provide the measurements their protocol actually returns; do not infer unsupported angle, identity, occupancy, or through-wall capability.
+- Thermal, mmWave, radar, drone, and vehicle data remain source-specific until independently calibrated and validated for the intended task.
+- If no trustworthy spatial pose is available, show map/evidence/replay mode rather than fabricating a live 3D position.
+
+No through-wall victim detection, universal indoor accuracy, or life-safety readiness claim is permitted without task-specific independent physical evidence and a documented safety case.
+
+### Conformance and validation sequence
+
+1. Freeze the provider-neutral schema and capability state machine.
+2. Build deterministic contract tests for timestamps, coordinate frames, uncertainty, provenance, permissions, and failure states.
+3. Implement and verify the Android native provider; add ARCore only as an optional adapter, not as a required bridge.
+4. Add Apple, desktop, GNSS/radio, and external-sensor adapters incrementally against the same conformance suite.
+5. Test each supported device/provider combination against independent physical ground truth and publish per-class error, availability, drift, and failure envelopes.
+6. Review every reused SDK/library for license, security, privacy, and redistribution constraints before incorporation.
+
+**Current implementation boundary:** The current Capacitor Android bridge exposes Android SensorManager diagnostics; the latest device diagnostic reported no native spatial-pose bridge. The separate Kotlin ARCore scaffold is not proof that the compiled Capacitor app exposes ARCore pose. Apple, desktop, and general-purpose external-radio providers remain planned until their adapters and conformance tests exist. This section defines the target architecture, not completed capability.
+
 ## 2. Single evidence lifecycle
 
 Every contribution must move through these states:
