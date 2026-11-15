@@ -37,6 +37,18 @@
 - **Contact:** NIOSH scientific program official listed in the forecast. A targeted inquiry draft has been prepared in Outlook.
 - **Next gate:** Read the final NOFO on publication; confirm applicant/PI rules, human-subjects requirements, data sharing, allowable costs, and whether the proposed measurement design is responsive.
 
+### P1 — NIOSH Exploratory/Developmental Grant Program (R21), RFA-OH-27-033
+
+- **Status:** Forecasted, not yet posted.
+- **Forecasted posting:** 2026-12-16.
+- **Forecasted due date:** 2027-02-16.
+- **Forecasted total program funding:** $3,000,000; 10 expected awards; award ceiling $300,000; no cost share listed.
+- **Eligibility:** The current forecast lists small businesses, other for-profit organizations, universities, nonprofits, and government entities. Final NOFO controls.
+- **Fit:** A stronger candidate than R03 only if the research requires exploratory development of a new occupational-safety tool or method. R03 remains the narrower feasibility route.
+- **Potential scope:** Controlled evaluation of a limited sensor-interoperability, time-alignment, and evidence-provenance method against independent reference streams. Do not frame this as a validated rescue, victim-location, or live-incident safety system.
+- **Next gate:** Compare the final R03 and R21 notices, PI requirements, allowable scope, and partner capacity before selecting a mechanism. Do not duplicate overlapping aims or assume both should be submitted.
+- **Official forecast:** https://simpler.grants.gov/es/opportunity/f4ac056d-f7a3-403b-8e82-95ddbd4a1e4b.
+
 ### P1 — NIOSH Centers of Excellence for Total Worker Health (U19), RFA-OH-27-049
 
 - **Status:** Forecasted; current forecast last updated 2026-11-12.
@@ -85,6 +97,18 @@
 - **Required elements:** SF-424, JustGrants application, proposal narrative (maximum 30 pages), budget, biographical sketches, current/pending support, research/evaluation independence and integrity statement, data management/sharing/archiving plan, and other applicable human-subjects/privacy/consortium materials. Evaluation proposals must include cost-benefit and cost-effectiveness analyses.
 - **Existing outreach:** OJP Response Center, a university research contact, and a police DFR contact have already been approached in prior correspondence. Avoid duplicate generic inquiries. A new targeted inquiry draft to St. Charles County Police has been prepared.
 - **Go/no-go gate:** By 2026-11-16, confirm a viable eligible lead applicant, active or immediately actionable SAM.gov registration, DFR operational partner, research PI, and capacity to complete the required application. If any are absent, stop this cycle and prepare for a later one.
+
+### Watch — DHS SBIR FY 2027.1 pre-solicitation, DHSSBIRFY27PRE
+
+- **Status:** Active pre-solicitation only; DHS explicitly states it is **not seeking proposals at this time**. The final 27.1 solicitation may differ.
+- **Posted:** 2026-11-13.
+- **Notice response date:** 2026-12-07 at 5:00 p.m. Eastern. This is the pre-solicitation notice's response date, **not a confirmed full-proposal deadline**.
+- **Set-aside / classification:** Total small-business set-aside; NAICS 541715.
+- **Topics listed:** Human Digital Twins Verification System; bacterial pathogen origin determination by direct methylome sequencing; direct detection and differentiation of prion protein isoforms.
+- **WaveRadar fit:** The human-digital-twin topic is only a possible adjacent fit. Its exact technical scope must be checked in the official attachment and final solicitation; the pathogen/prion topics are outside WaveRadar's current scope.
+- **Eligibility gate:** The notice requires SAM.gov and SBA Company Registration Database registration before proposal submission. WaveRadar's legal-entity and registration status is not confirmed complete, so it is not presently proposal-ready.
+- **Action:** Treat this as a watch item. Review the official topic attachment and final solicitation before deciding whether to respond. Do not treat the pre-solicitation response date as a grant deadline or submit a proposal against this notice.
+- **Official notice:** https://sam.gov/workspace/contract/opp/2bb008d110fd413290d3498b75d41f36/view.
 
 ### Watchlist — Department of War SBIR topics
 
@@ -141,11 +165,11 @@ Five new, unsent Outlook drafts were created for:
 4. St. Charles County Police DFR evaluation-partner inquiry.
 5. Boone County Fire Protection District / Missouri Task Force 1 UAS operational-feedback inquiry.
 
-The drafts are saved in the founder's Outlook Drafts folder with recipients populated. They have not been sent. Existing prior outreach and replies should be checked before creating additional messages to the same organizations.
+These were initially created as unsent drafts. Current send status is maintained in the mailbox and must be checked before any follow-up; do not assume this historical list is a current draft inventory or send duplicates. Existing prior outreach and replies should be checked before creating additional messages to the same organizations.
 
 ## Immediate sequence
 
-1. **By 2026-11-15:** If desired, complete the qualifying Verizon Digital Ready disaster-resilience course and inspect R4R eligibility/application terms. Apply only if the pre-formation business meets the actual rules.
+1. **By 2026-11-15:** R4R is a no-go on the last verified pre-formation/no-EIN facts. Revisit only if a qualifying small business with a valid EIN and all other eligibility conditions can be documented before the deadline; course completion alone does not cure ineligibility.
 2. **By 2026-11-16:** Make the NIJ go/no-go decision based on a real eligible lead, SAM registration, law-enforcement DFR partner, and research PI.
 3. **December 16–17:** Review the final NIOSH U19 and R03 NOFOs as soon as published.
 4. **December–January:** Secure an academic/fire-service occupational-safety team and write the NIOSH R03 feasibility proposal.
@@ -158,6 +182,8 @@ The drafts are saved in the founder's Outlook Drafts folder with recipients popu
 - NIJ PDF: https://www.ojp.gov/funding/docs/nij-2026-172805.pdf
 - NIOSH R03 forecast: https://simpler.grants.gov/es/opportunity/66b556a1-f978-4dbe-ae6b-4d23f799eb1a
 - NIOSH U19 forecast: https://simpler.grants.gov/es/opportunity/43e32c6d-fbbd-4056-8fd4-f64cdebefd41
+- NIOSH R21 forecast: https://simpler.grants.gov/es/opportunity/f4ac056d-f7a3-403b-8e82-95ddbd4a1e4b
+- DHS FY 2027.1 SBIR pre-solicitation: https://sam.gov/workspace/contract/opp/2bb008d110fd413290d3498b75d41f36/view
 - NSF 26-510: https://www.nsf.gov/funding/opportunities/small-business-innovation-research-small-business-technology/nsf26-510/solicitation
 - NSF 26-511: https://www.nsf.gov/funding/opportunities/small-business-innovation-research-small-business-technology-0/nsf26-511/solicitation
 - NSF Project Pitch process: https://seedfund.nsf.gov/apply/project-pitch-information/
