@@ -7,7 +7,9 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const hostedUrl = process.env.WAVERADAR_HOSTED_URL?.trim();
 
 const config: CapacitorConfig = {
-  appId: 'com.waveradar.app',
+  // Optional alternate package ID lets test APKs install beside the existing app.
+  // Keep the production/pilot package ID unchanged unless explicitly overridden.
+  appId: process.env.WAVERADAR_APP_ID?.trim() || 'com.waveradar.app',
   appName: 'WaveRadar',
   webDir: 'dist',
   ...(hostedUrl
