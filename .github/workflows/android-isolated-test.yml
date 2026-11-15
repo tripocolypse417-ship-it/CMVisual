@@ -1,0 +1,118 @@
+name: Build WaveRadar Isolated Test APK
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  android-isolated-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      WAVERADAR_HOSTED_URL: https://waveradar-20.hatchable.site/workspace/
+      WAVERADAR_APP_ID: com.waveradar.app.safetest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Audit canonical data contract
+        run: npm run audit:data
+
+      - name: Verify fresh-build zero-trust boundary
+        run: npm run test:fresh-build-boundary
+
+      - name: Test malformed array boundaries
+        run: npm run test:array-boundaries
+
+      - name: Test physical-validation queue safety
+        run: npm run test:physical-validation-queue
+
+      - name: Test physical-validation evidence provenance
+        run: npm run test:physical-validation-evidence
+
+      - name: Test native sensor registration lifecycle
+        run: npm run test:native-sensor-lifecycle
+
+      - name: Build web application
+        run: npm run build
+
+      - name: Generate isolated Capacitor Android project
+        run: npx cap add android
+
+      - name: Install WaveRadar native sensor bridge
+        run: |
+          mkdir -p android/app/src/main/java/com/waveradar/app
+          cp native/android/MainActivity.java android/app/src/main/java/com/waveradar/app/MainActivity.java
+          cp native/android/WaveRadarSensorsPlugin.java android/app/src/main/java/com/waveradar/app/WaveRadarSensorsPlugin.java
+          cp native/android/WaveRadarRangingPlugin.java android/app/src/main/java/com/waveradar/app/WaveRadarRangingPlugin.java
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('android/app/src/main/AndroidManifest.xml')
+          s = p.read_text()
+          perms = [
+              '    <uses-permission android:name="android.permission.CAMERA" />',
+              '    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />',
+              '    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />',
+              '    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" />',
+          ]
+          marker = '</manifest>'
+          for perm in perms:
+              if perm not in s:
+                  s = s.replace(marker, perm + '\n' + marker)
+          p.write_text(s)
+          PY
+
+      - name: Sync web assets and Capacitor plugins
+        run: npx cap sync android
+
+      - name: Verify isolated package ID
+        run: |
+          # Verify the generated Android package, not the TypeScript config
+          # source (which intentionally reads the package ID from an env var).
+          grep -Eq "applicationId[[:space:]]+['\"]com\\.waveradar\\.app\\.safetest['\"]" android/app/build.gradle
+          echo 'Verified generated Android package ID: com.waveradar.app.safetest'
+          echo 'This APK installs separately from com.waveradar.app and does not overwrite the existing installation.'
+
+      - name: Build isolated debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload isolated test APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: WaveRadar-isolated-test-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Write install safety note
+        run: |
+          {
+            echo 'WaveRadar isolated test APK'
+            echo 'Android package ID: com.waveradar.app.safetest'
+            echo 'This is a separate test installation. It does not update or migrate data from com.waveradar.app.'
+            echo 'Keep the existing WaveRadar installation and its app data until recovery is verified.'
+          } > WAVERADAR-ISOLATED-APK-NOTES.txt
+
+      - name: Upload install safety note
+        uses: actions/upload-artifact@v4
+        with:
+          name: WaveRadar-isolated-install-notes
+          path: WAVERADAR-ISOLATED-APK-NOTES.txt
+          if-no-files-found: error

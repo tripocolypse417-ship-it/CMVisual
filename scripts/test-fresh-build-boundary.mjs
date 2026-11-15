@@ -1,0 +1,55 @@
+import assert from 'node:assert/strict';
+import {
+  FRESH_BUILD_GENERATION,
+  assessFreshBuildRecord,
+  partitionFreshBuildRecords,
+} from '../src/lib/freshBuildBoundary.js';
+
+const valid = {
+  id: 'new-measurement-1',
+  buildGeneration: FRESH_BUILD_GENERATION,
+  source: 'android-sensor-manager',
+  deviceId: 'device-001',
+  observedAt: '2026-10-29T18:00:00.000Z',
+  evidenceClass: 'MEASURED',
+  integrityReceipt: {
+    version: 'server-attestation-v1',
+    issuer: 'waveradar-server-verifier',
+    recordDigest: 'a'.repeat(64),
+    signature: 'server-signature-placeholder-for-shape-test',
+    verifiedAt: '2026-10-29T18:00:01.000Z',
+  },
+  datasetType: 'live-measurement',
+};
+const testVerifier = (_record, receipt) => receipt?.signature === 'server-signature-placeholder-for-shape-test';
+assert.equal(assessFreshBuildRecord(valid, { verifyIntegrityReceipt: testVerifier }).eligible, true);
+// Without a cryptographic verifier, even a receipt-shaped object is rejected.
+assert.ok(assessFreshBuildRecord(valid).reasons.includes('SERVER_INTEGRITY_RECEIPT_NOT_CRYPTOGRAPHICALLY_VERIFIED'));
+
+// Old data is rejected even if it has a plausible timestamp and calls itself measured.
+const legacy = { ...valid, buildGeneration: undefined, id: 'old-record' };
+assert.equal(assessFreshBuildRecord(legacy).eligible, false);
+assert.ok(assessFreshBuildRecord(legacy).reasons.includes('NOT_FROM_FRESH_BUILD_GENERATION'));
+
+// A client-set boolean or an unsigned status flag is not an integrity receipt.
+const noIntegrity = { ...valid, integrityReceipt: undefined, integrityVerified: true, integrity: { status: 'VERIFIED' } };
+assert.ok(assessFreshBuildRecord(noIntegrity).reasons.includes('SERVER_INTEGRITY_RECEIPT_MISSING_OR_INVALID'));
+const malformedReceipt = { ...valid, integrityReceipt: { ...valid.integrityReceipt, recordDigest: 'not-a-digest' } };
+assert.ok(assessFreshBuildRecord(malformedReceipt).reasons.includes('SERVER_INTEGRITY_RECEIPT_MISSING_OR_INVALID'));
+
+// Simulated/demo inputs and predictions cannot enter the trusted measured layer.
+for (const source of ['demo-camera', 'simulated-sensor', 'fixture-feed', 'legacy-import']) {
+  assert.equal(assessFreshBuildRecord({ ...valid, source }, { verifyIntegrityReceipt: testVerifier }).eligible, false, source);
+}
+assert.equal(assessFreshBuildRecord({ ...valid, evidenceClass: 'PREDICTED' }, { verifyIntegrityReceipt: testVerifier }).eligible, false);
+assert.equal(assessFreshBuildRecord({ ...valid, observedAt: 'not-a-time' }, { verifyIntegrityReceipt: testVerifier }).eligible, false);
+
+// Invalid/empty input remains empty; rejected records are retained for audit.
+assert.deepEqual(partitionFreshBuildRecords([]).eligible, []);
+const partition = partitionFreshBuildRecords([legacy, valid], { verifyIntegrityReceipt: testVerifier });
+assert.equal(partition.inputCount, 2);
+assert.equal(partition.eligible.length, 1);
+assert.equal(partition.quarantined.length, 1);
+assert.equal(partition.quarantined[0].id, 'old-record');
+
+console.log('WaveRadar fresh-build zero-trust boundary tests: PASS');
