@@ -76,16 +76,20 @@ export default function UnifiedSpatialWorkspace({
     return (Array.isArray(liveDetections) ? liveDetections : []).find((d) => String(d.trackId ?? d.id) === String(lockedTrackId)) || null;
   }, [liveDetections, lockedTrackId]);
   const lockedStale = lockedTrackId != null && !lockedCurrent;
+  const lockedLastKnown = lockedTrackId != null && selectedDetection && String(selectedDetection.trackId ?? selectedDetection.id) === String(lockedTrackId) ? selectedDetection : null;
   const sameTrack = (a, b) => {
     if (!a || !b) return false;
     const idsA = [a.trackId, a.id].filter((v) => v != null).map(String);
     const idsB = [b.trackId, b.id].filter((v) => v != null).map(String);
     return idsA.some((id) => idsB.includes(id));
   };
-  const evidenceClass = selected?.evidenceClass || selected?.evidence_class || (
-    selected?.corroborated ? 'DERIVED' : selected?.source ? 'MEASURED' : 'UNAVAILABLE'
-  );
-  const evidenceLabel = String(evidenceClass).toUpperCase();
+  // Accept only an explicit, recognized evidence label. A source name or
+  // cross-source association is not, by itself, proof that a record is measured.
+  const declaredEvidenceClass = String(selected?.evidenceClass ?? selected?.evidence_class ?? selected?.evidence ?? '').toUpperCase();
+  const evidenceClass = ['MEASURED', 'DERIVED', 'INFERRED', 'PREDICTED', 'SIMULATED', 'DEMO', 'UNKNOWN', 'UNAVAILABLE'].includes(declaredEvidenceClass)
+    ? declaredEvidenceClass
+    : 'UNKNOWN';
+  const evidenceLabel = evidenceClass;
   const lockTone = selected?.type === 'human' ? '#00ff88' : selected?.type === 'animal' ? '#00ccff' : '#ffaa00';
   const lockSizePx = lockVisual.settings.size === 'large' ? 30 : lockVisual.settings.size === 'small' ? 16 : 22;
   const motionLabel = selected?.moving == null ? 'UNAVAILABLE' : selected.moving ? 'MOVING' : 'STATIONARY';
@@ -93,7 +97,7 @@ export default function UnifiedSpatialWorkspace({
     const external = Array.isArray(detections) ? detections.length : 0;
     const camera = Array.isArray(cameraDetections) ? cameraDetections.length : 0;
     const measurements = Array.isArray(lastFrame?.measurements) ? lastFrame.measurements.length : 0;
-    const ageMs = lastFrame?.receivedAt ? Math.max(0, performance.now() - lastFrame.receivedAt) : null;
+    const ageMs = lastFrame?.receivedAt != null && lastFrame?.isMeasurementFrame !== false ? Math.max(0, performance.now() - lastFrame.receivedAt) : null;
     const hz = Number(bridgeStats?.hz) || 0;
     const latency = Number.isFinite(Number(bridgeStats?.lastLatencyMs)) ? Number(bridgeStats.lastLatencyMs) : null;
     const quality = Number.isFinite(Number(bridgeStats?.rangeQuality)) ? Math.round(Number(bridgeStats.rangeQuality) * 100) : null;
@@ -338,21 +342,28 @@ export default function UnifiedSpatialWorkspace({
             <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
               {targetSummary.map((d) => {
                 const isSelected = sameTrack(selectedDetection, d);
+                const isLocked = String(lockedTrackId) === String(d.trackId ?? d.id);
+                const distanceM = d.distanceM == null ? null : Number(d.distanceM);
+                const trackSpeed = d.trackSpeed == null ? null : Number(d.trackSpeed);
                 const tone = d.type === 'human' ? '#00ff88' : d.type === 'animal' ? '#00ccff' : d.type === 'object' ? '#ffaa00' : '#ff4466';
                 return (
-                  <button key={d.id} type="button" onClick={() => onSelectDetection?.(d)} className="min-w-[150px] min-h-[54px] rounded-lg border px-2 py-1.5 text-left transition" style={{ borderColor: isSelected ? `${tone}90` : `${tone}25`, background: isSelected ? `${tone}16` : 'rgba(255,255,255,0.03)' }}>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-mono text-[8px] font-bold" style={{ color: tone }}>{d.uiId}</span>
-                      <span className="font-mono text-[6px] text-white/40">{d.evidence}</span>
-                    </div>
-                    <div className="mt-1 flex items-center gap-2 font-mono text-[6px] text-white/60">
-                      <span>{d.moving ? 'MOVING' : d.moving === false ? 'STILL' : '—'}</span>
-                      <span>{d.distanceM == null ? 'RANGE —' : `${d.distanceM.toFixed(1)}m`}</span>
-                      <span>{d.trackSpeed == null ? 'SPEED —' : `${d.trackSpeed.toFixed(1)}m/s`}</span>
-                      {d.confidencePct != null && <span>{d.confidencePct}%</span>}
-                    </div>
-                    <div className="mt-0.5 font-mono text-[6px] text-white/35 truncate">{d.source || 'LOCAL INPUT'}</div>
-                  </button>
+                  <div key={d.id} className="min-w-[190px] rounded-lg border p-1.5" style={{ borderColor: isLocked ? '#00ff88aa' : isSelected ? `${tone}90` : `${tone}25`, background: isLocked ? 'rgba(0,255,136,0.10)' : isSelected ? `${tone}16` : 'rgba(255,255,255,0.03)' }}>
+                    <button type="button" onClick={() => { onSelectDetection?.(d); setInspectorOpen(true); }} className="w-full min-h-[48px] text-left">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-mono text-[9px] font-bold" style={{ color: tone }}>{d.uiId}</span>
+                        <span className="font-mono text-[6px] text-white/50">{d.evidence}</span>
+                      </div>
+                      <div className="mt-1 flex items-center gap-2 font-mono text-[7px] text-white/65">
+                        <span>{d.moving ? 'MOVING' : d.moving === false ? 'STILL' : 'MOTION —'}</span>
+                        <span>{distanceM == null || !Number.isFinite(distanceM) ? 'RANGE —' : `${distanceM.toFixed(1)}m`}</span>
+                        <span>{trackSpeed == null || !Number.isFinite(trackSpeed) ? 'SPEED —' : `${trackSpeed.toFixed(1)}m/s`}</span>
+                      </div>
+                      <div className="mt-0.5 font-mono text-[6px] text-white/40 truncate">{d.source || 'LOCAL INPUT'}</div>
+                    </button>
+                    <button type="button" onClick={() => { onSelectDetection?.(d); onToggleTrackLock?.(d); }} className="mt-1 w-full min-h-[36px] rounded-md border font-mono text-[7px] font-bold tracking-wider" style={{ borderColor: isLocked ? '#00ff8890' : 'rgba(255,255,255,0.14)', color: isLocked ? '#7dffb2' : 'rgba(255,255,255,0.72)', background: isLocked ? 'rgba(0,255,136,0.12)' : 'rgba(255,255,255,0.04)' }}>
+                      {isLocked ? '🔒 TRACKING · UNLOCK' : '◎ LOCK THIS TRACK'}
+                    </button>
+                  </div>
                 );
               })}
             </div>
@@ -363,6 +374,19 @@ export default function UnifiedSpatialWorkspace({
         <button type="button" onClick={() => setTargetStripOpen(true)} className="absolute left-1/2 -translate-x-1/2 bottom-3 z-35 min-h-[44px] rounded-xl border border-white/10 bg-black/85 px-3 font-mono text-[8px] tracking-wider text-white/70 backdrop-blur-md pointer-events-auto shadow-xl">
           TARGETS · {targetSummary.length}
         </button>
+      )}
+
+      {lockedTrackId != null && (
+        <div className="absolute left-1/2 -translate-x-1/2 top-[72px] z-40 max-w-[calc(100%-24px)] rounded-xl border border-emerald-300/50 bg-black/90 px-3 py-2 shadow-2xl backdrop-blur-md pointer-events-auto">
+          <div className="flex items-center gap-3">
+            <span className="flex h-3 w-3 shrink-0 rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,255,180,0.9)]" />
+            <div className="min-w-0">
+              <div className="font-mono text-[9px] font-bold tracking-wider text-emerald-200">{lockedCurrent?.displayId || lockedLastKnown?.displayId || lockedCurrent?.label || lockedLastKnown?.label || lockedCurrent?.type?.toUpperCase() || lockedLastKnown?.type?.toUpperCase() || 'TARGET'} · {lockedStale ? 'LAST KNOWN TRACK — STALE' : 'TRACK LOCKED'}</div>
+              <div className="font-mono text-[7px] text-white/55">{lockedStale ? 'No current measurement. The retained observation is last-known, not a live location.' : 'Following the selected observation track · updates only when new observations arrive.'}</div>
+            </div>
+            <button type="button" onClick={() => onToggleTrackLock?.(lockedCurrent || { id: lockedTrackId })} className="min-h-[40px] rounded-lg border border-emerald-200/30 px-3 font-mono text-[8px] text-emerald-100">UNLOCK</button>
+          </div>
+        </div>
       )}
 
       {/* Target-lock appearance controls. These change presentation only; they never alter track identity or evidence. */}
