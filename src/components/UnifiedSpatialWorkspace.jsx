@@ -83,9 +83,13 @@ export default function UnifiedSpatialWorkspace({
     const idsB = [b.trackId, b.id].filter((v) => v != null).map(String);
     return idsA.some((id) => idsB.includes(id));
   };
-  // A source name or cross-source association is not, by itself, proof that a record is measured.
-  const evidenceClass = selected?.evidenceClass || selected?.evidence_class || 'UNKNOWN';
-  const evidenceLabel = String(evidenceClass).toUpperCase();
+  // Accept only an explicit, recognized evidence label. A source name or
+  // cross-source association is not, by itself, proof that a record is measured.
+  const declaredEvidenceClass = String(selected?.evidenceClass ?? selected?.evidence_class ?? selected?.evidence ?? '').toUpperCase();
+  const evidenceClass = ['MEASURED', 'DERIVED', 'INFERRED', 'PREDICTED', 'SIMULATED', 'DEMO', 'UNKNOWN', 'UNAVAILABLE'].includes(declaredEvidenceClass)
+    ? declaredEvidenceClass
+    : 'UNKNOWN';
+  const evidenceLabel = evidenceClass;
   const lockTone = selected?.type === 'human' ? '#00ff88' : selected?.type === 'animal' ? '#00ccff' : '#ffaa00';
   const lockSizePx = lockVisual.settings.size === 'large' ? 30 : lockVisual.settings.size === 'small' ? 16 : 22;
   const motionLabel = selected?.moving == null ? 'UNAVAILABLE' : selected.moving ? 'MOVING' : 'STATIONARY';
