@@ -113,6 +113,9 @@
 ### Watchlist — Department of War SBIR topics
 
 - 2027 topics include autonomous UAS and edge intelligence; several show a 2026-12-02 opening and 2027-01-06 closing.
+- **OSW27BZ02-DV003 — Real-World Applications for Prototype ISAC Demonstrations (RAPID) Small Business:** SBIR.gov lists release 2026-11-04, opening 2026-12-02, and due date 2027-01-06. The stated objective is a dual-use 5G/6G Integrated Sensing and Communications prototype that adds sensing without degrading the primary communications link, using cellular infrastructure and emerging Open RAN; pathways include fixed infrastructure, mobile platforms, and radio-resource optimization. This is a possible technical adjacency, not a generic firefighter-technology grant or a direct match to the current WaveRadar implementation.
+- **Verification caveat:** SBIR.gov warns its topic copy may not be the latest and points to DoD DSIP for the controlling topic. The DSIP link returned 403 in this review, so the official attachments (RAPID KPI framework and Statement of Objectives), phase rules, award ceiling, and security requirements remain unverified. Secondary sources indicate Direct-to-Phase-II and CMMC Level 2 (Self), but these are not confirmed until the official DSIP documents are reviewed.
+- **Readiness:** WaveRadar has not demonstrated a 5G/6G ISAC prototype or an independently validated prior-feasibility package, and legal-entity/SAM readiness remains unconfirmed. Do not treat this as application-ready. Reassess only if the official topic requirements match and a qualified RAN/telecom partner plus defensible prior-feasibility evidence are available.
 - Fit is conditional and defense-specific. Do not prioritize over NIOSH/NSF/FP&S unless a topic precisely matches a civilian-to-defense dual-use technology and WaveRadar can meet the defense contracting/security requirements.
 - Recheck official topic text and eligibility before pursuing.
 
@@ -183,6 +186,7 @@ These were initially created as unsent drafts. Current send status is maintained
 - NIOSH R03 forecast: https://simpler.grants.gov/es/opportunity/66b556a1-f978-4dbe-ae6b-4d23f799eb1a
 - NIOSH U19 forecast: https://simpler.grants.gov/es/opportunity/43e32c6d-fbbd-4056-8fd4-f64cdebefd41
 - NIOSH R21 forecast: https://simpler.grants.gov/es/opportunity/f4ac056d-f7a3-403b-8e82-95ddbd4a1e4b
+- DoW SBIR RAPID topic OSW27BZ02-DV003: https://www.sbir.gov/topics/13086 (controlling topic documents are on DSIP)
 - DHS FY 2027.1 SBIR pre-solicitation: https://sam.gov/workspace/contract/opp/2bb008d110fd413290d3498b75d41f36/view
 - NSF 26-510: https://www.nsf.gov/funding/opportunities/small-business-innovation-research-small-business-technology/nsf26-510/solicitation
 - NSF 26-511: https://www.nsf.gov/funding/opportunities/small-business-innovation-research-small-business-technology-0/nsf26-511/solicitation
