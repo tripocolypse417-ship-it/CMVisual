@@ -1,6 +1,6 @@
 # WaveRadar Master Capability Register
 
-**Register date:** 2026-11-14  
+**Register date:** 2026-11-15  
 **Scope:** WaveRadar Core, WIS command platform, responder interfaces, Guardian X, sensor and robotics ecosystem, Research & Validation Lab, deployment and commercialization.  
 **Status semantics:** `Existing/documented` means a repository or project record describes the item; it does not mean independently verified. `Partial` means some implementation or documentation exists but the capability is incomplete. `Planned` means architecture or requirements only. `Research` means feasibility is unproven. `Blocked` means a prerequisite or external action is outstanding.
 
@@ -89,11 +89,24 @@ The last repository master-status snapshot (2026-10-30) recorded 4,021 historica
 
 The same snapshot described the KIT Wi-Fi BFI/CSI and Android Native Sensor protocols as drafts, with no external researcher, tester, reviewer, or physical test evidence recorded at that time. Confirm current status before claiming progress.
 
-## 7. Change control
+## 7. Current service evidence snapshot (2026-11-15)
+
+Queried the existing WaveRadar service directly on 2026-11-15. These are database/service states, not independent validation results:
+
+- **Observation ledger:** 4,021 records; all 4,021 carry the `MEASURED` evidence-class label; 0 are integrity-verified. The current records remain `integrity_state=UNKNOWN`. No observation was received in the preceding 24 hours; the latest stored observation was received 2026-10-29 18:15:33 UTC. Five distinct device IDs appear in the observation ledger.
+- **Device registry:** 9 registry rows; 0 validated. One record was seen at 2026-11-15 19:20:18 UTC. This is a registry-row count, not a count of nine verified physical devices.
+- **Validation runs:** 78 total; 8 FAILED, 70 INDETERMINATE, 0 PASSED. The latest run was created 2026-10-24 19:40:22 UTC.
+- **Latest capability snapshots:** seven snapshots each for camera, geolocation, motion, and spatial pose, last received around 2026-11-15 19:20 UTC. Reported states were camera permission granted, geolocation and motion declared supported, and spatial pose unavailable. All four capability groups remain UNVALIDATED.
+- **Device identity limitation:** the recent registration/capability event carries generic Android / `guided-wizard-v1` metadata and does not establish the handset's exact manufacturer/model or prove that the native Android sensor plugin is loaded. Keep browser/device identity separate from account-alert identifiers.
+- **Latest data-quality audit (2026-11-15 20:10:06 UTC):** 59 distinct sources; 23 require license review; 12 ingestion errors; 14 duplicate metadata records. These are audit findings to triage, not permission to discard or rewrite source records.
+
+The `MEASURED` label describes the record's declared evidence class; it does not establish hardware authenticity, calibration, integrity, positional accuracy, or independent validation. Preserve the original rows and audit trail. Do not convert these records into an accuracy baseline or pass result.
+
+## 8. Change control
 
 Update this register through reviewable pull requests. Every change must explain the evidence supporting a maturity change, the risks introduced, the tests run, and the owner of follow-up actions. Never mark a capability validated solely because code exists, a build passes, a simulator works, a vendor claims performance, or an AI model agrees with itself.
 
-## 8. Reference documents
+## 9. Reference documents
 
 - `docs/WAVERADAR_MASTER_STATUS_AND_TASK_REGISTER.md` — project status and historical evidence snapshot.
 - `docs/WAVERADAR_WORKFLOW_AND_OWNER_CONTROL.md` — delegated work boundaries and owner approvals.
