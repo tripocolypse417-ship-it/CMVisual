@@ -126,6 +126,12 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
       ? Math.max(0L, (SystemClock.elapsedRealtimeNanos() - sensorElapsedNs) / 1000000L)
       : 0L;
     item.put("values", toArray(v));
+    // Preserve the original Android sensor event clock. The legacy timestamp
+    // remains a wall-clock estimate for compatibility, not a source timestamp.
+    item.put("timestampElapsedRealtimeNs", sensorElapsedNs);
+    item.put("timestampClockDomain", "ANDROID_ELAPSED_REALTIME");
+    item.put("timestampWallClockEstimated", true);
+    item.put("timestampWallClockEstimateMethod", "snapshot_wall_clock_minus_monotonic_age");
     item.put("timestamp", Math.max(0L, System.currentTimeMillis() - ageMs));
     item.put("ageMs", ageMs);
     item.put("sensorType", type);
