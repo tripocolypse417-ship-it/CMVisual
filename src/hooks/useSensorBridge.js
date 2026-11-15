@@ -103,6 +103,7 @@ export default function useSensorBridge(enabled = true) {
         }));
         setLastFrame({
           ...frame,
+          isMeasurementFrame: true,
           timestamp,
           sequence,
           receivedAt,
@@ -124,7 +125,7 @@ export default function useSensorBridge(enabled = true) {
     // pretending that unsupported radios exist.
     const onCapabilities = (event) => {
       const capabilities = event.detail && typeof event.detail === 'object' ? event.detail : {};
-      setLastFrame((prev) => prev ? { ...prev, capabilities } : { timestamp: Date.now(), receivedAt: performance.now(), detections: [], measurements: [], capabilities });
+      setLastFrame((prev) => prev ? { ...prev, capabilities } : { timestamp: Date.now(), receivedAt: performance.now(), isMeasurementFrame: false, detections: [], measurements: [], capabilities });
     };
     window.addEventListener('waveradar:ranging-capabilities', onCapabilities);
 
