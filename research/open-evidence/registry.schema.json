@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "WaveRadar Open Evidence Registry v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "registry_id",
+    "registry_version",
+    "schema_version",
+    "reviewed_on",
+    "status",
+    "policy",
+    "records"
+  ],
+  "properties": {
+    "registry_id": {
+      "const": "waveradar-open-evidence-registry"
+    },
+    "registry_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "schema_version": {
+      "const": "waveradar-open-evidence-registry-v1"
+    },
+    "reviewed_on": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "const": "RESEARCH_CANDIDATES_ONLY"
+    },
+    "policy": {
+      "type": "object",
+      "required": [
+        "no_dataset_is_preapproved_for_commercial_training",
+        "acquisition_requires_license_and_privacy_review",
+        "raw_dataset_files_must_not_be_committed_to_repository",
+        "benchmark_results_do_not_establish_field_or_life_safety_performance",
+        "evidence_classes_must_remain_separate"
+      ]
+    },
+    "records": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "dataset_id",
+          "name",
+          "domain",
+          "source_url",
+          "access_status",
+          "license_status",
+          "commercial_use",
+          "modalities",
+          "annotations",
+          "ground_truth",
+          "limitations",
+          "training_eligibility",
+          "acquisition_status",
+          "ingestion_status",
+          "benchmark_status",
+          "independent_validation_status",
+          "last_primary_source_check"
+        ],
+        "properties": {
+          "dataset_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]+$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "domain": {
+            "type": "string"
+          },
+          "source_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "access_status": {
+            "enum": [
+              "PUBLIC_DOWNLOAD",
+              "PUBLIC_PORTAL",
+              "PUBLICATION_LINKED",
+              "PUBLIC_REQUEST",
+              "CREDENTIAL_REQUIRED",
+              "RESTRICTED",
+              "STANDARD_ONLY",
+              "UNKNOWN"
+            ]
+          },
+          "license_status": {
+            "enum": [
+              "VERIFIED",
+              "UNVERIFIED",
+              "RESTRICTED_TERMS",
+              "MIXED_COMPONENTS_REVIEW_REQUIRED",
+              "NOT_APPLICABLE"
+            ]
+          },
+          "commercial_use": {
+            "enum": [
+              "PERMITTED_BY_VERIFIED_LICENSE",
+              "PERMITTED_WITH_ATTRIBUTION_AND_SHAREALIKE_REVIEW",
+              "ELIGIBLE_SUBJECT_TO_ATTRIBUTION_AND_COMPONENT_REVIEW",
+              "ELIGIBLE_SUBJECT_TO_ODBL_COMPLIANCE_REVIEW",
+              "UNKNOWN",
+              "NONCOMMERCIAL_ONLY",
+              "NONPROFIT_ONLY",
+              "NOT_APPLICABLE"
+            ]
+          },
+          "modalities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          },
+          "annotations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ground_truth": {
+            "type": "string"
+          },
+          "limitations": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "training_eligibility": {
+            "enum": [
+              "BLOCKED_PENDING_LICENSE_REVIEW",
+              "BLOCKED_PENDING_COMPONENT_LICENSE_REVIEW",
+              "BLOCKED_FOR_COMMERCIAL_USE_UNDER_CURRENT_TERMS",
+              "BLOCKED_PENDING_ACCESS_AND_LICENSE_REVIEW",
+              "ELIGIBLE_SUBJECT_TO_ATTRIBUTION_AND_COMPONENT_REVIEW",
+              "ELIGIBLE_SUBJECT_TO_VERSION_PINNING",
+              "ELIGIBLE_SUBJECT_TO_ODBL_COMPLIANCE_REVIEW",
+              "NOT_A_DATASET"
+            ]
+          },
+          "acquisition_status": {
+            "enum": [
+              "NOT_ACQUIRED",
+              "ACQUIRED_PENDING_INTEGRITY_CHECK",
+              "ACQUIRED_HASHED",
+              "QUARANTINED",
+              "NOT_APPLICABLE"
+            ]
+          },
+          "ingestion_status": {
+            "enum": [
+              "NOT_INGESTED",
+              "PARSER_PENDING",
+              "SCHEMA_VALIDATED",
+              "PROVENANCE_VALIDATED",
+              "QUARANTINED",
+              "NOT_APPLICABLE"
+            ]
+          },
+          "benchmark_status": {
+            "enum": [
+              "NOT_BENCHMARKED",
+              "PROTOCOL_DRAFT",
+              "PREREGISTERED",
+              "RUN_COMPLETE_INTERNAL",
+              "INDEPENDENTLY_REVIEWED",
+              "NOT_APPLICABLE"
+            ]
+          },
+          "independent_validation_status": {
+            "enum": [
+              "NOT_EVALUATED",
+              "NOT_APPLICABLE",
+              "COMPLETED"
+            ]
+          },
+          "last_primary_source_check": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  }
+}

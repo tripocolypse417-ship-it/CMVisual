@@ -14,7 +14,10 @@
     "test:array-boundaries": "node scripts/test-array-boundaries.mjs",
     "test:physical-validation-queue": "node scripts/test-physical-validation-queue.mjs",
     "test:physical-validation-evidence": "node scripts/test-physical-validation-evidence.mjs",
-    "test:native-sensor-lifecycle": "node scripts/test-native-sensor-lifecycle.mjs"
+    "test:native-sensor-lifecycle": "node scripts/test-native-sensor-lifecycle.mjs",
+    "audit:research-registry": "node scripts/validate-open-evidence-registry.mjs && node scripts/test-open-evidence-registry.mjs && node scripts/test-dataset-acquisition-manifest.mjs",
+    "dataset:manifest": "node scripts/dataset-acquisition-manifest.mjs",
+    "test:dataset-manifest": "node scripts/test-dataset-acquisition-manifest.mjs"
   },
   "dependencies": {
     "@base44/sdk": "^0.8.52",
