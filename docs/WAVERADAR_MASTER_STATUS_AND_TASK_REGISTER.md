@@ -24,6 +24,27 @@ The project is not yet a validated life-safety product. No through-wall sensing,
 
 Do not delete old workspaces or duplicate repositories merely to make the inventory appear simpler. Reconcile contents, verify a canonical replacement, and preserve a recovery path before any deletion.
 
+## 1A. Latest dependency-independence and recovery work — 2026-10-30
+
+A separate draft pull request is tracking the next portability and recovery improvements:
+- [PR #40 — Dependency portability and recovery audit](https://github.com/tripocolypse417-ship-it/CMVisual/pull/40).
+- [PR #39 — Independent World Model and institutional research plan](https://github.com/tripocolypse417-ship-it/CMVisual/pull/39).
+
+On the PR #40 branch:
+- Added an experimental bundled-assets Android APK workflow. Earlier revision run #3 completed successfully and uploaded a 5.34 MB APK artifact. The artifact used an ephemeral debug signing key, and has not been tested on a physical device or in airplane mode.
+- Added a provider-dependency inventory script. It is designed to report Base44 SDK/plugin, Base44 client/function, and hosted Hatchable URL references without pretending those dependencies have been removed.
+- Added an additive versioned World Model contract and test suite. It explicitly distinguishes MEASURED, DERIVED, INFERRED, PREDICTED, SIMULATED, UNKNOWN, and UNAVAILABLE; checks timestamps, provenance, units, uncertainty, coordinate frames, and entity lineage. It is not yet wired into production ingestion.
+- Added a local physical-validation queue archive prototype with SHA-256 integrity checking, preview, duplicate detection, and conflict-blocking restore. It covers only the browser-based local validation queue, not Base44 records or the complete app.
+
+**Current PR status:** draft/open, not merged. All four CI workflows passed on implementation commit `a546a2d...`: code quality, runtime safety, standard Android packaging, and experimental offline-shell packaging, including the new World Model, provider inventory, and queue archive/restore tests. The offline APK identity was recorded, but the signing secret was not configured; separate builds produced different ephemeral certificate fingerprints, so the APK is not safe to update the installed phone app. Main branch and hosted services remain unchanged.
+
+### Target phone compatibility note
+
+The target handset is the Moto G Play (2024), Android 14. Motorola's official specification lists accelerometer, proximity, ambient light, sensor hub, e-compass, and barometer; it does not list a gyroscope. Treat gyroscope availability as unknown until enumerated on the device. The exact Moto G Play (2024) model is not listed on Google's current ARCore supported-device page. This is consistent with the earlier spatial-pose-unavailable diagnostic, but does not independently prove its cause.
+
+The phone remains useful for baseline camera, available motion/environmental sensors, GPS, connectivity, UI, queue, and evidence-pipeline tests. Do not require ARCore or claim validated 6-DoF pose on this handset. See the dependency audit for sources and the revised device-specific test sequence.
+
+
 ## 2. Completed and verified work
 
 ### 2.1 Evidence-reporting correction in WaveRadar Core
@@ -221,3 +242,26 @@ Not allowed without independent evidence:
 - Debug signing certificate fingerprint: WaveRadar-debug-keystore-fingerprint.txt
 
 The keystore and its base64 representation are private signing material. Do not commit or share them publicly. The base64 file is intended only for the GitHub Actions secret described in the Android signing guide.
+
+## 9. Status update — 2026-10-31
+
+### Dependency portability / World Model pull requests
+- PR #39, `docs/dependency-independent-world-model`, remains open, draft, and unmerged. It documents the shared World Model, scanner adapter contracts, evidence lineage, portability controls, validation gates, and prospective institutional research plan.
+- PR #40, `audit/dependency-portability-recovery-2026-10-30`, remains open, draft, and unmerged. Latest inspected head: `0939e03d286a411b53df051962abcf6dc7b7e9b4`. Main remains unchanged; no production migration or deployment was performed.
+- Latest-head code-quality and runtime-safety checks passed. Standard Android build run `41132626000` and experimental offline-shell build run `41132626049` both completed successfully, including APK packaging and artifact upload.
+- Standard APK artifact: `13014341142`, SHA-256 `00459c794266c2022fe9a8b7b9ac6558a882e6478836461ff1dce8e5baeec72d`, expires 2027-01-28.
+- Experimental offline-shell artifact: `13013174354`, SHA-256 `f0ac468876d775d1d7a5626d65c6de0be77d1b2b1246b4c67e564e6bca9353c2`, expires 2026-11-29.
+- The experimental offline-shell bundles the interface but does not establish offline authentication, backend, or full product operation.
+- Neither APK is approved for installation on the owner's primary phone. The persistent signing secret remains unconfigured; compare signing identity and preserve local data before any update or uninstall.
+
+### Cinematic fire-chief presentation — production status
+- Descript project: `WaveRadar — See More. Save More. | 90-Second Showcase`, project ID `c5ef5f8a-cab7-4b54-a3cd-a389ee92951a`, composition ID `048dc73e-4ba4-4e76-b65d-be6df99521d7`.
+- The composition contains seven timed scene placeholders, chapter markers, approved narration stored in scene markers, and editable text overlays. It is not a finished video: project media inventory is empty, no narration audio is inserted, and no publish/export exists.
+- No media footage, UI/3D animation, or voice audio has been generated or imported. The Descript agent explicitly stopped before voice generation to avoid additional credits.
+- Higgsfield balance at the latest check: 109.77 credits; one free generation remains but is restricted to motion-control/object-replacement modes. No cinematic generation was submitted. No paid generation, upgrade, or credit spend is authorized.
+- The production constraint is strict $0 additional spend. Do not initiate paid generation, paid AI editing, subscription upgrades, or credit-consuming voice generation. Use only genuinely free, licensed assets and non-credit-consuming editing workflows; disclose if the requested cinematic quality cannot be achieved under this constraint.
+- Descript project link: https://web.descript.com/c5ef5f8a-cab7-4b54-a3cd-a389ee92951a/048dc
+
+### Current safety and validation boundary
+- Successful CI confirms code and APK packaging checks only. It does not validate the Moto G Play's physical sensors, spatial pose, indoor positioning, scanner fusion, through-wall sensing, victim localization, or rescue performance.
+- Keep all unvalidated functions visibly experimental/inferred/unavailable. Do not use simulated footage or fabricated UI data as evidence of a live operational capability.
