@@ -815,7 +815,7 @@ export default function Home() {
         {/* Controls row: scan mode + manual entry + saved scans + reports + alerts + gallery */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           <div className="glass-panel rounded-2xl p-3 relative corner-decoration">
-            <ScanControls scanMode={scanMode} onModeChange={setScanMode} isScanning={isScanning} onToggleScan={() => setIsScanning(s => !s)} signalStrength={signalStrength} />
+            <ScanControls scanMode={scanMode} onModeChange={setScanMode} isScanning={isScanning} onToggleScan={() => setIsScanning(s => !s)} signalStrength={signalStrength} detections={trackedLiveDetections} sensorConnected={sensorBridge.connected} lastFrame={sensorBridge.lastFrame} />
           </div>
           <div className="glass-panel rounded-2xl p-3 relative corner-decoration">
             <ManualEntryPanel detections={detections} onAdd={addDetection} onDelete={deleteDetection} onClear={clearDetections} color={color} sensors={sensors} />
