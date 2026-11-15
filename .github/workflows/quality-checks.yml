@@ -28,6 +28,9 @@ jobs:
       - name: Audit canonical data contract
         run: npm run audit:data
 
+      - name: Test federated observation envelope
+        run: npm run test:federation-envelope
+
       - name: Check JavaScript and JSX lint
         run: npm run lint
 
