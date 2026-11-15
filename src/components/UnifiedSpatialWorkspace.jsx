@@ -82,9 +82,8 @@ export default function UnifiedSpatialWorkspace({
     const idsB = [b.trackId, b.id].filter((v) => v != null).map(String);
     return idsA.some((id) => idsB.includes(id));
   };
-  const evidenceClass = selected?.evidenceClass || selected?.evidence_class || (
-    selected?.corroborated ? 'DERIVED' : selected?.source ? 'MEASURED' : 'UNAVAILABLE'
-  );
+  // A source name or cross-source association is not, by itself, proof that a record is measured.
+  const evidenceClass = selected?.evidenceClass || selected?.evidence_class || 'UNKNOWN';
   const evidenceLabel = String(evidenceClass).toUpperCase();
   const lockTone = selected?.type === 'human' ? '#00ff88' : selected?.type === 'animal' ? '#00ccff' : '#ffaa00';
   const lockSizePx = lockVisual.settings.size === 'large' ? 30 : lockVisual.settings.size === 'small' ? 16 : 22;
@@ -93,7 +92,7 @@ export default function UnifiedSpatialWorkspace({
     const external = Array.isArray(detections) ? detections.length : 0;
     const camera = Array.isArray(cameraDetections) ? cameraDetections.length : 0;
     const measurements = Array.isArray(lastFrame?.measurements) ? lastFrame.measurements.length : 0;
-    const ageMs = lastFrame?.receivedAt ? Math.max(0, performance.now() - lastFrame.receivedAt) : null;
+    const ageMs = lastFrame?.receivedAt != null && lastFrame?.isMeasurementFrame !== false ? Math.max(0, performance.now() - lastFrame.receivedAt) : null;
     const hz = Number(bridgeStats?.hz) || 0;
     const latency = Number.isFinite(Number(bridgeStats?.lastLatencyMs)) ? Number(bridgeStats.lastLatencyMs) : null;
     const quality = Number.isFinite(Number(bridgeStats?.rangeQuality)) ? Math.round(Number(bridgeStats.rangeQuality) * 100) : null;
