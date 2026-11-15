@@ -49,6 +49,9 @@ jobs:
       - name: Test native sensor registration lifecycle
         run: npm run test:native-sensor-lifecycle
 
+      - name: Test Wi-Fi RTT evidence contract
+        run: npm run test:wifi-rtt-evidence
+
       - name: Build web application
         run: npm run build
 
@@ -67,6 +70,8 @@ jobs:
           s = p.read_text()
           perms = [
               '    <uses-permission android:name="android.permission.CAMERA" />',
+              '    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />',
+              '    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />',
               '    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />',
               '    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />',
               '    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" />',

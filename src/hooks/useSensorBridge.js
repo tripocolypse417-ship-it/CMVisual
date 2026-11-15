@@ -61,7 +61,9 @@ export default function useSensorBridge(enabled = true) {
         const frameAgeMs = Number.isFinite(Number(frame.timestamp)) && Number(frame.timestamp) > 1e12 ? Math.max(0, Date.now() - timestamp) : null;
         const packetRateHz = Number.isFinite(Number(frame.packetRateHz)) ? Math.max(0, Number(frame.packetRateHz)) : null;
         const latencyMs = Number.isFinite(Number(frame.latencyMs)) ? Math.max(0, Number(frame.latencyMs)) : frameAgeMs;
-        const validDetections = frame.detections.filter(d => d && Number.isFinite(Number(d.angle)) && Number.isFinite(Number(d.distance)));
+        const validDetections = frame.detections.filter(d => d &&
+          d.angle != null && Number.isFinite(Number(d.angle)) &&
+          d.distance != null && Number.isFinite(Number(d.distance)));
         const confidenceValues = validDetections.map(d => Number(d.confidence)).filter(Number.isFinite).map(v => Math.max(0, Math.min(1, v)));
         const rangeQuality = confidenceValues.length ? confidenceValues.reduce((a, b) => a + b, 0) / confidenceValues.length : 0;
         const sourceSet = new Set(validDetections.map(d => d.source ?? frame.source ?? frame.technology).filter(Boolean));
@@ -88,7 +90,8 @@ export default function useSensorBridge(enabled = true) {
         const sensorAgreement = agreementCount ? agreementSum / agreementCount : 0;
         setBridgeStats(prev => ({ ...prev, rangeQuality: +rangeQuality.toFixed(2), sensorAgreement: +sensorAgreement.toFixed(2) }));
         const normalizedDetections = validDetections.filter(d =>
-          d && Number.isFinite(Number(d.angle)) && Number.isFinite(Number(d.distance))
+          d && d.angle != null && Number.isFinite(Number(d.angle)) &&
+          d.distance != null && Number.isFinite(Number(d.distance))
         ).map((d, i) => ({
           ...d,
           id: d.id ?? `${frame.deviceId ?? 'sensor'}-${timestamp}-${i}`,
