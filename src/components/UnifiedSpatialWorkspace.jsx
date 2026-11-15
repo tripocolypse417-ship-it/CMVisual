@@ -76,6 +76,7 @@ export default function UnifiedSpatialWorkspace({
     return (Array.isArray(liveDetections) ? liveDetections : []).find((d) => String(d.trackId ?? d.id) === String(lockedTrackId)) || null;
   }, [liveDetections, lockedTrackId]);
   const lockedStale = lockedTrackId != null && !lockedCurrent;
+  const lockedLastKnown = lockedTrackId != null && selectedDetection && String(selectedDetection.trackId ?? selectedDetection.id) === String(lockedTrackId) ? selectedDetection : null;
   const sameTrack = (a, b) => {
     if (!a || !b) return false;
     const idsA = [a.trackId, a.id].filter((v) => v != null).map(String);
@@ -376,8 +377,8 @@ export default function UnifiedSpatialWorkspace({
           <div className="flex items-center gap-3">
             <span className="flex h-3 w-3 shrink-0 rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,255,180,0.9)]" />
             <div className="min-w-0">
-              <div className="font-mono text-[9px] font-bold tracking-wider text-emerald-200">{lockedCurrent?.displayId || lockedCurrent?.label || lockedCurrent?.type?.toUpperCase() || 'TARGET'} · {lockedStale ? 'LAST KNOWN TRACK — STALE' : 'TRACK LOCKED'}</div>
-              <div className="font-mono text-[7px] text-white/55">{lockedStale ? 'No current measurement. Last known position is not a live location.' : 'Following the selected observation track · updates only when new observations arrive.'}</div>
+              <div className="font-mono text-[9px] font-bold tracking-wider text-emerald-200">{lockedCurrent?.displayId || lockedLastKnown?.displayId || lockedCurrent?.label || lockedLastKnown?.label || lockedCurrent?.type?.toUpperCase() || lockedLastKnown?.type?.toUpperCase() || 'TARGET'} · {lockedStale ? 'LAST KNOWN TRACK — STALE' : 'TRACK LOCKED'}</div>
+              <div className="font-mono text-[7px] text-white/55">{lockedStale ? 'No current measurement. The retained observation is last-known, not a live location.' : 'Following the selected observation track · updates only when new observations arrive.'}</div>
             </div>
             <button type="button" onClick={() => onToggleTrackLock?.(lockedCurrent || { id: lockedTrackId })} className="min-h-[40px] rounded-lg border border-emerald-200/30 px-3 font-mono text-[8px] text-emerald-100">UNLOCK</button>
           </div>
