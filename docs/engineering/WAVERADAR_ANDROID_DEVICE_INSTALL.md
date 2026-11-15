@@ -1,8 +1,8 @@
 # WaveRadar OS — Android Device Installation and Verification
 
-**Candidate test artifact:** `WaveRadar-debug-apk` from GitHub Actions run [43751288228](https://github.com/tripocolypse417-ship-it/CMVisual/actions/runs/43751288228), head commit `18c0fada6dfddc975e77f739f76d92a31c0e51b2` on `waveradar/native-sensor-diagnostics`.
-**Artifact created:** 2026-11-15 19:16 UTC. **Artifact expiry:** 2027-02-13 19:14 UTC.
-**Artifact SHA-256:** `85177ea91a9464c53c22ca5be64eb72b9cd1db9af2800417d024314d30cef351`.
+**Current candidate test artifact:** `WaveRadar-debug-apk` from GitHub Actions run [43758503320](https://github.com/tripocolypse417-ship-it/CMVisual/actions/runs/43758503320), head commit `f16b697af41561739aaa862674bca0ce3f1c29f2` on `waveradar/native-sensor-diagnostics`.
+**Artifact ID:** `14179057680`. **Created:** 2026-11-15 20:33:18 UTC. **Expiry:** 2027-02-13 20:30:58 UTC.
+**Artifact ZIP SHA-256:** `43837199b3a2b461a730794e7b9f622f2782969998b8e636cf9fac0818415554` (the workflow reported the ZIP digest; no separate APK digest was recorded).
 **Build type:** Debug APK. This is a test build, not a production release.
 **Signing status:** The run log reports that `WAVERADAR_DEBUG_KEYSTORE_BASE64` is not configured. The APK therefore uses a runner-generated ephemeral debug key; update compatibility with an already-installed APK is **not guaranteed**.
 
@@ -14,14 +14,14 @@ A persistent signing identity or a separate, explicitly isolated test applicatio
 
 ## Which APK is served by the app download route?
 
-The live `/api/download-waveradar-apk` endpoint redirects to GitHub's **latest release**, not to a pull-request artifact. At this check, the latest release is [WaveRadar build 486](https://github.com/tripocolypse417-ship-it/CMVisual/releases/tag/waveradar-build-486), published 2026-11-14 23:48 UTC from commit `69e29a887fa5e0b465d3b8b4ad9eec6817ef5852`. Its build log also reports the missing persistent debug-key secret and an ephemeral debug key.
+The live `/api/download-waveradar-apk` endpoint redirects to GitHub's **latest release**, not to a pull-request artifact. The last release verified by this document was [WaveRadar build 486](https://github.com/tripocolypse417-ship-it/CMVisual/releases/tag/waveradar-build-486), published 2026-11-14 23:48 UTC from commit `69e29a887fa5e0b465d3b8b4ad9eec6817ef5852`. The release list was not revalidated in this update. Its build log also reported the missing persistent debug-key secret and an ephemeral debug key.
 
 The PR #77 candidate artifact above is not published as a release. A download through the in-app endpoint must not be described as containing PR #77 changes.
 
 ## 1. Candidate artifact provenance
 
-1. Open [the exact PR #77 workflow run](https://github.com/tripocolypse417-ship-it/CMVisual/actions/runs/43751288228).
-2. Confirm the head commit matches the commit listed above.
+1. Open [the exact PR #77 workflow run](https://github.com/tripocolypse417-ship-it/CMVisual/actions/runs/43758503320).
+2. Confirm the head commit matches `f16b697af41561739aaa862674bca0ce3f1c29f2`.
 3. Confirm the Android job and all required steps are completed successfully.
 4. Download `WaveRadar-debug-apk` only for controlled testing after the signing/package identity hold is resolved.
 5. Do not substitute a different run's artifact without checking its commit, build result, artifact digest, and signing identity.
