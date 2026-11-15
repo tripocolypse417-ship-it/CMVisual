@@ -1,7 +1,7 @@
 # CMVisual / WaveRadar Portability & Recovery
 
-## Source of truth
-The Base44 project is currently the primary working source. The independent Hatchable deployment is a separate runtime fallback, not a byte-for-byte source export.
+## Source of truth and target canonical repository
+The Base44 project is currently the primary working source. CMVisual is the intended target canonical GitHub code repository, but it is not yet proven byte-for-byte or schema-for-schema equivalent to the Base44 working source. The private WaveRadar GitHub remote is a third distinct repository. Until a file, schema, data and commit parity map is completed, preserve all three and do not overwrite or blindly synchronize them. The independent Hatchable deployment is a separate runtime fallback, not a byte-for-byte source export.
 
 Known-good Base44 checkpoint:
 - Checkpoint: `6a97d94cd47bee5d9a5f089d`

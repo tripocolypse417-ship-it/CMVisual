@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { classifySpatialMeasurement } from '../lib/sensorFrameContract.js';
 
 const MAX_POINTS = 1500;
 const STALE_MS = 30000;
@@ -74,9 +75,10 @@ export default function useSpatialWorld(detections = [], heading = 0, enabled = 
 
     for (const d of detections) {
       if (!d?.id) continue;
-      const distance = Number(d.distance);
-      if (!Number.isFinite(distance) || distance < 0) continue;
-      const p = polarToWorld(d.angle, distance, heading);
+      const spatial = classifySpatialMeasurement(d);
+      if (spatial.status !== 'SPATIALLY_ALIGNED') continue;
+      const distance = spatial.distance;
+      const p = polarToWorld(spatial.angle, distance, heading);
       const confidence = Number.isFinite(Number(d.confidence))
         ? Math.max(0, Math.min(1, Number(d.confidence)))
         : Math.max(0, Math.min(1, (Number(d.intensity) || 0) / 100));

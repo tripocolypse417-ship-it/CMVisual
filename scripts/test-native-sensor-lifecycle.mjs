@@ -16,5 +16,6 @@ assert.match(source, /status\.put\("supported", sensor != null\);/);
 assert.match(source, /status\.put\("registered", registeredSensorTypes\.contains\(type\)\);/);
 assert.match(source, /status\.put\("hasSampleHistory", latest\.containsKey\(type\)\);/);
 assert.match(source, /o\.put\("sensorRegistration", sensorRegistration\);/);
+assert.match(source, /out\.put\("evidenceClass", measurements\.length\(\) > 0 \? "MEASURED" : "UNKNOWN"\);/, 'empty snapshots must not be labeled as measured');
 
 console.log('Native sensor lifecycle source-contract checks passed (physical-device validation still required).');
