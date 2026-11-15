@@ -21,8 +21,8 @@
 - **Advertised deadline:** 2026-11-15.
 - **Entry condition:** Complete a qualifying Disaster Resilience course in Verizon Digital Ready, then the program requirements and application become visible.
 - **Courses named in the email:** “Know Your Hazards” (16 minutes) and “Build Your Business Continuity & Mitigation Plan” (35 minutes).
-- **Current eligibility status:** UNCONFIRMED. WaveRadar was described to the program team as pre-formation, pre-revenue, and without an EIN. The program team directed the founder to complete a course to reveal full eligibility rules; it did not confirm that a pre-formation project qualifies.
-- **Action:** Founder logs into the existing Digital Ready account, completes a qualifying course, checks the full program terms and required applicant/business status, and only applies if eligible. Do not claim eligibility from the promotional email alone.
+- **Current eligibility status:** NOT ELIGIBLE on the last documented WaveRadar facts unless the business status has changed. The U.S. Chamber Foundation's current FAQ says eligible applicants must be small businesses with 500 or fewer employees **and an EIN**, excluding nonprofits. WaveRadar was last documented as pre-formation and without an EIN; completing the course does not cure that eligibility gap. Recheck only if a legal business and EIN now exist and all remaining terms are met. [Official eligibility and deadline](https://www.uschamberfoundation.org/disasters/how-small-businesses-can-apply-for-r4r-mitigation-grant).
+- **Action:** Do not spend time on this cycle or represent WaveRadar as eligible unless a valid EIN and qualifying business status can be documented. The application closes Sunday, 2026-11-15 at 11:59 p.m. Eastern. No application has been submitted.
 
 ### P1 — NIOSH Small Research Grant Program (R03), RFA-OH-27-056
 
