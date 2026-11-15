@@ -178,16 +178,25 @@ export function normalizeObservation(input = {}, context = {}) {
   };
 }
 
-export function normalizeState(source = {}, { ageMs = null, now = Date.now(), staleMs = 5000 } = {}) {
+export function normalizeState(source = {}, { ageMs = null, now = Date.now(), staleMs = null } = {}) {
   const timestampValue = source.observedAt ?? source.measuredAt ?? source.timestamp;
   const observedAt = parseTimestamp(timestampValue);
   const nowMs = parseTimestamp(now) ?? Date.now();
-  // A source cannot override invalid, future, or stale timestamp evidence by claiming CURRENT.
+  // Keep the canonical state and quality gate on one freshness policy. A caller
+  // may supply an explicit staleMs override; otherwise use a valid source/task
+  // freshnessWindowMs, then the same conservative 15-second default as
+  // useWorldDataQuality. This is freshness classification, not accuracy.
+  const configuredWindow = finite(source.freshnessWindowMs);
+  const effectiveStaleMs = Number.isFinite(staleMs) && staleMs > 0
+    ? staleMs
+    : configuredWindow != null && configuredWindow > 0
+      ? configuredWindow
+      : 15000;
   if (timestampValue != null && observedAt == null) return DATA_STATE.UNKNOWN;
   if (source.quarantined) return DATA_STATE.QUARANTINED;
   if (source.conflict || source.disagreement || source.sensorConflict) return DATA_STATE.CONFLICT;
   if (observedAt != null && observedAt - nowMs > 30000) return DATA_STATE.UNKNOWN;
-  if (observedAt != null && nowMs - observedAt > staleMs) return DATA_STATE.STALE;
+  if (observedAt != null && nowMs - observedAt > effectiveStaleMs) return DATA_STATE.STALE;
   const explicit = String(source.state || '').toUpperCase();
   if (Object.values(DATA_STATE).includes(explicit)) {
     if (explicit === DATA_STATE.CURRENT && observedAt == null) return DATA_STATE.UNKNOWN;

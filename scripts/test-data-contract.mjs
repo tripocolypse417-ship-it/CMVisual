@@ -23,6 +23,26 @@ const seconds = 1700000000;
 assert.equal(normalizeObservation({ modality: 'IMU', timestamp: seconds }, { now }).timestamp, seconds * 1000);
 assert.equal(normalizeObservation({ modality: 'IMU', timestamp: String(seconds) }, { now }).timestamp, seconds * 1000);
 
+// Canonical state and the quality gate must use the same default freshness
+// policy. Source/task overrides remain explicit and are never treated as accuracy.
+const tenSecondsOld = new Date(now - 10000).toISOString();
+const withinDefaultWindow = normalizeObservation({ modality: 'CAMERA', observedAt: tenSecondsOld }, { now });
+assert.equal(withinDefaultWindow.state, DATA_STATE.CURRENT);
+const beyondTaskWindow = normalizeObservation({
+  modality: 'CAMERA',
+  observedAt: tenSecondsOld,
+  freshnessWindowMs: 5000,
+}, { now });
+assert.equal(beyondTaskWindow.state, DATA_STATE.STALE);
+assert.equal(normalizeState({
+  observedAt: tenSecondsOld,
+  freshnessWindowMs: 5000,
+}, { now }), DATA_STATE.STALE);
+assert.equal(normalizeState({
+  observedAt: tenSecondsOld,
+  freshnessWindowMs: 15000,
+}, { now }), DATA_STATE.CURRENT);
+
 // Invalid explicit timestamps must not be silently replaced with the current time,
 // even when legacy input explicitly claims CURRENT.
 const invalid = normalizeObservation({ modality: 'CAMERA', observedAt: 'not-a-date', state: 'CURRENT' }, { now });
