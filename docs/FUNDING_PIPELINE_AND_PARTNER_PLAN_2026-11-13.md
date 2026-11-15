@@ -68,15 +68,16 @@
 - **Potential Phase I award:** Standard grant up to $305,000.
 - **Fit:** Strong for a commercializable WaveRadar OS technology innovation: interoperable sensor ingestion, edge processing, evidence provenance, robust fusion, and uncertainty-aware decision support.
 - **Critical gate:** Phase I requires an official invitation after an NSF Project Pitch. NSF says Project Pitch responses typically take 1–2 months. A pitch draft was previously prepared but was reported as not submitted; verify current pitch status before any new submission.
-- **Eligibility/registration:** A small business concern must meet NSF/SBA rules. A Project Pitch can be submitted before company formation, but the proposing small business must be a legal entity and have required active registrations (SAM/UEI, Research.gov, SBA Company Registry) before a full proposal. The PI's primary employment must be with the small business at award.
-- **Action:** Confirm whether any Project Pitch is pending or invitation exists. Do not submit a duplicate pitch while one is under review. Complete a focused technical innovation and commercialization narrative; form the entity and registrations in time for a full proposal if invited.
+- **Eligibility/registration:** NSF states that SAM/UEI, Research.gov, and SBA Company Registry registrations are not required to submit a Project Pitch; all are required before a full proposal. The proposing small business must still satisfy NSF/SBA eligibility (including fewer than 500 employees and at least 51% U.S. ownership/control). The PI must be more than 50% employed by the small business for the duration of the project; NSF says this primary-employment condition is not required at the time of full-proposal submission.
+- **Pitch-status check:** A mailbox review found no evidence of an NSF Project Pitch submission or invitation, but the NSF portal was not accessed; treat portal status as unknown until checked.
+- **Action:** Check the NSF MyWork portal before any new pitch. Do not submit a duplicate while one is under review; the limit is two pitches in any 12-month period and one under review at a time. If no pitch is pending, prepare a focused technical innovation and commercialization narrative, then complete entity/registration readiness in time for a full proposal if invited.
 
 ### P1 — NSF SBIR/STTR Scientific Instrumentation Pilot, NSF 26-511
 
 - **Status:** Open solicitation with next full-proposal deadline 2027-03-04, 5 p.m. submitting organization's local time.
 - **Fit:** Potentially strong if WaveRadar develops a distinct scientific measurement/instrumentation product rather than proposing only a software dashboard.
 - **Candidate product framing:** A portable, synchronized multi-sensor evidence acquisition and validation instrument for controlled emergency-response / occupational-safety studies. The proposal must demonstrate a novel instrument, measurement need, technical risks, reproducibility, and commercial market.
-- **Critical gate:** Same NSF Project Pitch invitation and small-business registration requirements apply. Do not assume the prior NSF pitch covers this different instrument concept; confirm NSF pitch limits and pending status before proposing a second concept.
+- **Critical gate:** Same NSF Project Pitch invitation and full-proposal registration requirements apply. The official NSF rules limit a company to two Project Pitches in any 12-month window and one under review at a time. Do not assume a prior pitch covers this different instrument concept; confirm portal status and topic fit before considering a second concept.
 
 ### P2 — FEMA Assistance to Firefighters Grants: Fire Prevention & Safety (FP&S) Research & Development
 
