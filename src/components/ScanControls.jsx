@@ -4,7 +4,7 @@ import { Thermometer, Activity, Power, Volume2, Info } from 'lucide-react';
 
 const modes = [
   { id: 'sonar', label: 'ACOUSTIC', icon: Volume2, color: '#00ff88', desc: 'Experimental audio' },
-  { id: 'thermal', label: 'THERMAL', icon: Thermometer, color: '#ff6633', desc: 'Available sensor' },
+  { id: 'thermal', label: 'THERMAL', icon: Thermometer, color: '#ff6633', desc: 'External thermal input' },
   { id: 'motion', label: 'MOTION', icon: Activity, color: '#00ccff', desc: 'Motion data' },
 ];
 
@@ -24,7 +24,7 @@ export default function ScanControls({ scanMode, onModeChange, isScanning, onTog
   // a render left a stopped feed permanently displaying its last (often 0s) age.
   const [frameAgeSeconds, setFrameAgeSeconds] = useState(null);
   useEffect(() => {
-    if (!lastFrame?.receivedAt || lastFrame?.isMeasurementFrame === false) {
+    if (lastFrame?.receivedAt == null || lastFrame?.isMeasurementFrame === false) {
       setFrameAgeSeconds(null);
       return undefined;
     }
@@ -36,7 +36,7 @@ export default function ScanControls({ scanMode, onModeChange, isScanning, onTog
     return () => window.clearInterval(timer);
   }, [lastFrame?.receivedAt, lastFrame?.isMeasurementFrame]);
 
-  const hasMeasurementFrame = Boolean(lastFrame?.receivedAt && lastFrame?.isMeasurementFrame !== false);
+  const hasMeasurementFrame = Boolean(lastFrame?.receivedAt != null && lastFrame?.isMeasurementFrame !== false);
   const frameIsStale = hasMeasurementFrame && frameAgeSeconds != null && frameAgeSeconds > STALE_FRAME_SECONDS;
   const feedLabel = !hasMeasurementFrame
     ? (sensorConnected ? 'CONNECTED · WAITING FOR DATA' : 'NO SENSOR FRAME')
