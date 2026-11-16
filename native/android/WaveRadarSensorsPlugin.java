@@ -21,6 +21,7 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
   private SensorManager sensorManager;
   private final Map<Integer, float[]> latest = new HashMap<>();
   private final Map<Integer, Long> sensorTimestamps = new HashMap<>();
+  private final Map<Integer, Long> sampleReceiptTimes = new HashMap<>();
   private final Map<Integer, Integer> sensorAccuracies = new HashMap<>();
   private long lastSensorTimestamp = 0L;
   private final Set<Integer> registeredSensorTypes = new HashSet<>();
@@ -80,6 +81,7 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
     sensorTimestamps.put(type, event.timestamp);
     sensorAccuracies.put(type, event.accuracy);
     lastSensorTimestamp = System.currentTimeMillis();
+    sampleReceiptTimes.put(type, lastSensorTimestamp);
   }
 
   @Override
@@ -126,8 +128,17 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
       ? Math.max(0L, (SystemClock.elapsedRealtimeNanos() - sensorElapsedNs) / 1000000L)
       : 0L;
     item.put("values", toArray(v));
-    item.put("timestamp", Math.max(0L, System.currentTimeMillis() - ageMs));
+    // SensorEvent.timestamp uses the elapsed-realtime clock (nanoseconds since boot),
+    // not Unix epoch time. Keep it intact and label the wall-clock conversion as an estimate.
+    long receiptAt = sampleReceiptTimes.getOrDefault(type, 0L);
+    item.put("sourceTimestampNs", sensorElapsedNs);
+    item.put("sourceClockDomain", "ANDROID_ELAPSED_REALTIME_NANOS");
+    item.put("timestampEstimateMs", Math.max(0L, System.currentTimeMillis() - ageMs));
+    item.put("timestampEstimateMethod", "receipt_wall_clock_minus_elapsed_age");
+    item.put("timestamp", Math.max(0L, System.currentTimeMillis() - ageMs)); // Legacy compatibility; estimate only.
+    item.put("sampleReceivedAt", receiptAt == 0L ? org.json.JSONObject.NULL : receiptAt);
     item.put("ageMs", ageMs);
+    item.put("sampleAgeMs", ageMs);
     item.put("sensorType", type);
     item.put("accuracy", sensorAccuracies.getOrDefault(type, SensorManager.SENSOR_STATUS_UNRELIABLE));
     target.put(name, item);
@@ -180,6 +191,13 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
     status.put("registered", registeredSensorTypes.contains(type));
     // A prior sample may be stale; this flag indicates history only, not freshness.
     status.put("hasSampleHistory", latest.containsKey(type));
+    long sourceTimestampNs = sensorTimestamps.getOrDefault(type, 0L);
+    long sampleAgeMs = sourceTimestampNs > 0L
+      ? Math.max(0L, (SystemClock.elapsedRealtimeNanos() - sourceTimestampNs) / 1000000L)
+      : -1L;
+    status.put("sampleAgeMs", sampleAgeMs);
+    long receivedAt = sampleReceiptTimes.getOrDefault(type, 0L);
+    status.put("sampleReceivedAt", receivedAt == 0L ? org.json.JSONObject.NULL : receivedAt);
     target.put(name, status);
   }
 
