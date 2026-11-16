@@ -5,6 +5,7 @@ import WallVisionScene from './WallVisionScene';
 import CameraARView from './CameraARView';
 import { Camera, Cuboid, Map, ScanLine, Layers3, Eye, EyeOff, Activity, Crosshair, Settings2 } from 'lucide-react';
 import useTargetLockStyle from '../hooks/useTargetLockStyle';
+import { normalizeEvidenceClass } from '../lib/evidenceClass';
 import DaredevilVisionHUD from './DaredevilVisionHUD';
 
 /**
@@ -114,7 +115,7 @@ export default function UnifiedSpatialWorkspace({
     return items.map((d, index) => ({
       ...d,
       uiId: d.displayId || (d.type === 'human' ? `PERSON ${String(index + 1).padStart(2, '0')}` : String(d.type || 'UNKNOWN').toUpperCase()),
-      evidence: (() => { const declared = String(d.evidenceClass ?? d.evidence_class ?? d.evidence ?? '').toUpperCase(); return ['MEASURED', 'DERIVED', 'INFERRED', 'PREDICTED', 'SIMULATED', 'DEMO', 'UNKNOWN', 'UNAVAILABLE'].includes(declared) ? declared : 'UNKNOWN'; })(),
+      evidence: normalizeEvidenceClass(d.evidenceClass ?? d.evidence_class ?? d.evidence),
       confidencePct: Number.isFinite(Number(d.confidence)) ? Math.round(Number(d.confidence) * 100) : null,
       distanceM: Number.isFinite(Number(d.distance)) ? Number(d.distance) : null,
       angleDeg: Number.isFinite(Number(d.angle)) ? Number(d.angle) : null,
