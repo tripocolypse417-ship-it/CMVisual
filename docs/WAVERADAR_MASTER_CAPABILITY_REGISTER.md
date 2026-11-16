@@ -115,3 +115,114 @@ Update this register through reviewable pull requests. Every change must explain
 - `docs/WAVERADAR_INDEPENDENT_ARCHITECTURE_AND_INSTITUTIONAL_PLAN.md` — independent architecture and institutional plan.
 
 **Important:** This register is an architecture and governance planning artifact. It does not certify the product, authorize field use, or establish that listed capabilities are implemented.
+
+## 10. Scanner Fusion Network and persistent 3D World Model
+
+**Status:** Architecture requirement / planned capability. This section is not evidence that multi-device ingestion, room-level sensing, through-wall detection, or validated 3D localization is currently implemented.
+
+### 10.1 Operator workflow
+
+The target workflow is a spatial-temporal investigation interface:
+
+1. Command staff select an authorized incident area on the world map.
+2. They open a building, floor, and room where reliable building geometry and identifiers exist.
+3. They choose a time interval and optional source, modality, device, and evidence-class filters.
+4. The system retrieves only observations the operator and source are authorized to access.
+5. Every result exposes its source, capture and receipt times, coordinate frame, location uncertainty, device capability, calibration state, provenance, evidence class, validation status, and link to immutable raw evidence where permitted.
+6. The operator can replay synchronized observations and compare sources without erasing disagreement or missing-data intervals.
+
+A room with no observations must be shown as **NO DATA / COVERAGE UNKNOWN**, not as empty, clear, safe, or searched.
+
+### 10.2 Scanner and source registry
+
+Each scanner/source record must include:
+
+- Stable source ID; owner/organization; device ID; manufacturer, model, hardware revision, serial/asset reference, firmware and adapter version where available.
+- Modality and exact measurement types; units; sampling rate; timestamp semantics and clock domain; coordinate frame; transport and power requirements.
+- Actual hardware/API/driver evidence establishing that the capability exists on this device and configuration.
+- Frequency, bandwidth, range, resolution, field of view, accuracy, and coverage only where supported by authoritative specifications or measured characterization. Unknown values remain UNKNOWN.
+- Calibration profile, certificate/reference, date, expiry, uncertainty, intrinsic/extrinsic transforms, and calibration status.
+- Environmental and operating limits; interference/coexistence constraints; known failure modes; health and data-age state.
+- Permission/consent basis, operator authorization, license/terms status, data classification, retention rule, encryption and key-management profile.
+- Evidence classes and validation status for each use case, not one global validated flag.
+
+A source may advertise a capability without producing a measurement. Keep **CAPABILITY DECLARED**, **HARDWARE DETECTED**, **PERMISSION GRANTED**, **STREAM REGISTERED**, **SAMPLE RECEIVED**, **CALIBRATED**, **INTEGRITY VERIFIED**, and **INDEPENDENTLY VALIDATED** as separate states.
+
+### 10.3 Connector and ingestion contract
+
+All connectors implement a versioned adapter contract with capability discovery, permission checks, start/stop lifecycle, health reporting, raw payload preservation, normalized observation output, clock metadata, error states, and deterministic teardown.
+
+Allowed source families are conditional on real access and authorization:
+
+- Opt-in enrolled phones: camera, native motion sensors, GNSS, and supported platform pose/depth APIs only when runtime capability checks confirm availability.
+- Wi-Fi: authorized device/AP telemetry and CSI only where chipset, firmware, driver, API, permission, and local law actually permit access.
+- Cellular: public coverage/open datasets or explicitly authorized carrier/network telemetry. Public coverage is infrastructure context, not a people-sensing measurement.
+- Power systems: public datasets or utility/asset-owner-authorized telemetry. Grid telemetry is infrastructure state, not a people-sensing measurement.
+- Dedicated UWB, FMCW/mmWave radar, thermal, depth/LiDAR, environmental, and other scanners only after physical hardware is present, identified, enrolled, and separately qualified.
+- Building plans, CAD/BIM, GIS, and open maps only with source/version, coordinate reference, license, rights, and accuracy limitations recorded.
+- Public research datasets remain separate from live incident evidence and must retain their license, provenance, and benchmark-only designation.
+
+Never infer that ordinary Wi-Fi, cellular, or power infrastructure is inherently a human scanner. No unauthorized network access, interception, probing, credential bypass, private-content collection, or aircraft control is permitted.
+
+### 10.4 Spatial-temporal event model
+
+Every observation must preserve its immutable source payload or a content-addressed raw-evidence reference and carry:
+
+- Observation ID, source ID, device ID, incident/tenant scope, sequence number, adapter/schema version.
+- Capture time, receive time, clock domain, synchronization estimate, offset/drift uncertainty, and missing/invalid timestamp state.
+- Position and orientation separately from sensor pose; coordinate reference/frame, transform lineage, units, and covariance/uncertainty where available.
+- Measurand, modality, calibration state, quality flags, environmental context, evidence class, validation state, and raw-data hash.
+- Consent/permission, access policy, license/terms reference, retention class, and audit lineage.
+
+Ingestion must be idempotent and append-only. Detect and surface duplicate, replayed, out-of-order, spoof-suspect, malformed, stale, clock-inconsistent, coordinate-incompatible, and unauthorized records. Quarantine an observation from a specific analysis when required, preserve the original, and record the reason. A hash establishes byte-level integrity relative to a trusted manifest; it does not establish source authenticity or scientific truth.
+
+### 10.5 Fusion and uncertainty policy
+
+1. Preserve source-level streams and source-specific uncertainty; fusion never overwrites raw evidence.
+2. Fuse only measurements with compatible measurands, units, coordinate frames, time semantics, calibration, and documented error models.
+3. Do not average incompatible modalities or correlated measurements as if they were independent. Record dependence assumptions and avoid double-counting shared upstream sources.
+4. Keep conflicts visible with source attribution, time alignment, magnitude, and unresolved status. Do not hide disagreement behind a single confidence score.
+5. Treat missing, stale, low-quality, out-of-distribution, uncalibrated, and unavailable data as explicit states.
+6. Distinguish observed position, estimated object position, device position, camera pose, and reconstructed geometry. Do not create a spatial overlay unless its transform and uncertainty are supportable.
+7. Predictive outputs remain PREDICTED/INFERRED, include horizon and uncertainty, and are evaluated prospectively on held-out data. They cannot become measured evidence or validated alerts automatically.
+
+### 10.6 Visual and audible command intelligence
+
+The command interface should provide a synchronized map/building/floor/room view, source registry, time-window replay, timeline, source comparison, coverage gaps, and drill-down from any overlay to its contributing observations and raw evidence.
+
+The AI explanation layer may produce concise spoken and written summaries containing: what was observed; by which source and when; what is derived or inferred; confidence/uncertainty; source conflicts; what is unknown or unavailable; change over time; and the next useful verification step. Recommendations must be labeled as recommendations, not observations or commands. Speech must support configurable verbosity, quiet mode, priority levels, transcript/audit history, and equivalent visual presentation. Avoid alarm overload and never issue unsupported certainty.
+
+### 10.7 Security, privacy, and legal gates
+
+Enforce tenant/incident isolation, least privilege, authenticated device identity, authorization per source and data type, explicit operator consent where required, encryption in transit and at rest, key rotation, signed provenance where feasible, audit logging, data minimization, retention/deletion policy, and license/terms review before ingestion or reuse. Publicly accessible does not automatically mean commercially reusable. Do not expose precise location, imagery, audio, biometric, or personal data to unauthorized roles. Research, training, operational, and public-release datasets require separate access and purpose controls.
+
+### 10.8 Validation and acceptance gates
+
+Before a source can contribute to a validated use case, require modality-specific qualification and independent evidence. Test families include:
+
+- Source discovery, identity, permission, lifecycle, sample arrival, and failure-state correctness.
+- Clock synchronization, timestamp drift, sequence integrity, duplicate/replay handling, and offline store-and-forward recovery.
+- Intrinsic/extrinsic calibration, coordinate-frame transforms, surveyed geometry comparison, and uncertainty propagation.
+- Per-modality performance with positive/negative controls, blinded ground truth where feasible, environmental variation, repeatability, false-positive/false-negative analysis, and preregistered acceptance criteria.
+- Cross-sensor dependence, disagreement, missingness, interference/coexistence, and degraded-mode tests.
+- Role/tenant isolation, access denial, retention, audit, export integrity, threat modeling, and privacy review.
+- Human-factors evaluation of map navigation, source inspection, replay, audible summaries, and operator comprehension.
+
+Passing software tests establishes implementation behavior only. It does not validate physical sensing, localization, through-wall detection, firefighter safety, or operational readiness.
+
+### 10.9 Initial backlog and ownership
+
+| ID | Priority | Owner | Status | Acceptance evidence |
+|---|---|---|---|---|
+| WR-TECH-3D-01 | Critical | WaveRadar engineering | Planned | Versioned observation and coordinate-frame contract with schema tests |
+| WR-TECH-SRC-02 | Critical | WaveRadar engineering | Planned | Source registry and per-capability lifecycle states; unsupported states tested |
+| WR-TECH-ING-03 | Critical | WaveRadar engineering | Planned | Idempotent append-only ingestion, raw evidence references, hashes, replay/duplicate tests |
+| WR-TECH-FUS-04 | Critical | Research & Validation Lab + engineering | Research | Preregistered compatibility/dependence rules and contradiction test suite |
+| WR-TECH-WIS-05 | High | WIS engineering | Planned | Map/building/floor/room/time/source filters with no-data and uncertainty states |
+| WR-TECH-AUD-06 | High | WIS engineering | Planned | Attributed voice/text summary with observation-vs-recommendation labels and transcript |
+| WR-EVID-3D-07 | Critical | Independent evaluator | Blocked | Surveyed physical ground truth, calibration evidence, uncertainty budget, independent report |
+| WR-RISK-SEC-08 | Critical | Security owner | Planned | Threat model, tenant isolation tests, permission/license gate, audit and retention evidence |
+
+Dependencies: current Phase 0 Android baseline and evidence contract; a versioned building/coordinate model; actual source hardware and authorization; qualified test equipment; and independent ground truth. Phone-only development may implement the registry, UI, provenance, and camera-visible workflows, but it cannot unlock RF sensing, through-wall claims, or validated room-level localization.
+
+**Release rule:** The Scanner Fusion Network remains a research/decision-support architecture until each contributing modality and each safety-relevant derived capability passes its own acceptance and independent-validation gates. No empty-room, all-clear, victim-location, or through-wall claim may be inferred from absence of detections or infrastructure telemetry.
