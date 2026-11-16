@@ -15,7 +15,7 @@ assert.match(source, /public void handleOnResume\(\)\s*\{\s*super\.handleOnResum
 assert.match(source, /status\.put\("supported", sensor != null\);/);
 assert.match(source, /status\.put\("registered", registeredSensorTypes\.contains\(type\)\);/);
 assert.match(source, /status\.put\("hasSampleHistory", latest\.containsKey\(type\)\);/);
-assert.match(source, /o\\.put\\("sensorRegistration", sensorRegistration\\);/);
+assert.ok(source.includes('o.put("sensorRegistration", sensorRegistration);'));
 // Preserve Android's monotonic source clock separately from estimated wall-clock time.
 assert.match(source, /sourceTimestampNs/);
 assert.match(source, /ANDROID_ELAPSED_REALTIME_NANOS/);
