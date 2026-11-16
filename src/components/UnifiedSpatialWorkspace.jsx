@@ -114,7 +114,7 @@ export default function UnifiedSpatialWorkspace({
     return items.map((d, index) => ({
       ...d,
       uiId: d.displayId || (d.type === 'human' ? `PERSON ${String(index + 1).padStart(2, '0')}` : String(d.type || 'UNKNOWN').toUpperCase()),
-      evidence: String(d.evidenceClass || d.evidence_class || (d.corroborated ? 'DERIVED' : d.source ? 'MEASURED' : 'UNAVAILABLE')).toUpperCase(),
+      evidence: (() => { const declared = String(d.evidenceClass ?? d.evidence_class ?? d.evidence ?? '').toUpperCase(); return ['MEASURED', 'DERIVED', 'INFERRED', 'PREDICTED', 'SIMULATED', 'DEMO', 'UNKNOWN', 'UNAVAILABLE'].includes(declared) ? declared : 'UNKNOWN'; })(),
       confidencePct: Number.isFinite(Number(d.confidence)) ? Math.round(Number(d.confidence) * 100) : null,
       distanceM: Number.isFinite(Number(d.distance)) ? Number(d.distance) : null,
       angleDeg: Number.isFinite(Number(d.angle)) ? Number(d.angle) : null,
