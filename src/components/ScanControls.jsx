@@ -1,14 +1,48 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Thermometer, Activity, Power, Volume2, Info } from 'lucide-react';
 
 const modes = [
   { id: 'sonar', label: 'ACOUSTIC', icon: Volume2, color: '#00ff88', desc: 'Experimental audio' },
-  { id: 'thermal', label: 'THERMAL', icon: Thermometer, color: '#ff6633', desc: 'Available sensor' },
+  { id: 'thermal', label: 'THERMAL', icon: Thermometer, color: '#ff6633', desc: 'External thermal input' },
   { id: 'motion', label: 'MOTION', icon: Activity, color: '#00ccff', desc: 'Motion data' },
 ];
 
-export default function ScanControls({ scanMode, onModeChange, isScanning, onToggleScan, signalStrength }) {
-  const currentMode = modes.find(m => m.id === scanMode) || modes[0];
+const STALE_FRAME_SECONDS = 3;
+
+export default function ScanControls({ scanMode, onModeChange, isScanning, onToggleScan, detections = [], sensorConnected = false, lastFrame = null }) {
+  const liveItems = Array.isArray(detections) ? detections : [];
+  const people = liveItems.filter(d => d?.type === 'human');
+  const moving = liveItems.filter(d => d?.moving === true).length;
+  // Only an explicit MEASURED evidence class is counted here. A generic
+  // "detected" or "observed" label is not silently upgraded to measurement.
+  const measured = liveItems.filter(d =>
+    String(d?.evidenceClass ?? d?.evidence_class ?? d?.evidence ?? '').toUpperCase() === 'MEASURED'
+  );
+
+  // Age must continue advancing after frames stop. Computing this only during
+  // a render left a stopped feed permanently displaying its last (often 0s) age.
+  const [frameAgeSeconds, setFrameAgeSeconds] = useState(null);
+  useEffect(() => {
+    if (lastFrame?.receivedAt == null || lastFrame?.isMeasurementFrame === false) {
+      setFrameAgeSeconds(null);
+      return undefined;
+    }
+    const updateAge = () => {
+      setFrameAgeSeconds(Math.max(0, Math.floor((performance.now() - lastFrame.receivedAt) / 1000)));
+    };
+    updateAge();
+    const timer = window.setInterval(updateAge, 1000);
+    return () => window.clearInterval(timer);
+  }, [lastFrame?.receivedAt, lastFrame?.isMeasurementFrame]);
+
+  const hasMeasurementFrame = Boolean(lastFrame?.receivedAt != null && lastFrame?.isMeasurementFrame !== false);
+  const frameIsStale = hasMeasurementFrame && frameAgeSeconds != null && frameAgeSeconds > STALE_FRAME_SECONDS;
+  const feedLabel = !hasMeasurementFrame
+    ? (sensorConnected ? 'CONNECTED · WAITING FOR DATA' : 'NO SENSOR FRAME')
+    : frameIsStale
+      ? 'STALE FRAME'
+      : sensorConnected ? 'LIVE SENSOR FEED' : 'RECENT SENSOR FRAME';
 
   return (
     <div className="space-y-3 rounded-xl border border-border bg-card/40 p-3">
@@ -64,44 +98,47 @@ export default function ScanControls({ scanMode, onModeChange, isScanning, onTog
         </div>
       </div>
 
-      {/* Signal quality */}
-      <div className="space-y-2">
-        <div className="font-mono text-[9px] text-muted-foreground tracking-wider">SIGNAL QUALITY</div>
-        <div className="space-y-1.5">
+      {/* Live results are derived from the current camera/sensor observation stream. */}
+      <div className="rounded-xl border border-border bg-muted/20 p-3 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <div className="font-display text-xs text-foreground">CURRENT OBSERVATIONS</div>
+            <div className="font-mono text-[9px] text-muted-foreground mt-0.5">Tracks reported by available inputs</div>
+          </div>
+          <span className="rounded-full border px-2 py-1 font-mono text-[8px]"
+            style={{
+              color: frameIsStale ? '#ffc36b' : hasMeasurementFrame ? '#7dffb2' : '#ffffff80',
+              borderColor: frameIsStale ? '#ffc36b55' : hasMeasurementFrame ? '#7dffb255' : '#ffffff20'
+            }}>
+            {feedLabel}
+          </span>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
           {[
-            { label: 'Strength', value: signalStrength, color: currentMode.color },
-            { label: 'SNR', value: null, color: currentMode.color },
-            { label: 'Clarity', value: null, color: currentMode.color },
-          ].map(s => (
-            <div key={s.label} className="space-y-0.5">
-              <div className="flex justify-between font-mono text-[9px]">
-                <span className="text-muted-foreground">{s.label}</span>
-                <span style={{ color: s.color }}>{s.value == null ? 'N/A' : `${s.value}%`}</span>
-              </div>
-              <div className="h-1 rounded-full bg-muted overflow-hidden">
-                <motion.div className="h-full rounded-full"
-                  style={{ background: s.color, opacity: s.value == null ? 0.2 : 0.7 }}
-                  animate={{ width: s.value == null ? '0%' : `${s.value}%` }} transition={{ duration: 0.5 }} />
-              </div>
+            { label: 'TRACKS', value: liveItems.length, color: '#7dffb2' },
+            { label: 'PEOPLE', value: people.length, color: '#7dffb2' },
+            { label: 'MOVING', value: moving, color: '#62d8ff' },
+          ].map(item => (
+            <div key={item.label} className="rounded-lg border border-border bg-background/50 p-2">
+              <div className="font-mono text-[8px] text-muted-foreground">{item.label}</div>
+              <div className="mt-1 text-xl font-semibold tabular-nums" style={{ color: item.color }}>{item.value}</div>
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Frequency visualizer */}
-      <div className="space-y-1.5">
-        <div className="flex justify-between">
-          <span className="font-mono text-[9px] text-muted-foreground tracking-wider">FREQUENCY</span>
-          <span className="font-mono text-[9px] text-foreground">N/A</span>
+        <div className="flex items-center justify-between gap-2 font-mono text-[9px] text-muted-foreground">
+          <span>{measured.length} explicitly measured tracks</span>
+          <span>{!hasMeasurementFrame ? 'No measurement frame received' : frameIsStale ? `Last frame ${frameAgeSeconds}s ago · stale` : `Updated ${frameAgeSeconds ?? 0}s ago`}</span>
         </div>
-        <div className="flex items-end gap-0.5 h-8">
-          {Array.from({ length: 24 }).map((_, i) => (
-            <motion.div key={i} className="flex-1 rounded-sm"
-              style={{ background: currentMode.color, minHeight: 2 }}
-              animate={{ height: isScanning ? [4, Math.random() * 24 + 4, 4] : 3, opacity: isScanning ? [0.3, 0.85, 0.3] : 0.12 }}
-              transition={{ duration: 0.4 + Math.random() * 0.4, repeat: Infinity, delay: i * 0.04 }} />
-          ))}
-        </div>
+        {!liveItems.length && (
+          <div className="rounded-lg border border-amber-400/20 bg-amber-400/5 p-2.5 text-[10px] leading-relaxed text-amber-100/80">
+            No people or objects are currently being reported. Scanning status alone does not mean a target was detected.
+          </div>
+        )}
+        {frameIsStale && (
+          <div className="rounded-lg border border-amber-400/30 bg-amber-400/10 p-2.5 text-[10px] leading-relaxed text-amber-100/90">
+            Sensor data is no longer arriving. Displayed tracks must not be treated as current positions.
+          </div>
+        )}
       </div>
 
       {/* Mode info */}
