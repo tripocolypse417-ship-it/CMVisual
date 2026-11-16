@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import EnvironmentMap from './EnvironmentMap';
 import AutoFloorplanMap from './AutoFloorplanMap';
 import WallVisionScene from './WallVisionScene';
@@ -76,8 +76,20 @@ export default function UnifiedSpatialWorkspace({
     if (lockedTrackId == null) return null;
     return (Array.isArray(liveDetections) ? liveDetections : []).find((d) => String(d.trackId ?? d.id) === String(lockedTrackId)) || null;
   }, [liveDetections, lockedTrackId]);
+  const [lockedSnapshot, setLockedSnapshot] = useState(null);
+  useEffect(() => {
+    if (lockedTrackId == null) {
+      setLockedSnapshot(null);
+      return;
+    }
+    if (lockedCurrent) {
+      setLockedSnapshot({ trackId: String(lockedTrackId), detection: { ...lockedCurrent } });
+    }
+  }, [lockedTrackId, lockedCurrent]);
   const lockedStale = lockedTrackId != null && !lockedCurrent;
-  const lockedLastKnown = lockedTrackId != null && selectedDetection && String(selectedDetection.trackId ?? selectedDetection.id) === String(lockedTrackId) ? selectedDetection : null;
+  const lockedLastKnown = lockedTrackId != null && lockedSnapshot?.trackId === String(lockedTrackId)
+    ? lockedSnapshot.detection
+    : null;
   const sameTrack = (a, b) => {
     if (!a || !b) return false;
     const idsA = [a.trackId, a.id].filter((v) => v != null).map(String);
