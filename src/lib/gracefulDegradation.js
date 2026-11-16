@@ -10,8 +10,10 @@ const rank = Object.fromEntries(FIELD_MODES.map((v,i)=>[v,i]));
 
 export function selectFieldMode(capabilities = {}) {
   const has = key => capabilities[key] === true;
-  const advancedSpatial = has('depth') || has('wifiRtt') || has('uwb') || has('thermal') || has('mmwave');
-  if (has('camera') && advancedSpatial) return 'FULL_MULTIMODAL';
+  // Hardware/evidence presence is not a validation result. The client cannot
+  // promote experimental spatial sensors into the "Full sensor fusion" mode.
+  // Keep this mode unreachable until a trusted, independently verified
+  // operational-capability contract is supplied by the server.
   if (has('camera') && has('imu')) return 'CAMERA_IMU';
   if (has('camera')) return 'CAMERA_ONLY';
   if (has('sensorData') || has('gnss') || has('wifiRtt') || has('uwb')) return 'SENSOR_MAP';
