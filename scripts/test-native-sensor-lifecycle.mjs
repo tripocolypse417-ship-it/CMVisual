@@ -15,6 +15,14 @@ assert.match(source, /public void handleOnResume\(\)\s*\{\s*super\.handleOnResum
 assert.match(source, /status\.put\("supported", sensor != null\);/);
 assert.match(source, /status\.put\("registered", registeredSensorTypes\.contains\(type\)\);/);
 assert.match(source, /status\.put\("hasSampleHistory", latest\.containsKey\(type\)\);/);
-assert.match(source, /o\.put\("sensorRegistration", sensorRegistration\);/);
+assert.match(source, /o\\.put\\("sensorRegistration", sensorRegistration\\);/);
+// Preserve Android's monotonic source clock separately from estimated wall-clock time.
+assert.match(source, /sourceTimestampNs/);
+assert.match(source, /ANDROID_ELAPSED_REALTIME_NANOS/);
+assert.match(source, /timestampEstimateMethod/);
+assert.match(source, /sampleReceiptTimes\.put\(type, lastSensorTimestamp\)/);
+assert.match(source, /status\.put\("sampleAgeMs", sampleAgeMs\)/);
+assert.match(source, /status\.put\("sampleReceivedAt", receivedAt == 0L \? org\.json\.JSONObject\.NULL : receivedAt\)/);
+assert.match(source, /item\.put\("sampleAgeMs", ageMs\)/);
 
 console.log('Native sensor lifecycle source-contract checks passed (physical-device validation still required).');
