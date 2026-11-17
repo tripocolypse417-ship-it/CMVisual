@@ -53,12 +53,11 @@ export async function appendLocalEvidenceEvent(event, sampleKey) {
   };
   const tx = db.transaction(STORE_NAME, 'readwrite');
   const store = tx.objectStore(STORE_NAME);
-  let added = true;
-  try {
+  let added = false;
+  const existing = await requestResult(store.get(record.sample_key));
+  if (!existing) {
     await requestResult(store.add(record));
-  } catch (error) {
-    if (error?.name === 'ConstraintError') added = false;
-    else throw error;
+    added = true;
   }
   await new Promise((resolve, reject) => {
     tx.oncomplete = resolve;
