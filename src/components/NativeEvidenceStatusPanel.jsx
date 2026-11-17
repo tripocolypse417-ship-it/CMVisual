@@ -18,22 +18,26 @@ export default function NativeEvidenceStatusPanel() {
         </div>
         <span className={`text-[9px] font-mono font-semibold ${statusColor(state.phase)}`}>{state.phase.replaceAll('_', ' ')}</span>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <div className="rounded-lg border border-white/10 bg-black/20 p-2">
           <div className="text-[9px] uppercase text-slate-500">Stored events</div>
           <div className="mt-1 text-xs font-semibold text-slate-100">{state.storedEvents ?? '—'}</div>
         </div>
         <div className="rounded-lg border border-white/10 bg-black/20 p-2">
-          <div className="text-[9px] uppercase text-slate-500">New this cycle</div>
-          <div className="mt-1 text-xs font-semibold text-slate-100">{state.addedThisCycle ?? '—'}</div>
+          <div className="text-[9px] uppercase text-slate-500">Pending upload</div>
+          <div className="mt-1 text-xs font-semibold text-slate-100">{state.pendingEvents ?? '—'}</div>
         </div>
         <div className="rounded-lg border border-white/10 bg-black/20 p-2">
-          <div className="text-[9px] uppercase text-slate-500">Server ingestion</div>
+          <div className="text-[9px] uppercase text-slate-500">Quarantined</div>
+          <div className="mt-1 text-xs font-semibold text-amber-200">{state.quarantinedEvents ?? 0}</div>
+        </div>
+        <div className="rounded-lg border border-white/10 bg-black/20 p-2">
+          <div className="text-[9px] uppercase text-slate-500">Core ingestion</div>
           <div className="mt-1 text-xs font-semibold text-amber-200">{state.remoteIngestion || 'UNKNOWN'}</div>
         </div>
       </div>
       <p className="text-[9px] leading-relaxed text-slate-500">
-        Local evidence is stored on this device only. Source monotonic timestamps are retained separately from receive time. A stored sample is not independently validated, and it is not yet available to another device or the WIS server.
+        Evidence is first stored locally, then sent to WaveRadar Core when the device enrollment token is available. Source monotonic timestamps remain separate from receive time. Server acknowledgment is not independent validation.
       </p>
       {state.lastError && <p className="text-[9px] leading-relaxed text-amber-200">{state.lastError}</p>}
     </section>
