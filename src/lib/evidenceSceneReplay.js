@@ -19,7 +19,10 @@ function normalizeSceneEntity(value, event) {
   const hasPosition = x != null && y != null && z != null;
   const coordinateFrame = clean(position?.coordinateFrame);
   const calibrationRef = clean(position?.calibrationRef);
-  const aligned = hasPosition && coordinateFrame && calibrationRef && position?.alignmentState === 'ALIGNED';
+  const validationRef = clean(position?.validationRef);
+  const validatorId = clean(position?.validatorId);
+  const independentlyValidated = hasPosition && coordinateFrame && calibrationRef && validationRef && validatorId &&
+    position?.alignmentState === 'ALIGNED' && position?.validationState === 'INDEPENDENTLY_VALIDATED';
   return {
     ...value,
     entityId,
@@ -28,10 +31,13 @@ function normalizeSceneEntity(value, event) {
       x, y, z,
       coordinateFrame,
       calibrationRef,
+      validationRef,
+      validatorId,
+      validationState: clean(position.validationState) ?? 'UNVERIFIED',
       floorId: clean(position.floorId),
-      alignmentState: aligned ? 'ALIGNED' : 'UNVERIFIED',
+      alignmentState: independentlyValidated ? 'ALIGNED' : 'UNVERIFIED',
     } : null,
-    spatialRegistration: aligned ? 'ALIGNED' : 'UNREGISTERED',
+    spatialRegistration: independentlyValidated ? 'INDEPENDENTLY_VALIDATED' : (hasPosition ? 'CALIBRATION_UNVERIFIED' : 'UNREGISTERED'),
     evidenceClass: event.evidenceClass,
     sourceId: event.sourceId,
     lastEventId: event.eventId,
@@ -170,7 +176,7 @@ export function projectEvidenceSceneView(snapshot, options = {}) {
     entities,
     hypotheses: snapshot.hypotheses,
     conflicts: snapshot.conflicts,
-    unlocatedEntityCount: snapshot.entities.filter(entity => entity.spatialRegistration !== 'ALIGNED').length,
+    unlocatedEntityCount: snapshot.entities.filter(entity => entity.spatialRegistration !== 'INDEPENDENTLY_VALIDATED').length,
     untimedEvidenceCount: snapshot.untimedEvents.length,
     unalignedClockEvidenceCount: snapshot.unalignedClockEvents.length,
   };
