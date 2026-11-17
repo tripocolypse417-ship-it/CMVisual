@@ -34,6 +34,9 @@ jobs:
       - name: Test append-only temporal evidence ledger
         run: npm run test:evidence-ledger
 
+      - name: Test native evidence store bridge
+        run: npm run test:native-evidence-store
+
       - name: Check JavaScript and JSX lint
         run: npm run lint
 
