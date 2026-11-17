@@ -31,6 +31,9 @@ jobs:
       - name: Test capability knowledge graph
         run: npm run test:capability-knowledge-graph
 
+      - name: Test append-only temporal evidence ledger
+        run: npm run test:evidence-ledger
+
       - name: Check JavaScript and JSX lint
         run: npm run lint
 
