@@ -239,8 +239,10 @@ public class WaveRadarEvidenceStorePlugin extends Plugin {
   }
 
   private static final class EvidenceDb extends SQLiteOpenHelper {
+    private final Context appContext;
     EvidenceDb(Context context) {
       super(context, "waveradar_evidence.db", null, 2);
+      this.appContext = context.getApplicationContext();
     }
     @Override public void onCreate(SQLiteDatabase db) {
       db.execSQL("CREATE TABLE evidence_events (" +
@@ -263,7 +265,7 @@ public class WaveRadarEvidenceStorePlugin extends Plugin {
             if (stored != null && !stored.startsWith(ENCRYPTED_PREFIX)) {
               android.content.ContentValues values = new android.content.ContentValues();
               try {
-                values.put("event_json", encryptPayload(getContext(), stored));
+                values.put("event_json", encryptPayload(appContext, stored));
               } catch (Exception error) {
                 throw new IllegalStateException("Evidence encryption migration failed; existing row preserved", error);
               }
