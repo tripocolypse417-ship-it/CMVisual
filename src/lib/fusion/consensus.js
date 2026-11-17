@@ -68,7 +68,7 @@ export function fusePositionObservations(observations, options = {}) {
   }
 
   if (distinct.length < 2) {
-    return { status: 'UNAVAILABLE', reason: 'INSUFFICIENT_INDEPENDENT_SOURCES', evidenceClass: 'UNAVAILABLE', rejected };
+    return { status: 'UNAVAILABLE', reason: 'INSUFFICIENT_DISTINCT_SOURCES', evidenceClass: 'UNAVAILABLE', rejected };
   }
 
   const frame = distinct[0].coordinateFrame;
@@ -159,6 +159,7 @@ export function fusePositionObservations(observations, options = {}) {
     leaveOneOutSensitivity,
     sensitivityKind: leaveOneOutSensitivity ? 'DESCRIPTIVE_NOT_VALIDATION' : 'INSUFFICIENT_SOURCES',
     uncertaintyKind: 'HEURISTIC_NOT_CALIBRATED',
+    sourceCorrelation: 'UNKNOWN_NOT_ESTIMATED',
     assumptions: [
       'Source errors are treated as independent for nominal weighting; correlation is not estimated.',
       'All sources share the declared coordinate frame, units, and compatible clock domain.',
