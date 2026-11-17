@@ -12,7 +12,7 @@ The project is not yet a validated life-safety product. No through-wall sensing,
 
 ### 1.1 Shared event pipeline update — 2026-11-17
 
-- WaveRadar Core v436 is live at https://waveradar-20.hatchable.site.
+- WaveRadar Core v437 is live at https://waveradar-20.hatchable.site.
 - Added append-only `waveradar_event_envelopes` and `waveradar_event_quarantine` tables with database-level UPDATE/DELETE rejection.
 - Added device-token-authenticated `POST /api/events/device-ingest`, owner-scoped `GET /api/events/snapshot`, and owner-scoped `GET /api/events-token`.
 - Core checks envelope structure, source-clock semantics, payload byte length, canonical JSON SHA-256, device/token binding, duplicate IDs, and quarantine reasons. Session IDs are retained for later replay.
@@ -27,7 +27,7 @@ The project is not yet a validated life-safety product. No through-wall sensing,
 | Workspace | Current state | Notes |
 |---|---|---|
 | GitHub CMVisual repository | Active | Canonical source and Android CI workflow |
-| WaveRadar Core | Hosted, version 436 deployed 2026-11-17 | Diagnostics, validation, append-only event ledger, device-token ingest, owner-scoped event snapshot, and realtime event grants |
+| WaveRadar Core | Hosted, version 437 deployed 2026-11-17 | Diagnostics, validation, append-only event ledger, device-token ingest, owner-scoped event snapshot, and realtime event grants |
 | Independent Validation Lab | Hosted, version 6 at last check | Researcher, tester, reviewer and admin workflows |
 | WaveRadar Cinematic Showcase | Existing project, version 13 at last check | Concept-media workspace; not product proof |
 | WaveRadar Studio | Existing project, version 4 at last check | Separate design workspace |
