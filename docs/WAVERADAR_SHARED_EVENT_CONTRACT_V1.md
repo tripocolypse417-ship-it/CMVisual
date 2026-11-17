@@ -1,6 +1,6 @@
 # WaveRadar Shared Event Contract v1
 
-**Status:** v1 contract committed on the CMVisual feature branch; the supporting WaveRadar Core event API and append-only tables are deployed in Core v435. Device-level upload and physical validation are still pending.
+**Status:** v1 contract committed on the CMVisual feature branch; the supporting WaveRadar Core event API and append-only tables are deployed in Core v436. Device-level upload and physical validation are still pending.
 
 ## Purpose
 
@@ -67,7 +67,7 @@ Nullable source time, pose, and raw-evidence references represent genuine platfo
 - Verify derived scene and prediction events link to all parent event IDs.
 - Verify WIS and helmet receive identical scene revision, event sequence, and timeline cursor under normal delivery, reconnect, and resynchronization.
 - Verify permission-denied, unsupported, stale, disconnected, and empty are separate source states.
-- Verify owner snapshot and event-token routes; verify missing/invalid device tokens are rejected. These API gate checks have passed in Core v435.
+- Verify owner snapshot and event-token routes; verify missing/invalid device tokens are rejected. These API gate checks have passed in Core v436.
 - Still required: valid enrollment-token upload from the actual Android phone; end-to-end realtime event delivery; run on the actual Android target; record build, device, OS, permission, and adapter versions. Engineering-only captures without independent ground truth are not validation.
 
 ## Integration sequence
@@ -83,11 +83,11 @@ Nullable source time, pose, and raw-evidence references represent genuine platfo
 
 ## Current implementation status
 
-**Implemented and deployed in WaveRadar Core v435:** additive append-only event-envelope and quarantine tables; database-level UPDATE/DELETE rejection triggers; device-token-authenticated event ingestion; owner-scoped snapshot retrieval; owner-scoped realtime subscription grants; session correlation; server-side canonical payload SHA-256 comparison; duplicate handling; and quarantine reason codes. The event/quarantine tables currently contain zero records; no synthetic observations were inserted during endpoint checks.
+**Implemented and deployed in WaveRadar Core v436:** additive append-only event-envelope and quarantine tables; database-level UPDATE/DELETE rejection triggers; device-token-authenticated event ingestion; owner-scoped snapshot retrieval; owner-scoped realtime subscription grants; session correlation; server-side canonical payload SHA-256 comparison; duplicate handling; and quarantine reason codes. The event/quarantine tables currently contain zero records; no synthetic observations were inserted during endpoint checks.
 
 **Implemented on CMVisual branch `feat/shared-event-contract-v1`:** v1 schema and adapter helper; Android sensor and network event adapters; local IndexedDB evidence store and separate delivery queue; retry/backoff; device identity alignment with the existing guided-setup key; enrollment-token upload path; CI regression test; WIS event-stream hook; and a shared timeline summary passed to the spatial workspace, WIS timeline panel, and HMD-style overlay. The WIS also has a raw sensor/network evidence inspector that shows source clock, client/server receive times, payload values, local delivery state, and server integrity result without inventing coordinates.
 
-**Verified so far:** schema JSON parses; Core v435 deployed without migration warnings; immutable database triggers exist; missing/invalid device tokens are rejected; owner event-token route returns a grant; session-filtered snapshot route returns an owner-scoped empty result. These checks do not prove a real device upload.
+**Verified so far:** schema JSON parses; Core v436 deployed without migration warnings; immutable database triggers exist; missing/invalid device tokens are rejected; owner event-token route returns a grant; session-filtered snapshot route returns an owner-scoped empty result. These checks do not prove a real device upload.
 
 **Not yet implemented or verified:** successful upload from the actual phone using its locally stored enrollment token; CI completion for the latest CMVisual head; installation and execution of the resulting APK on the Moto G Play; server-side 3D scene fusion from raw sensor events; scene entity/revision processor; deterministic replay of event envelopes as a spatial scene; and synchronization to a separate physical helmet display. The server stores the complete JSON envelope in Postgres; it does not yet copy raw binary sensor files into the separate evidence object vault. The payload hash covers canonical JSON payload data, not an original binary sensor file, and it is not independent validation.
 
