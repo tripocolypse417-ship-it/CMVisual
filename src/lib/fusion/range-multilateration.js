@@ -18,7 +18,7 @@ function solveThree(a, b, c) {
     Math.max(1e-12, Math.hypot(u.x, u.y) * Math.hypot(v.x, v.y));
   if (geometryQuality < 0.05 || Math.abs(det) < 1e-9) return null;
   const rhs = (item) => item.anchor.x ** 2 + item.anchor.y ** 2 -
-    ref.anchor.x ** 2 - ref.anchor.y ** 2 + ref.rangeM ** 2 - ref.rangeM ** 2;
+    ref.anchor.x ** 2 - ref.anchor.y ** 2 + ref.rangeM ** 2 - item.rangeM ** 2;
   const r1 = rhs(p[1]);
   const r2 = rhs(p[2]);
   const x = (r1 * v.y - u.y * r2) / det;
@@ -33,7 +33,7 @@ function solveWeightedLinear(inliers) {
     const dx = 2 * (item.anchor.x - ref.anchor.x);
     const dy = 2 * (item.anchor.y - ref.anchor.y);
     const rhs = item.anchor.x ** 2 + item.anchor.y ** 2 -
-      ref.anchor.x ** 2 - ref.anchor.y ** 2 + ref.rangeM ** 2 - ref.rangeM ** 2;
+      ref.anchor.x ** 2 - ref.anchor.y ** 2 + ref.rangeM ** 2 - item.rangeM ** 2;
     const weight = 1 / (item.uncertaintyM ** 2 + ref.uncertaintyM ** 2);
     xx += weight * dx * dx;
     xy += weight * dx * dy;
