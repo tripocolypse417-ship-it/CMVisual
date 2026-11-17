@@ -18,7 +18,8 @@
     "test:capability-intelligence": "node scripts/test-capability-intelligence.mjs",
     "test:capability-knowledge-graph": "node scripts/test-capability-knowledge-graph.mjs",
     "test:evidence-ledger": "node scripts/test-evidence-ledger.mjs",
-    "test:native-evidence-store": "node scripts/test-native-evidence-store.mjs"
+    "test:native-evidence-store": "node scripts/test-native-evidence-store.mjs",
+    "test:physical-validation-journal": "node scripts/test-physical-validation-journal.mjs"
   },
   "dependencies": {
     "@base44/sdk": "^0.8.52",
