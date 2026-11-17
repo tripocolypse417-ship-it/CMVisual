@@ -26,6 +26,7 @@ import RealSensorPanel from '../components/RealSensorPanel';
 import SonarRangerPanel from '@/components/SonarRangerPanel';
 import NetworkSignalPanel from '@/components/NetworkSignalPanel';
 import NativeNetworkDiscoveryPanel from '@/components/NativeNetworkDiscoveryPanel';
+import NativeEvidenceStatusPanel from '@/components/NativeEvidenceStatusPanel';
 import AlertToggle from '../components/AlertToggle';
 import HmdOverlay from '../components/HmdOverlay';
 import ArControlBar from '../components/ArControlBar';
