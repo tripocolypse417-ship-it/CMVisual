@@ -19,7 +19,7 @@ Android System WebView inside the Capacitor application is an app-rendering runt
 
 ## Acceptance tests
 
-1. Search all repositories and workflows for browser-control dependencies and classify every match as app rendering, test tooling, optional UI, or prohibited automation.
+1. Search all repositories and workflows for browser-control dependencies and classify every match as app rendering, test tooling, optional UI, or prohibited automation. The current branch's package, MCP, and Actions workflow subset is covered by `npm run test:browserless`.
 2. Remove prohibited automation configuration and tests; ensure the MCP configuration contains no browser server.
 3. Run supported core builds and tests with browser automation packages and services absent.
 4. Verify supported GitHub, email, files, research and evidence workflows through native APIs/connectors.
@@ -29,6 +29,6 @@ Android System WebView inside the Capacitor application is an app-rendering runt
 
 ## Current status
 
-The repository MCP configuration is empty and the browser-runtime policy has been rewritten to prohibit browser automation. Repository-wide dependency inventory, workflow migration, clean-room browser-absent testing, and durable background execution remain unverified. Existing Base44 hosted backend dependencies are separate and remain a portability workstream.
+The repository MCP configuration is empty; the Playwright MCP workflow and launcher script have been removed from this branch; the package manifest no longer declares a Playwright smoke command; and a browserless regression test now checks package dependencies/scripts, MCP servers, and GitHub Actions workflows. The four current GitHub Actions workflow files and package/MCP configuration were statically inspected. The regression test passed against an isolated Node 22 fixture; it has not yet run in GitHub Actions on this branch. Full source-code inventory, external-service migration, clean-room app build/test execution, and durable background execution remain unverified. Existing Base44 hosted backend dependencies are separate and remain a portability workstream.
 
 **No claim is made that all WaveRadar background workflows are already migrated or that continuous free execution is currently available.**
