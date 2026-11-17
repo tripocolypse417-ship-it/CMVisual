@@ -1,67 +1,68 @@
 # WaveRadar Evidence Operating System — Foundation Contract
 
-**Status:** Implemented software contract slice; integration and physical validation remain open.  
+**Status:** Software foundation implemented on a draft branch; live multi-device integration and physical validation remain open.  
 **Date:** 2026-11-17
 
 ## Core principle
 
-WaveRadar is an evidence operating system, not a sensor-fusion score generator. It preserves source-native observations, their provenance and timing, derived claims, competing hypotheses, conflicts and explicit unknowns. Fusion is a consumer of this evidence fabric—not the authority that rewrites it.
+WaveRadar is an evidence operating system, not a sensor-fusion score generator. It preserves source-native observations, provenance, capture and receipt time, derived claims, competing hypotheses, conflicts and explicit unknowns. Fusion is a consumer of this evidence fabric—not an authority that rewrites it.
 
-## Canonical event model
+## Implemented software slices
 
-The first software slice is `src/lib/evidenceLedger.js`.
+### 1. Canonical temporal evidence ledger
 
-Every event carries:
-- stable event and incident identifiers;
-- explicit event type and evidence class;
-- source identity where known;
-- capture/event time and receipt/ingest time as separate nullable fields;
-- declared clock domain (a label, not proof of synchronization);
-- sequence where supplied;
-- coordinate frame and calibration reference only when supplied;
-- immutable raw-evidence reference/hash where supplied;
-- source-event lineage for derivations and hypotheses;
-- integrity state separate from provenance;
-- typed payload and hypothesis grouping.
+`src/lib/evidenceLedger.js` defines versioned events for observations, derivations, hypotheses, conflicts and retractions. It keeps capture time and receipt time separate, preserves clock-domain labels, source lineage, calibration/frame references, integrity state and raw evidence references. Identical duplicate IDs are idempotent; ID collisions are rejected; invalid records are reported rather than silently accepted.
 
-Invalid events are reported in a rejection/quarantine list. Repeated identical IDs are idempotently recognized; a reused ID with different content is rejected as a collision. Original evidence is never overwritten by a stronger evidence label.
+The core is deterministic and in-memory. It is not itself durable storage or cryptographic integrity verification.
 
-## Two different historical questions
+### 2. Native Android local evidence journal
 
-- **Event-time reconstruction:** what events were captured in a specified time range and declared clock domain? No cross-domain clock alignment is attempted.
-- **Knowledge-time reconstruction:** what had reached the system by a receipt-time cutoff? Events without receipt time are excluded rather than assigned an invented arrival time.
+`native/android/WaveRadarEvidenceStorePlugin.java` implements an app-private SQLite append/read bridge. The physical-validation screen writes each captured sample as an UNKNOWN-envelope event while retaining per-field MEASURED/DERIVED/INFERRED labels inside the payload. The JS wrapper and mapping contract have automated tests.
 
-These are not interchangeable. Late-arriving evidence can change the current reconstruction without changing what the system knew at the earlier decision time.
+The journal has no update/delete API, enforces bounded batches and event sizes, and distinguishes exact duplicate events from event-ID collisions. It is local only; this plugin does not transmit data.
 
-## Multi-hypothesis state
+**Important limitations:** the database is not encrypted at rest; Android uninstall/data-clear can remove it; no backup/export recovery, tamper-evident hash chain, retention policy or instrumented process-death test is implemented. Do not place sensitive victim identifiers or unredacted personal information in it.
 
-Competing hypotheses share a group ID and remain separate records. The ledger does not collapse them into a single location, object identity or hazard state. Conflict and retraction events are first-class event types; a downstream policy must decide how to present or resolve them while preserving the underlying history.
+### 3. Evidence-ledger scene replay
 
-## Architecture integration
+`src/lib/evidenceSceneReplay.js` projects ledger events into a deterministic incident snapshot. Knowledge-time filtering is distinct from capture-time replay. Replay requires an explicit clock domain; events from other domains remain unaligned, and untimed evidence remains visible outside the timed scene.
 
-1. **Provider/capability plane:** existing capability registry and Android native plugins report support, permissions, registration, sample arrival and limitations separately.
-2. **Evidence ledger:** this module preserves the event history and lineage.
-3. **Clock/space alignment:** future adapters must provide explicit synchronization evidence and versioned coordinate transforms. Clock-domain equality alone is not synchronization.
-4. **Typed measurement/fusion:** the experimental fusion work in PR #94 remains a separate candidate consumer; its heuristic uncertainty and unknown source correlation are not calibrated confidence.
-5. **Incident scene and replay:** the scene/replay branch is a prototype projection layer. Reconcile its event contract with this ledger before integration; do not use its branch's prior divergent history as a merge base.
-6. **Independent integrity:** challenge estimates with held-out sources, physical ground truth and independent reviewers; the producer cannot certify its own output.
-7. **WIS/helmet projections:** command, helmet and replay must consume the same incident revision and evidence lineage. Only presentation density and role permissions differ.
+Only explicit `payload.sceneEntity` objects with stable IDs/types create scene entities. Position requires finite x/y/z. ALIGNED additionally requires an explicit coordinate frame and alignment declaration. Otherwise the entity remains unregistered and positionless. Competing hypotheses and conflicts remain separate collections.
 
-## Networking and offline operation
+Command and helmet projections derive from the same snapshot and share a synchronization key. This is a tested data contract, not yet a connected renderer or real helmet display.
 
-PR #95 defines the provider-independent network OS and command/helmet synchronization requirements. The ledger is designed to accept events from local-first adapters and durable store-and-forward transport. This commit does not implement radio discovery, encrypted transport, durable persistence, Linux services, or browserless device management.
+## Time and space rules
 
-## Acceptance gates
+- Capture/event time is not receipt/ingest time.
+- A clock-domain label is not proof of synchronization.
+- No timestamp is filled from arrival time.
+- Cross-domain capture timestamps are not compared without a validated clock transform and error bounds.
+- No coordinate is inferred from a range-only measurement.
+- No entity without an explicit registered position is placed at the origin.
+- Coordinate-frame labels are not calibration; alignment requires independently established transforms.
 
-- Schema and append-only/idempotency tests (this change).
-- Durable storage with crash-safe append and bounded retention.
-- Authenticated event transport with duplicate/reorder/partition/reconnect tests.
-- Clock offset/drift estimation backed by synchronization observations.
-- Versioned coordinate transforms and calibration provenance.
-- Multi-hypothesis scene projection with explicit uncertainty and unavailable states.
-- Command/helmet shared revision, stale/offline display and deterministic reconciliation.
-- Independent ground-truth evaluation and external safety review before operational use.
+## Existing architecture retained
+
+- PR #95 remains the separate networking and WIS/helmet architecture proposal.
+- PR #94 remains an experimental fusion candidate. Its uncertainty estimates and source-correlation assumptions are not calibrated confidence.
+- The divergent scene/replay branch was not merged. Its earlier prototype informed the new ledger-based replay contract, which has been reimplemented on this clean branch.
+- Existing Android sensor, ranging and network plugins remain distinct capability providers. This change does not add new hardware capability.
+
+## Next acceptance gates
+
+1. Add Android Keystore-backed encryption and documented key recovery/rotation before sensitive incident data.
+2. Add instrumented Android tests for append, process restart, paging, duplicates, collisions, interrupted transactions and migrations.
+3. Persist all approved sensor/evidence adapters through the journal without blocking capture.
+4. Implement authenticated, encrypted, idempotent store-and-forward transport with explicit authorization, replay protection and conflict handling.
+5. Implement clock offset/drift estimation and versioned coordinate transforms with measured error bounds.
+6. Connect the ledger-backed scene snapshot to a 3D renderer, timeline controls and evidence drill-down.
+7. Connect WIS command and helmet projections to the same incident revision/cursor, with stale/offline and uncertainty indications.
+8. Independently evaluate sensor and scene performance against physical ground truth and external review.
+
+## Verification
+
+Automated contract tests cover ledger semantics, local-store bridge behavior, validation-sample mapping and scene replay/projection semantics. GitHub Actions runs web lint/build, Android compilation and regression tests. A passing source-level test does not prove device persistence or physical accuracy; actual Android device testing remains required.
 
 ## Non-claims
 
-This is an in-memory deterministic software foundation. It is not a durable event database, cryptographic signature verifier, real-time multi-device sync service, physical sensor adapter, 3D renderer, calibrated fusion engine or life-safety validated system. It does not establish through-wall sensing, victim detection, precise indoor positioning or operational readiness.
+This is not a completed operating system, durable multi-device evidence platform, encrypted incident database, calibrated fusion engine, 3D scene renderer, verified helmet display, through-wall sensor, victim detector or life-safety validated system. No indoor-positioning accuracy or operational readiness is established.
