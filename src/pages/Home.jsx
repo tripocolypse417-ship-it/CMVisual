@@ -389,7 +389,7 @@ export default function Home() {
     ...(Array.isArray(federatedWorld?.projectableEvents) ? federatedWorld.projectableEvents : []),
   ], [opportunisticLiveDetections, federatedWorld?.projectableEvents]);
   const worldTimeline = useWorldTimeline({ observations: timelineObservations, geo: geo?.pos, sessionId: sessionIdRef.current, enabled: isScanning });
-  const sharedEventStream = useSharedEventStream(true);
+  const sharedEventStream = useSharedEventStream(sessionIdRef.current, true);
   const sharedScene = useMemo(() => ({
     timelineEventCount: Number(worldTimeline?.timeline?.eventCount || 0),
     trackCount: Number(worldTimeline?.timeline?.trackCount || 0),
@@ -826,7 +826,7 @@ export default function Home() {
             <NativeNetworkDiscoveryPanel />
           </div>
           <div className="glass-panel rounded-2xl p-3 relative corner-decoration">
-            <NativeEvidenceStatusPanel />
+            <NativeEvidenceStatusPanel sessionId={sessionIdRef.current} />
           </div>
         </div>
 
