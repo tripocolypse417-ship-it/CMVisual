@@ -1,6 +1,6 @@
 # WaveRadar Shared Event Contract v1
 
-**Status:** Canonical engineering contract proposal, committed on an isolated feature branch for review. This is not evidence of deployed ingestion or device validation.
+**Status:** v1 contract committed on the CMVisual feature branch; the supporting WaveRadar Core event API and append-only tables are deployed in Core v435. Device-level upload and physical validation are still pending.
 
 ## Purpose
 
@@ -21,7 +21,7 @@ Every authorized collector and downstream service uses one versioned event envel
 
 Machine-readable JSON Schema: `schemas/waveradar-event-envelope-v1.schema.json`.
 
-A dependency-free adapter helper is available at `src/lib/eventEnvelope.js`. It wraps an unmodified native snapshot, preserves source clock-domain distinctions, assigns a UUID, and calculates a SHA-256 digest when Web Crypto is available. `src/hooks/useNativeEvidencePipeline.js` now connects the Android SensorManager snapshot and the existing Android network-discovery event to this envelope. `src/lib/localEvidenceStore.js` appends envelopes to a device-local IndexedDB store using a deterministic source-sample key; a concrete `local-indexeddb://` reference is recorded in each event. This is local persistence only: it is not a remote evidence vault, and browser/app data clearing or storage eviction can remove it. A storage failure is surfaced rather than silently dropping samples.
+A dependency-free adapter helper is available at `src/lib/eventEnvelope.js`. It wraps an unmodified native snapshot, preserves source clock-domain distinctions, assigns a UUID, attaches the active WIS session ID when available, and calculates a SHA-256 digest when Web Crypto is available. `src/hooks/useNativeEvidencePipeline.js` connects Android SensorManager samples and the existing Android network-discovery event to this envelope. `src/lib/localEvidenceStore.js` appends envelopes to a device-local IndexedDB store using deterministic source-sample keys; a separate delivery store tracks pending, acknowledged, and quarantined upload states without modifying evidence records. A `local-indexeddb://` reference points to the local record. IndexedDB can still be cleared or evicted, and storage exhaustion is surfaced rather than silently dropping samples.
 
 The envelope contains event identity/type, source and adapter identity, authorization scope, observation and receive timestamps, clock domain and uncertainty, evidence class and integrity state, parent event IDs, optional spatial frame/pose and uncertainty, a versioned event-specific payload, immutable raw-evidence reference and SHA-256, retention class, and quality status.
 
@@ -31,12 +31,12 @@ Nullable source time, pose, and raw-evidence references represent genuine platfo
 
 1. Native adapter captures source data and source-native timestamps.
 2. Adapter creates an envelope and preserves original payload bytes.
-3. Ingestion authenticates the collector, checks authorization scope, validates schema, verifies digest when bytes are present, and records receive time.
-4. Invalid or suspicious events are quarantined with reason codes; originals remain preserved.
-5. Accepted events append to the event log. Duplicate event IDs are idempotent; conflicting content under the same ID is rejected and audited.
+3. The deployed Core endpoint `/api/events/device-ingest` authenticates the collector with the existing device enrollment token and checks that the envelope device ID matches the token-bound device.
+4. Core checks envelope structure, source clock semantics, evidence class, payload byte length, and SHA-256 over canonical JSON payload data. Invalid or mismatched events are appended to an immutable quarantine table with reason codes.
+5. Accepted events append to `waveradar_event_envelopes`; event IDs are idempotent, and conflicting content under the same ID is quarantined. Server receive time is stored separately from client receive time and source time.
 6. A separate fusion worker consumes accepted events and emits derived scene events with parent event IDs and uncertainty.
-7. A scene revision is published atomically for subscribers.
-8. WIS and helmet render the same scene revision and timeline cursor. If a consumer falls behind, it requests a snapshot at a known revision and resumes from the event sequence.
+7. Core publishes a small owner-scoped `event-stored` notification after the database insert. `/api/events-token` grants a short-lived subscription to the authenticated owner's channel; `/api/events/snapshot` returns owner-scoped, session-filterable event envelopes.
+8. CMVisual's WIS workspace, spatial viewport, and HMD-style overlay receive the same local timeline cursor and shared Core event-stream status object. This is same-app view-state alignment; it is not yet proof of a separate physical helmet client or a shared server-side scene revision.
 9. Replay reconstructs state from a snapshot plus ordered events, using event time for the timeline and receive time to diagnose late arrivals. Late events must not silently rewrite what the operator saw at an earlier time.
 
 ## Event-specific payload conventions
@@ -59,7 +59,7 @@ Nullable source time, pose, and raw-evidence references represent genuine platfo
 
 ## Acceptance tests before integration
 
-- JSON Schema positive/negative fixtures; reject missing required fields, unknown evidence classes, invalid hashes, malformed timestamps, and invalid units.
+- JSON Schema positive/negative fixtures; reject missing required fields, unknown evidence classes, invalid hashes, malformed timestamps, and invalid units. CI regression tests cover the adapter's clock-domain and local-reference semantics.
 - Verify raw payload hash before and after ingestion and replay.
 - Verify idempotent duplicate delivery and conflicting-ID rejection.
 - Verify out-of-order and late-arriving events preserve both replay modes.
@@ -67,7 +67,8 @@ Nullable source time, pose, and raw-evidence references represent genuine platfo
 - Verify derived scene and prediction events link to all parent event IDs.
 - Verify WIS and helmet receive identical scene revision, event sequence, and timeline cursor under normal delivery, reconnect, and resynchronization.
 - Verify permission-denied, unsupported, stale, disconnected, and empty are separate source states.
-- Run on the actual Android target; record build, device, OS, permission, and adapter versions. Engineering-only captures without independent ground truth are not validation.
+- Verify owner snapshot and event-token routes; verify missing/invalid device tokens are rejected. These API gate checks have passed in Core v435.
+- Still required: valid enrollment-token upload from the actual Android phone; end-to-end realtime event delivery; run on the actual Android target; record build, device, OS, permission, and adapter versions. Engineering-only captures without independent ground truth are not validation.
 
 ## Integration sequence
 
@@ -82,8 +83,14 @@ Nullable source time, pose, and raw-evidence references represent genuine platfo
 
 ## Current implementation status
 
-Implemented on this feature branch: v1 schema; event-envelope helper; sensor and network event adapters; device-local append-only IndexedDB event storage with deduplication; visible pipeline status panel; and a CI regression-test step. The network adapter preserves the clock as UNKNOWN because the Android platform snapshot does not establish source measurement time. Sensor events preserve Android elapsed-realtime nanoseconds separately from receive time.
+**Implemented and deployed in WaveRadar Core v435:** additive append-only event-envelope and quarantine tables; database-level UPDATE/DELETE rejection triggers; device-token-authenticated event ingestion; owner-scoped snapshot retrieval; owner-scoped realtime subscription grants; session correlation; server-side canonical payload SHA-256 comparison; duplicate handling; and quarantine reason codes. The event/quarantine tables currently contain zero records; no synthetic observations were inserted during endpoint checks.
 
-Not implemented or verified: authenticated remote ingestion, server-side append-only raw evidence vault, server schema validation/quarantine, cross-device event transport, shared scene processor/revision stream, deterministic replay engine, synchronized WIS/helmet subscriber, on-device APK build/install test for this branch, or independent physical validation. The local IndexedDB record is a recovery aid, not a substitute for server backup or a validated evidence repository.
+**Implemented on CMVisual branch `feat/shared-event-contract-v1`:** v1 schema and adapter helper; Android sensor and network event adapters; local IndexedDB evidence store and separate delivery queue; retry/backoff; device identity alignment with the existing guided-setup key; enrollment-token upload path; CI regression test; WIS event-stream hook; and a shared timeline summary passed to the spatial workspace, WIS timeline panel, and HMD-style overlay.
+
+**Verified so far:** schema JSON parses; Core v435 deployed without migration warnings; immutable database triggers exist; missing/invalid device tokens are rejected; owner event-token route returns a grant; session-filtered snapshot route returns an owner-scoped empty result. These checks do not prove a real device upload.
+
+**Not yet implemented or verified:** successful upload from the actual phone using its locally stored enrollment token; CI completion for the latest CMVisual head; installation and execution of the resulting APK on the Moto G Play; server-side 3D scene fusion from raw sensor events; scene entity/revision processor; deterministic replay of event envelopes as a spatial scene; and synchronization to a separate physical helmet display. The server stores the complete JSON envelope in Postgres; it does not yet copy raw binary sensor files into the separate evidence object vault. The payload hash covers canonical JSON payload data, not an original binary sensor file, and it is not independent validation.
+
+Android sensor events preserve elapsed-realtime nanoseconds and leave UTC observation time null. Network snapshots retain an UNKNOWN source clock because Android's platform snapshot does not establish the original measurement time. Wi-Fi scan results may be cached; cellular metadata is platform-provided; BLE discovery is permission- and scan-window-limited.
 
 The existing Android plugin's Wi-Fi data is platform scan cache; cellular information is platform-provided; BLE discovery is limited by Android permissions and radio scope. Those limitations remain visible in every event and operator view.
