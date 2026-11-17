@@ -67,7 +67,7 @@ export function prepareEvidenceSceneReplay(ledger, {
   const known = knowledgeTime == null ? ledger.events : eventsKnownAt(ledger, knowledgeTime);
   const allIncidentEvents = ledger.events.filter(event => event.incidentId === incident);
   const incidentEvents = known.filter(event => event.incidentId === incident);
-  const unknownReceiptEvents = knowledgeTime == null ? [] : allIncidentEvents.filter(event => event.receivedAt == null);
+  const unknownReceiptEvents = allIncidentEvents.filter(event => event.receivedAt == null);
   const domain = clean(clockDomain);
   const timed = incidentEvents.filter(event => event.capturedAt != null);
   if (timed.length && !domain) throw new TypeError('clockDomain is required for timed scene replay');
