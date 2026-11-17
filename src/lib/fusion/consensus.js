@@ -22,6 +22,7 @@ function validateObservation(observation, nowMs, maxAgeMs) {
   if (!observation.position || !['x', 'y', 'z'].every((axis) => finite(observation.position[axis]))) return 'INVALID_POSITION';
   if (typeof observation.coordinateFrame !== 'string' || !observation.coordinateFrame.trim()) return 'MISSING_COORDINATE_FRAME';
   if (typeof observation.units !== 'string' || !observation.units.trim()) return 'MISSING_UNITS';
+  if (typeof observation.clockDomain !== 'string' || !observation.clockDomain.trim()) return 'MISSING_CLOCK_DOMAIN';
   if (!finite(observation.timestampMs)) return 'INVALID_TIMESTAMP';
   if (!finite(observation.uncertainty) || observation.uncertainty <= 0) return 'INVALID_UNCERTAINTY';
   const ageMs = nowMs - observation.timestampMs;
@@ -82,6 +83,12 @@ export function fusePositionObservations(observations, options = {}) {
 
   if (compatible.length < 2) {
     return { status: 'UNAVAILABLE', reason: 'INSUFFICIENT_COMPATIBLE_SOURCES', evidenceClass: 'UNAVAILABLE', rejected };
+  }
+
+  const clockDomains = new Set(compatible.map((item) => item.clockDomain));
+  if (clockDomains.size > 1) {
+    for (const observation of compatible) rejected.push({ sourceId: observation.sourceId, reason: 'CLOCK_DOMAIN_MISMATCH' });
+    return { status: 'UNAVAILABLE', reason: 'INCOMPATIBLE_CLOCK_DOMAINS', evidenceClass: 'UNAVAILABLE', rejected };
   }
 
   const timestamps = compatible.map((item) => item.timestampMs);
@@ -152,6 +159,7 @@ export function fusePositionObservations(observations, options = {}) {
     position,
     units,
     coordinateFrame: frame,
+    clockDomain: compatible[0].clockDomain,
     timestampWindow: { earliestMs: Math.min(...timestamps), latestMs: Math.max(...timestamps) },
     sourceIds: inliers.map(({ observation }) => observation.sourceId),
     excludedSourceIds: rejected.map(({ sourceId }) => sourceId).filter(Boolean),
@@ -162,7 +170,7 @@ export function fusePositionObservations(observations, options = {}) {
     sourceCorrelation: 'UNKNOWN_NOT_ESTIMATED',
     assumptions: [
       'Source errors are treated as independent for nominal weighting; correlation is not estimated.',
-      'All sources share the declared coordinate frame, units, and compatible clock domain.',
+      'All sources share the declared coordinate frame, units, and one clock domain whose timestamps have already been normalized or synchronized.',
       'The robust residual gate is a screening rule, not proof that an observation is false.',
     ],
     limitations: [
