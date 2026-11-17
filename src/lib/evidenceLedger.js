@@ -160,8 +160,9 @@ export function eventsAtCaptureTime(ledger, { start, end, clockDomain } = {}) {
   const to = end == null ? Infinity : parseTimestamp(end);
   if (!ledger || !Array.isArray(ledger.events) || from == null || to == null || from > to) throw new TypeError('valid ledger time range is required');
   const domain = text(clockDomain);
+  if (!domain) throw new TypeError('clockDomain is required; capture times from different domains are not directly comparable');
   return ledger.events
-    .filter(event => event.capturedAt != null && (!domain || event.clockDomain === domain) && event.capturedAt >= from && event.capturedAt <= to)
+    .filter(event => event.capturedAt != null && event.clockDomain === domain && event.capturedAt >= from && event.capturedAt <= to)
     .slice()
     .sort((a, b) => a.capturedAt - b.capturedAt || (a.sequence ?? Infinity) - (b.sequence ?? Infinity) || a.eventId.localeCompare(b.eventId));
 }
