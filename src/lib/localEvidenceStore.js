@@ -54,17 +54,26 @@ export async function appendLocalEvidenceEvent(event, sampleKey) {
   const tx = db.transaction(STORE_NAME, 'readwrite');
   const store = tx.objectStore(STORE_NAME);
   let added = false;
-  const existing = await requestResult(store.get(record.sample_key));
-  if (!existing) {
-    await requestResult(store.add(record));
-    added = true;
-  }
-  await new Promise((resolve, reject) => {
-    tx.oncomplete = resolve;
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve({ added, sampleKey: record.sample_key });
     tx.onerror = () => reject(tx.error || new Error('INDEXED_DB_COMMIT_FAILED'));
     tx.onabort = () => reject(tx.error || new Error('INDEXED_DB_TRANSACTION_ABORTED'));
+    const lookup = store.get(record.sample_key);
+    lookup.onsuccess = () => {
+      if (lookup.result) return;
+      try {
+        store.add(record);
+        added = true;
+      } catch (error) {
+        reject(error);
+        try { tx.abort(); } catch {}
+      }
+    };
+    lookup.onerror = () => {
+      reject(lookup.error || new Error('INDEXED_DB_LOOKUP_FAILED'));
+      try { tx.abort(); } catch {}
+    };
   });
-  return { added, sampleKey: record.sample_key };
 }
 
 export async function getLocalEvidenceStatus() {
@@ -89,5 +98,6 @@ export async function listLocalEvidenceEvents({ limit = 100 } = {}) {
   const tx = db.transaction(STORE_NAME, 'readonly');
   const store = tx.objectStore(STORE_NAME);
   const records = await requestResult(store.getAll());
-  return records.slice(-Math.max(1, Math.min(1000, Number(limit) || 100)));
+  return records.sort((a, b) => String(a.received_at).localeCompare(String(b.received_at)))
+    .slice(-Math.max(1, Math.min(1000, Number(limit) || 100)));
 }
