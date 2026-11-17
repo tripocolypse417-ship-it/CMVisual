@@ -25,6 +25,7 @@ import useWakeLock from '../hooks/useWakeLock';
 import RealSensorPanel from '../components/RealSensorPanel';
 import SonarRangerPanel from '@/components/SonarRangerPanel';
 import NetworkSignalPanel from '@/components/NetworkSignalPanel';
+import NativeNetworkDiscoveryPanel from '@/components/NativeNetworkDiscoveryPanel';
 import AlertToggle from '../components/AlertToggle';
 import HmdOverlay from '../components/HmdOverlay';
 import ArControlBar from '../components/ArControlBar';
@@ -799,6 +800,9 @@ export default function Home() {
           </div>
           <div className="glass-panel rounded-2xl p-3 relative corner-decoration">
             <NetworkSignalPanel color={color} />
+          </div>
+          <div className="glass-panel rounded-2xl p-3 relative corner-decoration">
+            <NativeNetworkDiscoveryPanel />
           </div>
         </div>
 
