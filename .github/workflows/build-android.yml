@@ -85,6 +85,11 @@ jobs:
           from pathlib import Path
           p = Path("android/app/src/main/AndroidManifest.xml")
           s = p.read_text()
+          import re
+          if re.search(r'android:allowBackup="[^"]*"', s):
+              s = re.sub(r'android:allowBackup="[^"]*"', 'android:allowBackup="false"', s, count=1)
+          else:
+              s = s.replace('<application', '<application android:allowBackup="false"', 1)
           perms = [
               '    <uses-permission android:name="android.permission.CAMERA" />',
               '    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />',
