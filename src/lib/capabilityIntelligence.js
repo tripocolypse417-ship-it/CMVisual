@@ -11,6 +11,9 @@ export const CAPABILITIES = Object.freeze([
   { id: 'WIFI.NETWORK.SSID', family: 'WIFI', label: 'Wi-Fi network name', evidence: 'MEASURED' },
   { id: 'WIFI.SIGNAL.RSSI', family: 'WIFI', label: 'Wi-Fi received signal strength', evidence: 'MEASURED', unit: 'dBm' },
   { id: 'WIFI.CHANNEL.FREQUENCY', family: 'WIFI', label: 'Wi-Fi frequency', evidence: 'MEASURED', unit: 'MHz' },
+  { id: 'BLUETOOTH.SERVICE.UUID', family: 'BLUETOOTH', label: 'Bluetooth LE advertised service UUID', evidence: 'MEASURED' },
+  { id: 'BLUETOOTH.MANUFACTURER.ID', family: 'BLUETOOTH', label: 'Bluetooth LE manufacturer identifier', evidence: 'MEASURED' },
+  { id: 'BLUETOOTH.SIGNAL.RSSI', family: 'BLUETOOTH', label: 'Bluetooth LE received signal strength', evidence: 'MEASURED', unit: 'dBm' },
   { id: 'RELATIONSHIP.CO_VISIBLE', family: 'RELATIONSHIP', label: 'Co-visible network observations', evidence: 'DERIVED' },
   { id: 'RELATIONSHIP.SAME_NETWORK_CANDIDATE', family: 'RELATIONSHIP', label: 'Same network candidate', evidence: 'INFERRED' }
 ]);
@@ -77,7 +80,24 @@ export function normalizeNetworkSnapshot(snapshot = {}, context = {}) {
     });
     if (finite(item.signalDbm) !== null) observations.push({ ...base, observationId: 'cell-rssi-' + observations.length, capabilityId: 'CELLULAR.SIGNAL.DBM', family: 'CELLULAR', evidenceState: 'MEASURED', value: finite(item.signalDbm), unit: 'dBm', state: ageMs === null ? 'UNKNOWN' : ageMs > 60000 ? 'STALE' : 'CURRENT', ageMs, network: { technology: text(item.technology), registered: Boolean(item.registered), cellId: text(item.cellId) } });
   }
-  return { schemaVersion: 'waveradar-capability-observation-v1', receivedAt, wifiStatus: text(source.wifi?.status) || 'UNAVAILABLE', cellularStatus: text(source.cellular?.status) || 'UNAVAILABLE', observations, counts: { wifi: observations.filter((o) => o.family === 'WIFI').length, cellular: observations.filter((o) => o.family === 'CELLULAR').length } };
+  for (const item of Array.isArray(source.bluetooth?.observations) ? source.bluetooth.observations : []) {
+    if (!item || typeof item !== 'object') continue;
+    const serviceUuids = Array.isArray(item.serviceUuids) ? item.serviceUuids.map(text).filter(Boolean) : [];
+    const manufacturerIds = Array.isArray(item.manufacturerIds) ? item.manufacturerIds.map(finite).filter((v) => v !== null) : [];
+    const common = {
+      ...base,
+      family: 'BLUETOOTH',
+      evidenceState: 'MEASURED',
+      state: 'CURRENT',
+      sourceTimestampNanos: finite(item.sourceTimestampNanos),
+      provenance: { source: 'Android BluetoothLeScanner advertisement', adapterVersion: '1.0.0' },
+      limitations: ['Advertisement metadata only; no device address, advertised name, GATT characteristic, owner, or identity is collected', 'Advertisement presence does not prove that the device is a sensor']
+    };
+    serviceUuids.forEach((uuid, index) => observations.push({ ...common, observationId: 'ble-service-' + observations.length + '-' + index, capabilityId: 'BLUETOOTH.SERVICE.UUID', value: uuid, classification: text(item.classification) || 'POSSIBLE_SENSOR' }));
+    manufacturerIds.forEach((id, index) => observations.push({ ...common, observationId: 'ble-manufacturer-' + observations.length + '-' + index, capabilityId: 'BLUETOOTH.MANUFACTURER.ID', value: id, classification: text(item.classification) || 'POSSIBLE_SENSOR' }));
+    if (finite(item.rssiDbm) !== null) observations.push({ ...common, observationId: 'ble-rssi-' + observations.length, capabilityId: 'BLUETOOTH.SIGNAL.RSSI', value: finite(item.rssiDbm), unit: 'dBm', classification: text(item.classification) || 'POSSIBLE_SENSOR' });
+  }
+  return { schemaVersion: 'waveradar-capability-observation-v1', receivedAt, wifiStatus: text(source.wifi?.status) || 'UNAVAILABLE', cellularStatus: text(source.cellular?.status) || 'UNAVAILABLE', bluetoothStatus: text(source.bluetooth?.status) || 'UNAVAILABLE', observations, counts: { wifi: observations.filter((o) => o.family === 'WIFI').length, cellular: observations.filter((o) => o.family === 'CELLULAR').length, bluetooth: observations.filter((o) => o.family === 'BLUETOOTH').length } };
 }
 
 function haversineMeters(a, b) {
