@@ -21,7 +21,7 @@ Every authorized collector and downstream service uses one versioned event envel
 
 Machine-readable JSON Schema: `schemas/waveradar-event-envelope-v1.schema.json`.
 
-A dependency-free adapter helper is available at `src/lib/eventEnvelope.js`. It wraps an unmodified native snapshot, preserves source clock-domain distinctions, assigns a UUID, and calculates a SHA-256 digest when Web Crypto is available. It deliberately leaves `raw_payload_ref` null: hashing a serialized snapshot does not make it durably stored raw evidence. The helper is not yet connected to the live Android bridge or an ingestion service.
+A dependency-free adapter helper is available at `src/lib/eventEnvelope.js`. It wraps an unmodified native snapshot, preserves source clock-domain distinctions, assigns a UUID, and calculates a SHA-256 digest when Web Crypto is available. `src/hooks/useNativeEvidencePipeline.js` now connects the Android SensorManager snapshot and the existing Android network-discovery event to this envelope. `src/lib/localEvidenceStore.js` appends envelopes to a device-local IndexedDB store using a deterministic source-sample key; a concrete `local-indexeddb://` reference is recorded in each event. This is local persistence only: it is not a remote evidence vault, and browser/app data clearing or storage eviction can remove it. A storage failure is surfaced rather than silently dropping samples.
 
 The envelope contains event identity/type, source and adapter identity, authorization scope, observation and receive timestamps, clock domain and uncertainty, evidence class and integrity state, parent event IDs, optional spatial frame/pose and uncertainty, a versioned event-specific payload, immutable raw-evidence reference and SHA-256, retention class, and quality status.
 
@@ -82,6 +82,8 @@ Nullable source time, pose, and raw-evidence references represent genuine platfo
 
 ## Current implementation status
 
-The v1 schema and adapter helper are committed on this feature branch. The helper has a focused regression test but remains disconnected from the live Android bridge. There is no verified durable evidence store, ingestion endpoint, replay service, shared WIS/helmet scene subscription, Android build, or independent validation from this change set.
+Implemented on this feature branch: v1 schema; event-envelope helper; sensor and network event adapters; device-local append-only IndexedDB event storage with deduplication; visible pipeline status panel; and a CI regression-test step. The network adapter preserves the clock as UNKNOWN because the Android platform snapshot does not establish source measurement time. Sensor events preserve Android elapsed-realtime nanoseconds separately from receive time.
+
+Not implemented or verified: authenticated remote ingestion, server-side append-only raw evidence vault, server schema validation/quarantine, cross-device event transport, shared scene processor/revision stream, deterministic replay engine, synchronized WIS/helmet subscriber, on-device APK build/install test for this branch, or independent physical validation. The local IndexedDB record is a recovery aid, not a substitute for server backup or a validated evidence repository.
 
 The existing Android plugin's Wi-Fi data is platform scan cache; cellular information is platform-provided; BLE discovery is limited by Android permissions and radio scope. Those limitations remain visible in every event and operator view.
