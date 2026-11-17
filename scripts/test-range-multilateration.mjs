@@ -18,6 +18,7 @@ const obs = (item, index, overrides = {}) => ({
   uncertaintyM: 0.05,
   timestampMs: nowMs - 10,
   coordinateFrame: 'surveyed-floor-A-v1',
+  clockDomain: 'monotonic:session-1',
   ...overrides,
 });
 
@@ -28,6 +29,7 @@ assert.ok(Math.abs(exact.position.x - target.x) < 1e-8);
 assert.ok(Math.abs(exact.position.y - target.y) < 1e-8);
 assert.equal(exact.dimensions, 2);
 assert.equal(exact.sourceCorrelation, 'UNKNOWN_NOT_ESTIMATED');
+assert.equal(exact.clockDomain, 'monotonic:session-1');
 
 const redundant = solveRangeOnlyPosition2D(anchors.map(obs), { nowMs });
 assert.equal(redundant.status, 'CANDIDATE');
@@ -43,6 +45,23 @@ assert.ok(stale.rejected.every((item) => item.reason === 'STALE'));
 
 const mixedFrames = solveRangeOnlyPosition2D(anchors.slice(0, 3).map((a, i) => obs(a, i, { coordinateFrame: i === 2 ? 'other-frame' : 'surveyed-floor-A-v1' })), { nowMs });
 assert.equal(mixedFrames.reason, 'INCOMPATIBLE_COORDINATE_FRAMES');
+
+const mixedClockDomains = solveRangeOnlyPosition2D([
+  obs(anchors[0], 0),
+  obs(anchors[1], 1),
+  obs(anchors[2], 2, { clockDomain: 'monotonic:session-2' }),
+], { nowMs });
+assert.equal(mixedClockDomains.status, 'UNAVAILABLE');
+assert.equal(mixedClockDomains.reason, 'INCOMPATIBLE_CLOCK_DOMAINS');
+assert.ok(mixedClockDomains.rejected.every((item) => item.reason === 'CLOCK_DOMAIN_MISMATCH'));
+
+const missingClockDomain = solveRangeOnlyPosition2D([
+  obs(anchors[0], 0, { clockDomain: undefined }),
+  obs(anchors[1], 1),
+  obs(anchors[2], 2),
+], { nowMs });
+assert.equal(missingClockDomain.reason, 'INSUFFICIENT_ANCHORS');
+assert.ok(missingClockDomain.rejected.some((item) => item.reason === 'MISSING_CLOCK_DOMAIN'));
 
 const duplicateAnchor = solveRangeOnlyPosition2D([obs(anchors[0], 0), obs(anchors[0], 1), obs(anchors[1], 2)], { nowMs });
 assert.equal(duplicateAnchor.reason, 'INSUFFICIENT_ANCHORS');
@@ -61,4 +80,4 @@ assert.ok(Math.abs(robust.position.y - target.y) < 1e-6);
 
 assert.throws(() => solveRangeOnlyPosition2D({}, { nowMs }), /array/);
 assert.throws(() => solveRangeOnlyPosition2D([], {}), /nowMs/);
-console.log('Range-only multilateration contract passed: 9 scenarios.');
+console.log('Range-only multilateration contract passed: 11 scenarios.');
