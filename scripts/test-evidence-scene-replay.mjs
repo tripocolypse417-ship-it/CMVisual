@@ -12,6 +12,7 @@ const ledger = createEvidenceLedger([
   { eventId: 'late-event', incidentId: 'incident-a', eventType: 'OBSERVATION', sourceId: 'phone-b', capturedAt: ms(base) + 500, receivedAt: ms(base) + 5000, clockDomain: 'UTC', evidenceClass: 'MEASURED', payload: { note: 'arrived later' } },
   { eventId: 'other-clock', incidentId: 'incident-a', eventType: 'OBSERVATION', sourceId: 'phone-c', capturedAt: ms(base) + 2000, receivedAt: ms(base) + 2100, clockDomain: 'ANDROID_ELAPSED_REALTIME_NANOS', evidenceClass: 'MEASURED', payload: {} },
   { eventId: 'untimed', incidentId: 'incident-a', eventType: 'OBSERVATION', sourceId: 'sensor-d', capturedAt: null, receivedAt: ms(base) + 2200, clockDomain: null, evidenceClass: 'UNKNOWN', payload: {} },
+  { eventId: 'unknown-receipt', incidentId: 'incident-a', eventType: 'OBSERVATION', sourceId: 'offline-device', capturedAt: ms(base) + 2500, receivedAt: null, clockDomain: 'UTC', evidenceClass: 'MEASURED', payload: {} },
   { eventId: 'other-incident', incidentId: 'incident-b', eventType: 'OBSERVATION', sourceId: 'x', capturedAt: ms(base), receivedAt: ms(base), clockDomain: 'UTC', evidenceClass: 'MEASURED', payload: {} },
 ]);
 assert.throws(() => prepareEvidenceSceneReplay(ledger, { incidentId: 'incident-a' }), /clockDomain is required/);
