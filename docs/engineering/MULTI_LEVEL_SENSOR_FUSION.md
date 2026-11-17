@@ -60,7 +60,7 @@ Prefer a truthful lower-capability mode over a confident-looking but unsupported
 
 ## Range-only multilateration experiment
 
-`src/lib/fusion/range-multilateration.js` adds a separate 2D solver for ranges to surveyed anchors. It uses deterministic three-anchor hypotheses, a geometry gate, residual-consistent inlier selection, and weighted linear refitting. It returns only a 2D DERIVED candidate, source/anchor lineage, residual diagnostics, and an explicit unknown-source-correlation warning.
+`src/lib/fusion/range-multilateration.js` adds a separate 2D solver for ranges to surveyed anchors. It uses deterministic three-anchor hypotheses, a geometry gate, residual-consistent inlier selection, and weighted linear refitting. It returns only a 2D DERIVED candidate, source/anchor lineage, residual diagnostics, an explicit clock-domain requirement, and an unknown-source-correlation warning.
 
 This does not turn Wi-Fi RTT into a bearing or a 3D location. It requires at least three surveyed anchor coordinates in the same frame, fresh time-aligned ranges, and usable geometry. Multipath/NLOS, anchor survey error, timestamp synchronization, correlated errors, and uncertainty calibration remain open research and physical-validation tasks. The solver is not connected to the operational UI.
 
