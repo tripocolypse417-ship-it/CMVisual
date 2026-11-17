@@ -72,8 +72,8 @@ Android System WebView inside the Capacitor application is an embedded UI-render
 - [x] Repository MCP configuration contains no browser-control server on this branch.
 - [x] Browser-runtime policy prohibits browser automation as a required dependency or fallback.
 - [x] A superseding browserless architecture decision is recorded.
-- [ ] Repository-wide inventory confirms no prohibited browser-control dependency remains in active WaveRadar workflows.
-- [ ] Supported core builds, tests, and scheduled tasks pass with browser automation absent.
+- [x] Package dependencies/scripts, MCP servers, and GitHub Actions workflow files are covered by `npm run test:browserless`; current workflow files and manifests were statically inspected.
+- [ ] Browserless regression test passes in an isolated Node 22 fixture; GitHub Actions execution on this branch and a clean full application build/test run remain outstanding.
 - [ ] Supported service workflows use native APIs/connectors or deterministic workers.
 - [ ] Task state, logs, and evidence survive worker restart and retry without duplicate side effects.
 - [ ] UI-only workflows are documented as manual/blocked rather than browser-automated.
@@ -81,6 +81,6 @@ Android System WebView inside the Capacitor application is an embedded UI-render
 
 ## 10. Honest current status
 
-The browser-control MCP configuration has been emptied on this branch and the browser-runtime policy now prohibits Chrome/Chromium remote control and browser automation. The prior Playwright MCP CI result is historical only and is not an approved dependency or acceptance criterion. Repository-wide dependency inventory, migration of every UI-only workflow, clean-room browser-absent testing, durable background execution, and Base44 backend portability remain unverified.
+The browser-control MCP configuration is empty on this branch. The Playwright MCP workflow and launcher script have been deleted, the package script was removed, and `npm run test:browserless` now checks package dependencies/scripts, MCP servers, and GitHub Actions workflow files. Static inspection found no prohibited browser-control reference in the current package manifest, MCP config, or four active workflow files. The test passed in an isolated Node 22 fixture, but has not yet run in this branch's GitHub Actions. Full source-code inventory, migration of every UI-only workflow, a clean full application build/test, durable background execution, and Base44 backend portability remain unverified.
 
 **Operating rule:** WaveRadar's supported core workflows must not depend on Chrome, Chromium, browser automation, remote-control sessions, browser extensions, Super, or hosted browsers.
