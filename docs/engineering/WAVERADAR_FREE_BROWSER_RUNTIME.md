@@ -60,8 +60,8 @@ A successful worker exit or accepted API call is not proof of completion. Verify
 ## 7. Acceptance criteria
 
 - [x] The repository MCP configuration contains no browser-control server.
-- [ ] Repository-wide search confirms no required Chrome/Chromium remote-control, Playwright MCP, Puppeteer, Selenium, WebDriver, extension, or hosted-browser dependency in WaveRadar automation.
-- [ ] Core build, tests, scheduled tasks, and supported integrations operate with browser tooling absent.
+- [x] Active package scripts, dependencies, MCP configuration, and GitHub Actions workflows contain no required browser-control runtime; enforced by `npm run test:browserless`.
+- [ ] Core build and supported integration tests pass in a clean environment without browser tooling.
 - [ ] All supported service workflows use native APIs/connectors or deterministic workers.
 - [ ] Unsupported UI-only workflows are explicitly documented as manual/blocked, not silently automated.
 - [ ] Task state and evidence survive worker restart and retry without duplicate side effects.
@@ -70,6 +70,6 @@ A successful worker exit or accepted API call is not proof of completion. Verify
 
 ## 8. Current limitations
 
-This document defines the target and does not prove the repository-wide inventory, all workflow migrations, persistent hosting, or offline operation have passed. The existing app's Base44 SDK and hosted backend are separate portability dependencies and are not removed by this browser-control change. Android WebView remains an app-rendering component, not a remote-control dependency.
+The package manifest, MCP configuration, and active GitHub Actions workflows are covered by an automated browserless regression test. This is not yet a complete inventory of every source file, external service, scheduled workflow, persistent host, or offline behavior. The existing app's Base44 SDK and hosted backend are separate portability dependencies and are not removed by this browser-control change. Android WebView remains an app-rendering component, not a remote-control dependency.
 
 **Operational rule:** WaveRadar must run its supported core workflows without Chrome, Chromium, browser automation, remote-control sessions, browser extensions, or hosted browsers. Browser automation is not an approved fallback.
