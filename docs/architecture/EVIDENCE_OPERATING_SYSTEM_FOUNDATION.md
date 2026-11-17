@@ -21,15 +21,15 @@ The core is deterministic and in-memory. It is not itself durable storage or cry
 
 The journal has no update/delete API, enforces bounded batches and event sizes, and distinguishes exact duplicate events from event-ID collisions. It is local only; this plugin does not transmit data.
 
-**Important limitations:** the database is not encrypted at rest; Android uninstall/data-clear can remove it; no backup/export recovery, tamper-evident hash chain, retention policy or instrumented process-death test is implemented. Do not place sensitive victim identifiers or unredacted personal information in it.
+**Security boundary:** event JSON payloads are AES-256-GCM encrypted with an Android Keystore key. Event/incident IDs and index metadata remain plaintext for local querying. Android backup is disabled for the generated app because the key is device-bound. This is not whole-database encryption or tamper-evident storage; uninstall/data-clear can remove the database and key. Key rotation/recovery, retention and instrumented process-death tests remain open.
 
 ### 3. Evidence-ledger scene replay
 
 `src/lib/evidenceSceneReplay.js` projects ledger events into a deterministic incident snapshot. Knowledge-time filtering is distinct from capture-time replay. Replay requires an explicit clock domain; events from other domains remain unaligned, and untimed evidence remains visible outside the timed scene.
 
-Only explicit `payload.sceneEntity` objects with stable IDs/types create scene entities. Position requires finite x/y/z. ALIGNED additionally requires an explicit coordinate frame and alignment declaration. Otherwise the entity remains unregistered and positionless. Competing hypotheses and conflicts remain separate collections.
+Only explicit `payload.sceneEntity` objects with stable IDs/types create scene entities. Position rendering requires finite x/y/z, coordinate frame, calibration reference, transform version, metric units, validation reference, validator ID and an INDEPENDENTLY_VALIDATED declaration. The UI labels this validation-referenced geometry, not verified certification; the referenced evidence still requires independent review. Multiple coordinate frames are not overlaid without a common validated transform. Competing hypotheses and conflicts remain separate collections.
 
-Command and helmet projections derive from the same snapshot and share a synchronization key. This is a tested data contract, not yet a connected renderer or real helmet display.
+Command and helmet projections derive from the same snapshot and share a synchronization key. A local replay page and basic Three.js viewport are implemented; they read the native journal and render only validation-referenced positions. This is not yet the production WIS renderer or a real helmet display.
 
 ## Time and space rules
 
@@ -50,14 +50,13 @@ Command and helmet projections derive from the same snapshot and share a synchro
 
 ## Next acceptance gates
 
-1. Add Android Keystore-backed encryption and documented key recovery/rotation before sensitive incident data.
-2. Add instrumented Android tests for append, process restart, paging, duplicates, collisions, interrupted transactions and migrations.
-3. Persist all approved sensor/evidence adapters through the journal without blocking capture.
-4. Implement authenticated, encrypted, idempotent store-and-forward transport with explicit authorization, replay protection and conflict handling.
-5. Implement clock offset/drift estimation and versioned coordinate transforms with measured error bounds.
-6. Connect the ledger-backed scene snapshot to a 3D renderer, timeline controls and evidence drill-down.
-7. Connect WIS command and helmet projections to the same incident revision/cursor, with stale/offline and uncertainty indications.
-8. Independently evaluate sensor and scene performance against physical ground truth and external review.
+1. Add documented Keystore key rotation/recovery and instrumented Android tests for append, process restart, paging, duplicates, collisions, interrupted transactions and migrations.
+2. Persist all approved sensor/evidence adapters through the journal without blocking capture.
+3. Implement authenticated, encrypted, idempotent store-and-forward transport with explicit authorization, replay protection and conflict handling.
+4. Implement clock offset/drift estimation and versioned coordinate transforms with measured error bounds.
+5. Integrate the replay page with the production WIS command interface and a real helmet transport/display, preserving a shared incident revision/cursor.
+6. Add building/floor geometry ingestion and independent review of validation references before any coordinates are treated as trusted.
+7. Independently evaluate sensor and scene performance against physical ground truth and external review.
 
 ## Verification
 
