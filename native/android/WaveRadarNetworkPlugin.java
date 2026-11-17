@@ -5,7 +5,6 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
-import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanRecord;
 import android.os.Handler;
 import android.os.Looper;
@@ -315,13 +314,13 @@ public class WaveRadarNetworkPlugin extends Plugin {
     final Map<String, JSObject> candidates = new LinkedHashMap<>();
     final ScanCallback callback = new ScanCallback() {
       @Override
-      public void onScanResult(int callbackType, ScanResult result) {
+      public void onScanResult(int callbackType, android.bluetooth.le.ScanResult result) {
         addBleCandidate(candidates, result);
       }
 
       @Override
-      public void onBatchScanResults(List<ScanResult> results) {
-        if (results != null) for (ScanResult result : results) addBleCandidate(candidates, result);
+      public void onBatchScanResults(List<android.bluetooth.le.ScanResult> results) {
+        if (results != null) for (android.bluetooth.le.ScanResult result : results) addBleCandidate(candidates, result);
       }
 
       @Override
@@ -362,7 +361,7 @@ public class WaveRadarNetworkPlugin extends Plugin {
     }
   }
 
-  private void addBleCandidate(Map<String, JSObject> candidates, ScanResult result) {
+  private void addBleCandidate(Map<String, JSObject> candidates, android.bluetooth.le.ScanResult result) {
     if (result == null || result.getScanRecord() == null) return;
     ScanRecord record = result.getScanRecord();
     List<String> serviceUuids = new ArrayList<>();
