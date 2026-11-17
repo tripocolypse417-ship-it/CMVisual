@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.concurrent.Executor;
 
 @CapacitorPlugin(name = "WaveRadarNetwork", permissions = {
-  @Permission(alias = "location", strings = { Manifest.permission.ACCESS_FINE_LOCATION })
+  @Permission(alias = "location", strings = { Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.READ_PHONE_STATE })
 })
 public class WaveRadarNetworkPlugin extends Plugin {
   private WifiManager wifiManager;
