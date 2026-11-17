@@ -26,6 +26,7 @@ function loadEventsClient() {
 }
 
 export default function useSharedEventStream(sessionId = null, enabled = true) {
+  const [retrySignal, setRetrySignal] = useState(0);
   const [state, setState] = useState({
     status: 'IDLE',
     eventCount: 0,
@@ -35,6 +36,17 @@ export default function useSharedEventStream(sessionId = null, enabled = true) {
     channel: null,
     error: null,
   });
+
+  useEffect(() => {
+    if (!enabled || typeof window === 'undefined') return undefined;
+    const retryAfterDevicePairing = () => {
+      if (state.status === 'AUTH_REQUIRED' || state.status === 'UNAVAILABLE') {
+        setRetrySignal(value => value + 1);
+      }
+    };
+    window.addEventListener('waveradar:remote-evidence-status', retryAfterDevicePairing);
+    return () => window.removeEventListener('waveradar:remote-evidence-status', retryAfterDevicePairing);
+  }, [enabled, state.status]);
 
   useEffect(() => {
     if (!enabled || typeof window === 'undefined') return undefined;
@@ -152,7 +164,7 @@ export default function useSharedEventStream(sessionId = null, enabled = true) {
       // workspace remains mounted for the app session; no transport internals
       // are assumed here.
     };
-  }, [enabled, sessionId]);
+  }, [enabled, sessionId, retrySignal]);
 
   return state;
 }
