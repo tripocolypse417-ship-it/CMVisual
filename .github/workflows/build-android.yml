@@ -61,6 +61,9 @@ jobs:
       - name: Test physical validation journal mapping
         run: npm run test:physical-validation-journal
 
+      - name: Test evidence-ledger scene replay
+        run: npm run test:evidence-scene-replay
+
       - name: Build web application
         run: npm run build
 
