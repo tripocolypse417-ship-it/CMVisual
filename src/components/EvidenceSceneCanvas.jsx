@@ -12,6 +12,9 @@ export default function EvidenceSceneCanvas({ entities = [] }) {
   const cameraRef = useRef(null);
   const groupRef = useRef(null);
   const [error, setError] = useState(null);
+  const validatedEntities = entities.filter(entity => entity?.spatialRegistration === 'INDEPENDENTLY_VALIDATED' && entity.position);
+  const coordinateFrames = new Set(validatedEntities.map(entity => entity.position.coordinateFrame));
+  const frameMismatch = coordinateFrames.size > 1;
 
   useEffect(() => {
     const host = hostRef.current;
@@ -85,8 +88,7 @@ export default function EvidenceSceneCanvas({ entities = [] }) {
       if (Array.isArray(object.material)) object.material.forEach(material => material.dispose());
       else object.material?.dispose?.();
     }
-    for (const entity of entities) {
-      if (entity?.spatialRegistration !== 'INDEPENDENTLY_VALIDATED' || !entity.position) continue;
+    for (const entity of (frameMismatch ? [] : validatedEntities)) {
       const { x, y, z } = entity.position;
       if (![x, y, z].every(Number.isFinite)) continue;
       const geometry = new THREE.SphereGeometry(0.13, 16, 12);
@@ -110,7 +112,8 @@ export default function EvidenceSceneCanvas({ entities = [] }) {
         INDEPENDENTLY VALIDATED GEOMETRY ONLY
       </div>
       {error && <div className="absolute inset-0 flex items-center justify-center bg-slate-950/90 p-4 text-center text-xs text-amber-200">{error}</div>}
-      {!error && entities.filter(entity => entity?.spatialRegistration === 'INDEPENDENTLY_VALIDATED' && entity.position).length === 0 && (
+      {!error && frameMismatch && <div className="pointer-events-none absolute inset-0 flex items-center justify-center"><div className="rounded-lg border border-amber-400/30 bg-slate-950/90 px-4 py-3 text-center text-xs text-amber-200">Multiple coordinate frames detected<div className="mt-1 text-[10px] text-slate-400">A validated transform is required before these points can share one scene</div></div></div>}
+      {!error && !frameMismatch && validatedEntities.length === 0 && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <div className="rounded-lg border border-white/10 bg-slate-950/85 px-4 py-3 text-center text-xs text-slate-300">
             No independently validated scene entities at this time cursor
