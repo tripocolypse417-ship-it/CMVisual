@@ -59,6 +59,7 @@ export default function useNativeEvidencePipeline(enabled = true) {
           collectionMethod: 'ANDROID_PLATFORM_WIFI_CELLULAR_BLE_APIS',
           payloadSchema: 'waveradar.android.network-snapshot.v1',
           retentionClass: 'DIAGNOSTIC',
+          rawPayloadRef: 'local-indexeddb://waveradar-evidence-v1/events/' + encodeURIComponent(sampleKey),
           limitations: [
             'Wi-Fi scan results may be cached and are not a full radio scan.',
             'Cellular metadata is platform/carrier controlled and may be stale or unavailable.',
@@ -131,6 +132,7 @@ export default function useNativeEvidencePipeline(enabled = true) {
             collectionMethod: 'ANDROID_SENSOR_MANAGER_SENSOR_EVENT',
             payloadSchema: 'waveradar.android.sensor-sample.v1',
             retentionClass: 'DIAGNOSTIC',
+            rawPayloadRef: 'local-indexeddb://waveradar-evidence-v1/events/' + encodeURIComponent(sampleKey),
           });
           const result = await appendLocalEvidenceEvent(event, sampleKey);
           seenRef.current.add(sampleKey);
