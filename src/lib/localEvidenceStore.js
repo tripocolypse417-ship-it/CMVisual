@@ -209,19 +209,14 @@ export async function getLocalEvidenceStatus() {
 export async function listLocalEvidenceEvents({ limit = 100 } = {}) {
   const db = await openEvidenceDb();
   const max = Math.max(1, Math.min(1000, Number(limit) || 100));
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readonly');
-    const store = tx.objectStore(STORE_NAME);
-    const records = [];
-    tx.oncomplete = () => resolve(records.reverse());
-    tx.onerror = () => reject(tx.error || new Error('INDEXED_DB_EVIDENCE_READ_FAILED'));
-    const cursor = store.index('received_at').openCursor(null, 'prev');
-    cursor.onsuccess = () => {
-      const current = cursor.result;
-      if (!current || records.length >= max) return;
-      records.push(current.value);
-      current.continue();
-    };
-    cursor.onerror = () => reject(cursor.error || new Error('INDEXED_DB_EVIDENCE_CURSOR_FAILED'));
-  });
+  const tx = db.transaction([STORE_NAME, DELIVERY_STORE], 'readonly');
+  const [records, deliveries] = await Promise.all([
+    requestResult(tx.objectStore(STORE_NAME).getAll()),
+    requestResult(tx.objectStore(DELIVERY_STORE).getAll()),
+  ]);
+  const statusByKey = new Map(deliveries.map(item => [item.sample_key, item.status]));
+  return records
+    .map(record => ({ ...record, deliveryStatus: statusByKey.get(record.sample_key) || 'PENDING' }))
+    .sort((a, b) => String(a.received_at).localeCompare(String(b.received_at)))
+    .slice(-max);
 }
