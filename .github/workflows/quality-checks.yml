@@ -44,5 +44,8 @@ jobs:
       - name: Test deterministic scene replay
         run: npm run test:scene-replay
 
+      - name: Test sensor-to-scene observation adapter
+        run: npm run test:scene-observation-adapter
+
       - name: Build web application
         run: npm run build
