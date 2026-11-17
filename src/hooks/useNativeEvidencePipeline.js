@@ -28,7 +28,7 @@ function enrollmentToken() {
   try { return localStorage.getItem('waveradar.enrollment.token') || ''; } catch { return ''; }
 }
 
-export default function useNativeEvidencePipeline(enabled = true) {
+export default function useNativeEvidencePipeline(enabled = true, sessionId = null) {
   const [status, setStatus] = useState({
     phase: 'IDLE',
     native: false,
@@ -62,6 +62,7 @@ export default function useNativeEvidencePipeline(enabled = true) {
       try {
         const event = await createWaveRadarEventEnvelope({
           snapshot: detail.snapshot,
+          sessionId,
           source: {
             ...SOURCE,
             sourceType: 'ANDROID_NETWORK_PLATFORM_CACHE',
@@ -206,6 +207,7 @@ export default function useNativeEvidencePipeline(enabled = true) {
           if (seenRef.current.has(sampleKey)) continue;
 
           const event = await createWaveRadarEventEnvelope({
+            sessionId,
             snapshot: {
               capabilityId,
               measurement,
@@ -278,7 +280,7 @@ export default function useNativeEvidencePipeline(enabled = true) {
       window.removeEventListener(NETWORK_EVENT_NAME, onNetworkEvidence);
       if (timer) window.clearInterval(timer);
     };
-  }, [enabled]);
+  }, [enabled, sessionId]);
 
   return status;
 }
