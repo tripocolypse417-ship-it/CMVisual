@@ -7,8 +7,8 @@ const statusColor = (phase) => {
   return 'text-slate-300';
 };
 
-export default function NativeEvidenceStatusPanel() {
-  const state = useNativeEvidencePipeline(true);
+export default function NativeEvidenceStatusPanel({ sessionId = null }) {
+  const state = useNativeEvidencePipeline(true, sessionId);
   return (
     <section className="rounded-xl border border-emerald-400/20 bg-slate-950/70 p-3 space-y-2">
       <div className="flex items-center justify-between gap-3">
