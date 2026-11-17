@@ -216,7 +216,7 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
             skippedNoSourceTime += 1;
             continue;
           }
-          const sampleKey = [deviceId, capabilityId, sourceNs].join(':');
+          const sampleKey = [deviceIdRef.current, capabilityId, sourceNs].join(':');
           if (seenRef.current.has(sampleKey)) continue;
 
           const event = await createWaveRadarEventEnvelope({
