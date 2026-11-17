@@ -1,6 +1,7 @@
 const DB_NAME = 'waveradar-evidence-v1';
 const STORE_NAME = 'events';
-const DB_VERSION = 1;
+const DELIVERY_STORE = 'deliveries';
+const DB_VERSION = 2;
 
 let dbPromise;
 
@@ -15,6 +16,10 @@ function openEvidenceDb() {
           const store = db.createObjectStore(STORE_NAME, { keyPath: 'sample_key' });
           store.createIndex('received_at', 'received_at', { unique: false });
           store.createIndex('event_id', 'event.event_id', { unique: true });
+        }
+        if (!db.objectStoreNames.contains(DELIVERY_STORE)) {
+          const delivery = db.createObjectStore(DELIVERY_STORE, { keyPath: 'sample_key' });
+          delivery.createIndex('status', 'status', { unique: false });
         }
       };
       request.onsuccess = () => resolve(request.result);
@@ -36,8 +41,8 @@ function requestResult(request) {
 }
 
 /**
- * Append once by deterministic source-sample key. Existing records are never
- * overwritten or deleted. A storage failure is returned to the caller.
+ * Append event content once. Evidence records are never updated or deleted;
+ * delivery state is tracked separately so retries cannot rewrite evidence.
  */
 export async function appendLocalEvidenceEvent(event, sampleKey) {
   if (!event || typeof event !== 'object' || !event.event_id || !sampleKey) {
@@ -49,24 +54,46 @@ export async function appendLocalEvidenceEvent(event, sampleKey) {
     event,
     received_at: event.timing?.received_at || new Date().toISOString(),
     stored_at: new Date().toISOString(),
-    storage_state: 'LOCAL_DURABLE',
+    storage_state: 'LOCAL_PERSISTED',
   };
-  const tx = db.transaction(STORE_NAME, 'readwrite');
-  const store = tx.objectStore(STORE_NAME);
-  let added = false;
   return new Promise((resolve, reject) => {
+    const tx = db.transaction([STORE_NAME, DELIVERY_STORE], 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    const deliveries = tx.objectStore(DELIVERY_STORE);
+    let added = false;
     tx.oncomplete = () => resolve({ added, sampleKey: record.sample_key });
     tx.onerror = () => reject(tx.error || new Error('INDEXED_DB_COMMIT_FAILED'));
     tx.onabort = () => reject(tx.error || new Error('INDEXED_DB_TRANSACTION_ABORTED'));
     const lookup = store.get(record.sample_key);
     lookup.onsuccess = () => {
-      if (lookup.result) return;
-      try {
-        store.add(record);
-        added = true;
-      } catch (error) {
-        reject(error);
-        try { tx.abort(); } catch {}
+      if (!lookup.result) {
+        try {
+          store.add(record);
+          deliveries.put({
+            sample_key: record.sample_key,
+            status: 'PENDING',
+            attempts: 0,
+            updated_at: new Date().toISOString(),
+            server_ack: null,
+          });
+          added = true;
+        } catch (error) {
+          reject(error);
+          try { tx.abort(); } catch {}
+        }
+      } else {
+        const deliveryLookup = deliveries.get(record.sample_key);
+        deliveryLookup.onsuccess = () => {
+          if (!deliveryLookup.result) {
+            deliveries.put({
+              sample_key: record.sample_key,
+              status: 'PENDING',
+              attempts: 0,
+              updated_at: new Date().toISOString(),
+              server_ack: null,
+            });
+          }
+        };
       }
     };
     lookup.onerror = () => {
@@ -76,28 +103,73 @@ export async function appendLocalEvidenceEvent(event, sampleKey) {
   });
 }
 
+export async function markLocalEvidenceDelivered(sampleKey, serverAck) {
+  const db = await openEvidenceDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(DELIVERY_STORE, 'readwrite');
+    const store = tx.objectStore(DELIVERY_STORE);
+    let found = false;
+    tx.oncomplete = () => resolve(found);
+    tx.onerror = () => reject(tx.error || new Error('INDEXED_DB_DELIVERY_UPDATE_FAILED'));
+    tx.onabort = () => reject(tx.error || new Error('INDEXED_DB_DELIVERY_UPDATE_ABORTED'));
+    const lookup = store.get(String(sampleKey));
+    lookup.onsuccess = () => {
+      const current = lookup.result;
+      if (!current) return;
+      found = true;
+      store.put({
+        ...current,
+        status: 'ACKNOWLEDGED',
+        attempts: Number(current.attempts || 0) + 1,
+        updated_at: new Date().toISOString(),
+        server_ack: serverAck || null,
+      });
+    };
+    lookup.onerror = () => {
+      reject(lookup.error || new Error('INDEXED_DB_DELIVERY_LOOKUP_FAILED'));
+      try { tx.abort(); } catch {}
+    };
+  });
+}
+
+export async function listPendingLocalEvidenceEvents({ limit = 50 } = {}) {
+  const db = await openEvidenceDb();
+  const tx = db.transaction([STORE_NAME, DELIVERY_STORE], 'readonly');
+  const [records, deliveries] = await Promise.all([
+    requestResult(tx.objectStore(STORE_NAME).getAll()),
+    requestResult(tx.objectStore(DELIVERY_STORE).getAll()),
+  ]);
+  const statusByKey = new Map(deliveries.map(item => [item.sample_key, item]));
+  return records
+    .filter(record => statusByKey.get(record.sample_key)?.status !== 'ACKNOWLEDGED')
+    .sort((a, b) => String(a.received_at).localeCompare(String(b.received_at)))
+    .slice(0, Math.max(1, Math.min(100, Number(limit) || 50)));
+}
+
 export async function getLocalEvidenceStatus() {
   const db = await openEvidenceDb();
-  const tx = db.transaction(STORE_NAME, 'readonly');
-  const store = tx.objectStore(STORE_NAME);
-  const [count, newest] = await Promise.all([
-    requestResult(store.count()),
-    requestResult(store.index('received_at').openCursor(null, 'prev')),
+  const tx = db.transaction([STORE_NAME, DELIVERY_STORE], 'readonly');
+  const [count, records, deliveries] = await Promise.all([
+    requestResult(tx.objectStore(STORE_NAME).count()),
+    requestResult(tx.objectStore(STORE_NAME).index('received_at').openCursor(null, 'prev')),
+    requestResult(tx.objectStore(DELIVERY_STORE).getAll()),
   ]);
+  const pending = deliveries.filter(item => item.status !== 'ACKNOWLEDGED').length;
   return {
     available: true,
     count,
-    newestReceivedAt: newest?.value?.received_at || null,
+    pending,
+    newestReceivedAt: records?.value?.received_at || null,
     storage: 'INDEXED_DB_LOCAL_ONLY',
-    remoteIngestion: 'NOT_CONNECTED',
+    remoteIngestion: pending ? 'PENDING' : 'SYNCED',
   };
 }
 
 export async function listLocalEvidenceEvents({ limit = 100 } = {}) {
   const db = await openEvidenceDb();
   const tx = db.transaction(STORE_NAME, 'readonly');
-  const store = tx.objectStore(STORE_NAME);
-  const records = await requestResult(store.getAll());
-  return records.sort((a, b) => String(a.received_at).localeCompare(String(b.received_at)))
+  const records = await requestResult(tx.objectStore(STORE_NAME).getAll());
+  return records
+    .sort((a, b) => String(a.received_at).localeCompare(String(b.received_at)))
     .slice(-Math.max(1, Math.min(1000, Number(limit) || 100)));
 }
