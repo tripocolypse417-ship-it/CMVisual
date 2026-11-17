@@ -58,6 +58,7 @@ function validate(item, nowMs, maxAgeMs) {
   if (!finite(item.uncertaintyM) || item.uncertaintyM <= 0) return 'INVALID_UNCERTAINTY';
   if (!finite(item.timestampMs)) return 'INVALID_TIMESTAMP';
   if (typeof item.coordinateFrame !== 'string' || !item.coordinateFrame.trim()) return 'MISSING_COORDINATE_FRAME';
+  if (typeof item.clockDomain !== 'string' || !item.clockDomain.trim()) return 'MISSING_CLOCK_DOMAIN';
   const age = nowMs - item.timestampMs;
   if (age < 0) return 'FUTURE_TIMESTAMP';
   if (age > maxAgeMs) return 'STALE';
@@ -88,6 +89,11 @@ export function solveRangeOnlyPosition2D(observations, options = {}) {
   if (frames.size > 1) {
     for (const item of valid) rejected.push({ sourceId: item.sourceId, reason: 'COORDINATE_FRAME_MISMATCH' });
     return { status: 'UNAVAILABLE', reason: 'INCOMPATIBLE_COORDINATE_FRAMES', evidenceClass: 'UNAVAILABLE', rejected };
+  }
+  const clockDomains = new Set(valid.map((item) => item.clockDomain));
+  if (clockDomains.size > 1) {
+    for (const item of valid) rejected.push({ sourceId: item.sourceId, reason: 'CLOCK_DOMAIN_MISMATCH' });
+    return { status: 'UNAVAILABLE', reason: 'INCOMPATIBLE_CLOCK_DOMAINS', evidenceClass: 'UNAVAILABLE', rejected };
   }
   const unique = new Set();
   const anchors = [];
@@ -141,6 +147,7 @@ export function solveRangeOnlyPosition2D(observations, options = {}) {
     dimensions: 2,
     units: 'm',
     coordinateFrame: anchors[0].coordinateFrame,
+    clockDomain: anchors[0].clockDomain,
     sourceIds: best.inliers.map((item) => item.sourceId),
     anchorIds: best.inliers.map((item) => item.anchorId),
     residuals,
