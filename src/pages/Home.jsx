@@ -27,6 +27,7 @@ import SonarRangerPanel from '@/components/SonarRangerPanel';
 import NetworkSignalPanel from '@/components/NetworkSignalPanel';
 import NativeNetworkDiscoveryPanel from '@/components/NativeNetworkDiscoveryPanel';
 import NativeEvidenceStatusPanel from '@/components/NativeEvidenceStatusPanel';
+import NativeEvidenceReplayPanel from '@/components/NativeEvidenceReplayPanel';
 import AlertToggle from '../components/AlertToggle';
 import HmdOverlay from '../components/HmdOverlay';
 import ArControlBar from '../components/ArControlBar';
@@ -768,6 +769,7 @@ export default function Home() {
         </div>
 
         <WorldTimelinePanel timeline={worldTimeline.timeline} cursor={worldTimeline.cursor} setCursor={worldTimeline.setCursor} reset={worldTimeline.reset} color={color} sharedScene={sharedScene} />
+        <NativeEvidenceReplayPanel stream={sharedEventStream} color={color} />
         <FederatedWorldPanel federation={federatedWorld} color={color} />
         <EvaluationReadinessPanel evaluation={evaluation} color={color} runtimeCapacity={runtimeCapacity} />
 
