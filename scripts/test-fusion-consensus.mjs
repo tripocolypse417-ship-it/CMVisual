@@ -80,4 +80,4 @@ assert.ok(sensitivity.leaveOneOutSensitivity.every((item) => item.shift >= 0));
 assert.throws(() => fusePositionObservations({}, { nowMs }), /array/);
 assert.throws(() => fusePositionObservations([], {}), /nowMs/);
 
-console.log('Fusion consensus contract passed: 9 scenarios.');
+console.log('Fusion consensus contract passed: 10 scenarios.');
