@@ -73,7 +73,20 @@ export default function useNativeNetworkDiscovery() {
       // Shared in-app handoff for WIS modules. The payload is an observation
       // envelope, not a claim that a server or durable world model stored it.
       window.dispatchEvent(new CustomEvent('waveradar:capability-observations', {
-        detail: { source: 'android-network-discovery', capturedAt, snapshot, normalized }
+        detail: { source: 'android-network-discovery', capturedAt, snapshot: combinedSnapshot, normalized }
+      }));
+      const cells = Array.isArray(snapshot?.cellular?.cells) ? snapshot.cellular.cells.map((cell) => ({
+        ...cell,
+        timestamp: Number.isFinite(Number(cell?.ageMs)) && Number(cell.ageMs) >= 0 ? capturedAt - Number(cell.ageMs) : capturedAt
+      })) : [];
+      window.dispatchEvent(new CustomEvent('waveradar:telephony', {
+        detail: {
+          timestamp: capturedAt,
+          measuredAt: capturedAt,
+          permissionState: permission,
+          radioTechnology: cells.find((cell) => cell.registered)?.technology || null,
+          cells
+        }
       }));
       window.dispatchEvent(new CustomEvent('waveradar:network-discovery', { detail: result }));
       setState(result);
