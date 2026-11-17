@@ -23,7 +23,7 @@ Hypotheses and conflicts are first-class snapshot collections. Competing hypothe
 
 ## Command / helmet consistency
 
-`buildSynchronizedEvidenceScene` constructs one snapshot and produces command and helmet projections from that same snapshot. The synchronization key includes incident, selected clock domain, cursor and applied event IDs. Role/floor/entity-type filtering changes presentation only.
+`buildSynchronizedEvidenceScene` constructs one snapshot using both a capture-time cursor and an optional knowledge-time cutoff, then produces command and helmet projections from that same snapshot. The synchronization key includes incident, selected clock domain, cursor and applied event IDs. Role/floor/entity-type filtering changes presentation only.
 
 The renderer must surface unlocated entities, hypotheses, conflicts, untimed evidence, unaligned-clock evidence and stale/offline state. It must not place unregistered observations at (0,0,0).
 
