@@ -120,6 +120,7 @@ export async function createWaveRadarEventEnvelope(input = {}) {
       limitations: [
         'Raw payload reference is null until append-only evidence storage is integrated.',
         ...(digest ? [] : ['SHA-256 unavailable in this runtime; integrity remains unassessed.']),
+        ...(Array.isArray(input.limitations) ? input.limitations.filter((item) => typeof item === 'string' && item.trim()) : []),
       ],
     },
     payload: {
