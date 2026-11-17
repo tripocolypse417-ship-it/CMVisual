@@ -65,7 +65,9 @@ export function prepareEvidenceSceneReplay(ledger, {
   const incident = clean(incidentId);
   if (!incident) throw new TypeError('incidentId is required');
   const known = knowledgeTime == null ? ledger.events : eventsKnownAt(ledger, knowledgeTime);
+  const allIncidentEvents = ledger.events.filter(event => event.incidentId === incident);
   const incidentEvents = known.filter(event => event.incidentId === incident);
+  const unknownReceiptEvents = knowledgeTime == null ? [] : allIncidentEvents.filter(event => event.receivedAt == null);
   const domain = clean(clockDomain);
   const timed = incidentEvents.filter(event => event.capturedAt != null);
   if (timed.length && !domain) throw new TypeError('clockDomain is required for timed scene replay');
@@ -85,6 +87,7 @@ export function prepareEvidenceSceneReplay(ledger, {
     knowledgeTimeline,
     unalignedClockEvents,
     untimedEvents,
+    unknownReceiptEvents,
     replayIntegrity: 'DETERMINISTIC_WITHIN_DECLARED_CLOCK_DOMAIN',
     physicalAccuracy: 'NOT_ESTABLISHED',
   });
@@ -97,6 +100,7 @@ export function buildEvidenceSceneSnapshot(replay, cursorMs) {
     incidentId: replay.incidentId, clockDomain: replay.clockDomain, cursorMs: null,
     entities: [], hypotheses: [], conflicts: [], appliedEventIds: [],
     untimedEvents: replay.untimedEvents, unalignedClockEvents: replay.unalignedClockEvents,
+    unknownReceiptEvents: replay.unknownReceiptEvents,
     state: 'TIME_UNAVAILABLE', physicalAccuracy: 'NOT_ESTABLISHED',
   };
   const entities = new Map();
@@ -151,6 +155,7 @@ export function buildEvidenceSceneSnapshot(replay, cursorMs) {
     appliedEventIds,
     untimedEvents: replay.untimedEvents,
     unalignedClockEvents: replay.unalignedClockEvents,
+    unknownReceiptEvents: replay.unknownReceiptEvents,
     state: 'RECONSTRUCTED_FROM_EVIDENCE_LEDGER',
     replayIntegrity: replay.replayIntegrity,
     physicalAccuracy: 'NOT_ESTABLISHED',
@@ -184,6 +189,7 @@ export function projectEvidenceSceneView(snapshot, options = {}) {
     unlocatedEntityCount: snapshot.entities.filter(entity => entity.spatialRegistration !== 'VALIDATION_REFERENCED').length,
     untimedEvidenceCount: snapshot.untimedEvents.length,
     unalignedClockEvidenceCount: snapshot.unalignedClockEvents.length,
+    unknownReceiptEvidenceCount: snapshot.unknownReceiptEvents.length,
   };
 }
 
