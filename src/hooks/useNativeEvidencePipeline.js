@@ -3,7 +3,12 @@ import { Capacitor } from '@capacitor/core';
 import { getStableDeviceId } from '../lib/deviceIdentity';
 import { getNativeSensorSnapshot } from '../lib/nativeSensors';
 import { createWaveRadarEventEnvelope } from '../lib/eventEnvelope';
-import { appendLocalEvidenceEvent, getLocalEvidenceStatus } from '../lib/localEvidenceStore';
+import {
+  appendLocalEvidenceEvent,
+  getLocalEvidenceStatus,
+  listPendingLocalEvidenceEvents,
+  markLocalEvidenceDelivered,
+} from '../lib/localEvidenceStore';
 
 const POLL_INTERVAL_MS = 2000;
 const NETWORK_EVENT_NAME = 'waveradar:capability-observations';
@@ -14,17 +19,30 @@ const SOURCE = Object.freeze({
   authorizationScopeId: null,
 });
 
+function apiBase() {
+  const configured = typeof window !== 'undefined' ? window.__HATCHABLE__?.api : null;
+  return String(configured || '/api').replace(/\/+$/, '');
+}
+
+function enrollmentToken() {
+  try { return localStorage.getItem('waveradar.enrollment.token') || ''; } catch { return ''; }
+}
+
 export default function useNativeEvidencePipeline(enabled = true) {
   const [status, setStatus] = useState({
     phase: 'IDLE',
     native: false,
     storedEvents: null,
+    pendingEvents: null,
+    quarantinedEvents: 0,
     lastCaptureAt: null,
     lastError: null,
-    remoteIngestion: 'NOT_CONNECTED',
+    remoteIngestion: 'NOT_CONFIGURED',
   });
   const runningRef = useRef(false);
   const seenRef = useRef(new Set());
+  const remoteRetryAfterRef = useRef(0);
+  const remoteInFlightRef = useRef(false);
 
   useEffect(() => {
     if (!enabled || !Capacitor.isNativePlatform()) {
@@ -74,8 +92,9 @@ export default function useNativeEvidencePipeline(enabled = true) {
         if (active) setStatus((old) => ({
           ...old,
           storedEvents: storageStatus.count,
+          pendingEvents: storageStatus.pending,
+          quarantinedEvents: storageStatus.quarantined,
           lastCaptureAt: new Date().toISOString(),
-          remoteIngestion: 'NOT_CONNECTED',
         }));
       } catch (error) {
         if (active) setStatus((old) => ({
@@ -87,6 +106,82 @@ export default function useNativeEvidencePipeline(enabled = true) {
     };
 
     window.addEventListener(NETWORK_EVENT_NAME, onNetworkEvidence);
+
+    const flushRemoteQueue = async () => {
+      if (remoteInFlightRef.current || Date.now() < remoteRetryAfterRef.current) return;
+      const token = enrollmentToken();
+      if (!token) {
+        setStatus((old) => ({ ...old, remoteIngestion: 'ENROLLMENT_TOKEN_MISSING' }));
+        return;
+      }
+      const pending = await listPendingLocalEvidenceEvents({ limit: 50 });
+      if (!pending.length) {
+        setStatus((old) => ({ ...old, remoteIngestion: 'SYNCED' }));
+        return;
+      }
+
+      remoteInFlightRef.current = true;
+      try {
+        const response = await fetch(apiBase() + '/events/device-ingest', {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': 'Bearer ' + token,
+          },
+          body: JSON.stringify({ events: pending.map(record => record.event) }),
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          const reason = body.error || ('HTTP_' + response.status);
+          if (response.status === 401 || response.status === 403) {
+            setStatus((old) => ({ ...old, remoteIngestion: 'AUTH_REQUIRED', lastError: reason }));
+            remoteRetryAfterRef.current = Date.now() + 30000;
+            return;
+          }
+          const error = new Error(reason);
+          error.status = response.status;
+          throw error;
+        }
+
+        const byEventId = new Map(pending.map(record => [record.event.event_id, record]));
+        let acknowledged = 0;
+        for (const ack of Array.isArray(body.acknowledgments) ? body.acknowledgments : []) {
+          const record = byEventId.get(ack.eventId);
+          if (!record) continue;
+          if (ack.status === 'ACCEPTED_STORED' || ack.status === 'DUPLICATE_ALREADY_STORED' || ack.status === 'QUARANTINED') {
+            await markLocalEvidenceDelivered(record.sample_key, ack);
+            acknowledged += 1;
+          }
+        }
+
+        const storageStatus = await getLocalEvidenceStatus();
+        if (!active) return;
+        setStatus((old) => ({
+          ...old,
+          storedEvents: storageStatus.count,
+          pendingEvents: storageStatus.pending,
+          quarantinedEvents: storageStatus.quarantined,
+          remoteIngestion: storageStatus.pending ? 'PENDING' : storageStatus.quarantined ? 'QUARANTINED' : 'SYNCED',
+          lastError: storageStatus.quarantined ? 'One or more events were acknowledged into server quarantine; inspect reason codes before reuse.' : null,
+        }));
+        window.dispatchEvent(new CustomEvent('waveradar:remote-evidence-status', {
+          detail: { ...storageStatus, acknowledgedThisCycle: acknowledged, serverAcknowledgments: body.acknowledgments || [] },
+        }));
+        remoteRetryAfterRef.current = Date.now() + (storageStatus.pending ? 5000 : 15000);
+      } catch (error) {
+        if (!active) return;
+        setStatus((old) => ({
+          ...old,
+          remoteIngestion: 'RETRY_WAIT',
+          lastError: error?.message || 'REMOTE_INGEST_FAILED',
+        }));
+        remoteRetryAfterRef.current = Date.now() + 30000;
+      } finally {
+        remoteInFlightRef.current = false;
+      }
+    };
 
     const poll = async () => {
       if (!active || runningRef.current) return;
@@ -144,18 +239,21 @@ export default function useNativeEvidencePipeline(enabled = true) {
 
         const storageStatus = await getLocalEvidenceStatus();
         if (!active) return;
-        setStatus({
+        setStatus((old) => ({
+          ...old,
           phase: storageStatus.available ? 'CAPTURING_LOCAL' : 'STORAGE_UNAVAILABLE',
           native: true,
           storedEvents: storageStatus.count,
+          pendingEvents: storageStatus.pending,
+          quarantinedEvents: storageStatus.quarantined,
           lastCaptureAt: new Date().toISOString(),
-          lastError: skippedNoSourceTime ? 'Some samples had no source monotonic timestamp and were not assigned fabricated times.' : null,
-          remoteIngestion: 'NOT_CONNECTED',
+          lastError: skippedNoSourceTime ? 'Some samples had no source monotonic timestamp and were not assigned fabricated times.' : old.lastError,
           addedThisCycle,
-        });
+        }));
         window.dispatchEvent(new CustomEvent('waveradar:local-evidence-status', {
           detail: { ...storageStatus, addedThisCycle, skippedNoSourceTime },
         }));
+        await flushRemoteQueue();
       } catch (error) {
         if (!active) return;
         const message = error?.name === 'QuotaExceededError'
@@ -166,7 +264,6 @@ export default function useNativeEvidencePipeline(enabled = true) {
           phase: message === 'LOCAL_STORAGE_QUOTA_EXCEEDED' ? 'STORAGE_FULL' : 'ERROR',
           native: true,
           lastError: message,
-          remoteIngestion: 'NOT_CONNECTED',
         }));
       } finally {
         runningRef.current = false;
