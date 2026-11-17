@@ -434,6 +434,7 @@ export default function PhysicalValidation() {
         <header className="rounded-xl border border-white/10 bg-slate-900 p-4">
           <div className="text-xs tracking-widest text-emerald-300">WAVERADAR · PHYSICAL VALIDATION</div>
           <h1 className="text-xl font-semibold mt-2">Real-device validation</h1>
+          <a href="/evidence-replay" className="mt-3 inline-flex rounded border border-cyan-400/40 px-3 py-2 text-xs text-cyan-200">OPEN INCIDENT REPLAY</a>
           <p className="text-xs text-slate-400 mt-1">
             Measured sensor data, camera capability, and operator ground truth remain separate.
           </p>
