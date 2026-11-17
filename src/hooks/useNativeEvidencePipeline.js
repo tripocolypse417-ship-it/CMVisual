@@ -56,9 +56,30 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
     let active = true;
     let timer;
     deviceIdRef.current = getStableDeviceId();
-    const onEnrollmentBundleUpdated = () => {
-      deviceIdRef.current = getStableDeviceId();
+    const onEnrollmentBundleUpdated = async () => {
+      const previousDeviceId = deviceIdRef.current;
+      const nextDeviceId = getStableDeviceId();
+      deviceIdRef.current = nextDeviceId;
       seenRef.current.clear();
+      remoteRetryAfterRef.current = Date.now() + 5000;
+      if (previousDeviceId && previousDeviceId !== nextDeviceId) {
+        try {
+          const pending = await listPendingLocalEvidenceEvents({ limit: 1000 });
+          const mismatched = pending.filter(record => String(record.event?.source?.device_id || '') !== String(nextDeviceId));
+          for (const record of mismatched) {
+            await markLocalEvidenceDelivered(record.sample_key, {
+              status: 'QUARANTINED',
+              reason: 'DEVICE_ID_CHANGED_BEFORE_UPLOAD',
+              note: 'Original evidence retained locally; not rewritten to a different enrolled device identity.',
+            });
+          }
+          window.dispatchEvent(new CustomEvent('waveradar:remote-evidence-status', {
+            detail: { localIdentityQuarantineCount: mismatched.length },
+          }));
+        } catch (error) {
+          setStatus(old => ({ ...old, lastError: error?.message || 'LOCAL_IDENTITY_RECONCILIATION_FAILED' }));
+        }
+      }
       remoteRetryAfterRef.current = 0;
     };
     window.addEventListener('waveradar:enrollment-token-updated', onEnrollmentBundleUpdated);
