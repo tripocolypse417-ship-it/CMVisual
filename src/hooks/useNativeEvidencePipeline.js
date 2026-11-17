@@ -28,66 +28,7 @@ function enrollmentToken() {
   try { return localStorage.getItem('waveradar.enrollment.token') || ''; } catch { return ''; }
 }
 
-async function requestEnrollmentToken(deviceId, snapshot) {
-  const base = apiBase();
-  const capabilities = {
-    nativeBridgeVersion: snapshot?.nativeBridgeVersion || 'unknown',
-    androidSensorManager: snapshot?.androidSensorManager === true,
-    sensorCount: Number(snapshot?.sensorCount || 0),
-    registeredSensorCount: Number(snapshot?.registeredSensorCount || 0),
-    sensorRegistration: snapshot?.sensorRegistration || {},
-    androidGnss: snapshot?.androidGnss === true,
-    androidWifiRtt: snapshot?.androidWifiRtt === true,
-    uwb: snapshot?.uwb === true,
-    camera: snapshot?.camera === true,
-    arcoreDepth: snapshot?.arcoreDepth === true,
-    arcoreRawDepth: snapshot?.arcoreRawDepth === true,
-    thermal: snapshot?.thermal === true,
-    mmwave: snapshot?.mmwave === true,
-  };
-  const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
-  const registration = await fetch(base + '/sensors/register', {
-    method: 'POST',
-    credentials: 'include',
-    headers,
-    body: JSON.stringify({
-      deviceId,
-      manufacturer: null,
-      model: 'Android native collector',
-      osVersion: null,
-      bridgeVersion: snapshot?.nativeBridgeVersion || 'unknown',
-      capabilities,
-      provenance: {
-        source: 'WaveRadar native evidence pipeline',
-        registrationMethod: 'SIGNED_IN_OWNER_SESSION',
-        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
-      },
-    }),
-  });
-  const registrationBody = await registration.json().catch(() => ({}));
-  if (!registration.ok) {
-    const error = new Error(registrationBody.error || 'DEVICE_REGISTRATION_HTTP_' + registration.status);
-    error.status = registration.status;
-    throw error;
-  }
 
-  const response = await fetch(base + '/devices/enrollment-token', {
-    method: 'POST',
-    credentials: 'include',
-    headers,
-    body: JSON.stringify({ deviceId, validDays: 30 }),
-  });
-  const body = await response.json().catch(() => ({}));
-  if (!response.ok || !body.enrollmentToken) {
-    const error = new Error(body.error || 'DEVICE_ENROLLMENT_TOKEN_HTTP_' + response.status);
-    error.status = response.status;
-    throw error;
-  }
-  try { localStorage.setItem('waveradar.enrollment.token', body.enrollmentToken); } catch {}
-  try { localStorage.setItem('waveradar.device.id.v1', deviceId); } catch {}
-  try { localStorage.setItem('waveradar.device.registered', 'true'); } catch {}
-  return body.enrollmentToken;
-}
 
 export default function useNativeEvidencePipeline(enabled = true, sessionId = null) {
   const [status, setStatus] = useState({
@@ -104,7 +45,7 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
   const seenRef = useRef(new Set());
   const remoteRetryAfterRef = useRef(0);
   const remoteInFlightRef = useRef(false);
-  const latestSnapshotRef = useRef(null);
+  const deviceIdRef = useRef(null);
 
   useEffect(() => {
     if (!enabled || !Capacitor.isNativePlatform()) {
@@ -114,13 +55,19 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
 
     let active = true;
     let timer;
-    const deviceId = getStableDeviceId();
+    deviceIdRef.current = getStableDeviceId();
+    const onEnrollmentBundleUpdated = () => {
+      deviceIdRef.current = getStableDeviceId();
+      seenRef.current.clear();
+      remoteRetryAfterRef.current = 0;
+    };
+    window.addEventListener('waveradar:enrollment-token-updated', onEnrollmentBundleUpdated);
 
     const onNetworkEvidence = async (customEvent) => {
       const detail = customEvent?.detail || {};
       const capturedAt = Number(detail.capturedAt);
       if (!Number.isFinite(capturedAt) || capturedAt <= 0 || !detail.snapshot) return;
-      const sampleKey = [deviceId, 'android-network', capturedAt].join(':');
+      const sampleKey = [deviceIdRef.current, 'android-network', capturedAt].join(':');
       try {
         const event = await createWaveRadarEventEnvelope({
           snapshot: detail.snapshot,
@@ -129,8 +76,8 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
             ...SOURCE,
             sourceType: 'ANDROID_NETWORK_PLATFORM_CACHE',
             adapterId: 'waveradar-android-network',
-            sourceId: deviceId,
-            deviceId,
+            sourceId: deviceIdRef.current,
+            deviceId: deviceIdRef.current,
             capabilityId: 'android.network.snapshot',
           },
           observedClockDomain: 'UNKNOWN',
@@ -172,21 +119,10 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
 
     const flushRemoteQueue = async () => {
       if (remoteInFlightRef.current || Date.now() < remoteRetryAfterRef.current) return;
-      let token = enrollmentToken();
+      const token = enrollmentToken();
       if (!token) {
-        setStatus((old) => ({ ...old, remoteIngestion: 'REGISTERING_DEVICE' }));
-        try {
-          token = await requestEnrollmentToken(deviceId, latestSnapshotRef.current);
-        } catch (error) {
-          const authRequired = error?.status === 401 || error?.status === 403;
-          setStatus((old) => ({
-            ...old,
-            remoteIngestion: authRequired ? 'AUTH_REQUIRED' : error?.status === 409 ? 'DEVICE_OWNERSHIP_CONFLICT' : 'ENROLLMENT_FAILED',
-            lastError: error?.message || 'DEVICE_ENROLLMENT_FAILED',
-          }));
-          remoteRetryAfterRef.current = Date.now() + 60000;
-          return;
-        }
+        setStatus((old) => ({ ...old, remoteIngestion: 'ENROLLMENT_BUNDLE_REQUIRED' }));
+        return;
       }
       const pending = await listPendingLocalEvidenceEvents({ limit: 50 });
       if (!pending.length) {
@@ -210,20 +146,13 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
         if (!response.ok) {
           const reason = body.error || ('HTTP_' + response.status);
           if (response.status === 401 || response.status === 403) {
-            try {
-              localStorage.removeItem('waveradar.enrollment.token');
-              await requestEnrollmentToken(deviceId, latestSnapshotRef.current);
-              remoteRetryAfterRef.current = Date.now();
-              return;
-            } catch (enrollmentError) {
-              setStatus((old) => ({
-                ...old,
-                remoteIngestion: enrollmentError?.status === 401 || enrollmentError?.status === 403 ? 'AUTH_REQUIRED' : 'ENROLLMENT_FAILED',
-                lastError: enrollmentError?.message || reason,
-              }));
-              remoteRetryAfterRef.current = Date.now() + 60000;
-              return;
-            }
+            setStatus((old) => ({
+              ...old,
+              remoteIngestion: response.status === 401 ? 'TOKEN_INVALID_OR_EXPIRED' : 'DEVICE_TOKEN_MISMATCH',
+              lastError: reason,
+            }));
+            remoteRetryAfterRef.current = Date.now() + 60000;
+            return;
           }
           const error = new Error(reason);
           error.status = response.status;
@@ -273,7 +202,6 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
       runningRef.current = true;
       try {
         const snapshot = await getNativeSensorSnapshot();
-        latestSnapshotRef.current = snapshot;
         if (!snapshot || !snapshot.measurements || typeof snapshot.measurements !== 'object') {
           setStatus((old) => ({ ...old, phase: 'COLLECTOR_UNAVAILABLE', native: true }));
           return;
@@ -301,8 +229,8 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
             },
             source: {
               ...SOURCE,
-              sourceId: deviceId,
-              deviceId,
+              sourceId: deviceIdRef.current,
+              deviceId: deviceIdRef.current,
               capabilityId: 'android.sensor.' + capabilityId,
             },
             observedClockDomain: measurement.sourceClockDomain || 'ANDROID_ELAPSED_REALTIME_NANOS',
@@ -363,6 +291,7 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
     return () => {
       active = false;
       window.removeEventListener(NETWORK_EVENT_NAME, onNetworkEvidence);
+      window.removeEventListener('waveradar:enrollment-token-updated', onEnrollmentBundleUpdated);
       if (timer) window.clearInterval(timer);
     };
   }, [enabled, sessionId]);
