@@ -37,6 +37,9 @@ jobs:
       - name: Audit canonical data contract
         run: npm run audit:data
 
+      - name: Test shared event envelope and clock provenance
+        run: npm run test:event-envelope
+
       - name: Test malformed array boundaries
         run: npm run test:array-boundaries
 

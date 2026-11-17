@@ -28,6 +28,9 @@ jobs:
       - name: Audit canonical data contract
         run: npm run audit:data
 
+      - name: Test shared event envelope and clock provenance
+        run: npm run test:event-envelope
+
       - name: Test capability knowledge graph
         run: npm run test:capability-knowledge-graph
 
