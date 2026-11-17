@@ -55,6 +55,7 @@ import useTrackAnomalies from '../hooks/useTrackAnomalies';
 import usePredictionCalibration from '../hooks/usePredictionCalibration';
 import usePhysicalOutcomeForecast from '../hooks/usePhysicalOutcomeForecast';
 import useWorldTimeline from '../hooks/useWorldTimeline';
+import useSharedEventStream from '../hooks/useSharedEventStream';
 import WorldTimelinePanel from '../components/WorldTimelinePanel';
 import useFederatedWorld from '../hooks/useFederatedWorld';
 import useWorldStateProjection from '../hooks/useWorldStateProjection';
@@ -388,6 +389,23 @@ export default function Home() {
     ...(Array.isArray(federatedWorld?.projectableEvents) ? federatedWorld.projectableEvents : []),
   ], [opportunisticLiveDetections, federatedWorld?.projectableEvents]);
   const worldTimeline = useWorldTimeline({ observations: timelineObservations, geo: geo?.pos, sessionId: sessionIdRef.current, enabled: isScanning });
+  const sharedEventStream = useSharedEventStream(true);
+  const sharedScene = useMemo(() => ({
+    timelineEventCount: Number(worldTimeline?.timeline?.eventCount || 0),
+    trackCount: Number(worldTimeline?.timeline?.trackCount || 0),
+    cursor: worldTimeline?.cursor ?? worldTimeline?.timeline?.maxTime ?? null,
+    live: worldTimeline?.timeline?.live !== false,
+    remoteEventCount: Number(sharedEventStream?.eventCount || 0),
+    remoteStatus: sharedEventStream?.status || 'UNAVAILABLE',
+    lastRemoteEventAt: sharedEventStream?.lastEventAt || null,
+  }), [
+    worldTimeline?.timeline?.eventCount,
+    worldTimeline?.timeline?.trackCount,
+    worldTimeline?.timeline?.maxTime,
+    worldTimeline?.timeline?.live,
+    worldTimeline?.cursor,
+    sharedEventStream,
+  ]);
   const isReplay = worldTimeline?.timeline?.live === false;
   const activePredictions = isReplay ? [] : trajectoryPredictions;
   const activeAnomalies = isReplay ? [] : trackAnomalies;
@@ -646,6 +664,7 @@ export default function Home() {
         battery={battery}
         network={network}
         sensors={sensors}
+        sharedScene={sharedScene}
       />}
 
       {/* Edge-glow pulse on movement / threat */}
@@ -689,6 +708,7 @@ export default function Home() {
             predictionCalibration={activeCalibration}
             physicalOutcomeForecast={isReplay ? [] : physicalOutcomeForecast.forecasts}
             worldTimeline={worldTimeline}
+            sharedScene={sharedScene}
             scanMode={scanMode}
             isScanning={isScanning}
             cameraActive={cameraActive}
@@ -747,7 +767,7 @@ export default function Home() {
           )}
         </div>
 
-        <WorldTimelinePanel timeline={worldTimeline.timeline} cursor={worldTimeline.cursor} setCursor={worldTimeline.setCursor} reset={worldTimeline.reset} color={color} />
+        <WorldTimelinePanel timeline={worldTimeline.timeline} cursor={worldTimeline.cursor} setCursor={worldTimeline.setCursor} reset={worldTimeline.reset} color={color} sharedScene={sharedScene} />
         <FederatedWorldPanel federation={federatedWorld} color={color} />
         <EvaluationReadinessPanel evaluation={evaluation} color={color} runtimeCapacity={runtimeCapacity} />
 
