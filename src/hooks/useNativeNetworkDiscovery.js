@@ -41,8 +41,16 @@ export default function useNativeNetworkDiscovery() {
 
       setState((old) => ({ ...old, phase: 'READING_PLATFORM_DATA', native: true, permission }));
       const snapshot = await WaveRadarNetwork.getSnapshot();
+      let bluetooth = { status: 'UNAVAILABLE', observations: [] };
+      try {
+        bluetooth = await WaveRadarNetwork.discoverBluetooth();
+        bluetooth.status = 'AVAILABLE';
+      } catch (bleError) {
+        bluetooth = { status: 'UNAVAILABLE_OR_PERMISSION_DENIED', observations: [], reason: bleError?.message || 'BLE scan unavailable' };
+      }
+      const combinedSnapshot = { ...snapshot, bluetooth };
       const capturedAt = Number(snapshot?.capturedAt) || Date.now();
-      const normalized = normalizeNetworkSnapshot(snapshot, { receivedAt: capturedAt });
+      const normalized = normalizeNetworkSnapshot(combinedSnapshot, { receivedAt: capturedAt });
       const result = {
         ...initial,
         phase: 'CAPTURED',
@@ -51,11 +59,13 @@ export default function useNativeNetworkDiscovery() {
         capturedAt,
         wifiStatus: normalized.wifiStatus,
         cellularStatus: normalized.cellularStatus,
+        bluetoothStatus: normalized.bluetoothStatus,
         observations: normalized.observations,
         counts: normalized.counts,
         limitations: [
           ...initial.limitations,
           'Observation integrity is UNASSESSED; no independent ground-truth validation has been performed.',
+          'Bluetooth collection is passive advertisement discovery only; no device address, name, identity, or GATT characteristic is collected.',
           'This capture is currently session-local. A durable WIS backend ingestion endpoint is not wired by this adapter.'
         ]
       };
