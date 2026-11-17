@@ -55,6 +55,9 @@ jobs:
       - name: Test capability knowledge graph
         run: npm run test:capability-knowledge-graph
 
+      - name: Test native evidence store bridge
+        run: npm run test:native-evidence-store
+
       - name: Build web application
         run: npm run build
 
@@ -68,6 +71,7 @@ jobs:
           cp native/android/WaveRadarSensorsPlugin.java android/app/src/main/java/com/waveradar/app/WaveRadarSensorsPlugin.java
           cp native/android/WaveRadarRangingPlugin.java android/app/src/main/java/com/waveradar/app/WaveRadarRangingPlugin.java
           cp native/android/WaveRadarNetworkPlugin.java android/app/src/main/java/com/waveradar/app/WaveRadarNetworkPlugin.java
+          cp native/android/WaveRadarEvidenceStorePlugin.java android/app/src/main/java/com/waveradar/app/WaveRadarEvidenceStorePlugin.java
           python3 - <<'PY'
           from pathlib import Path
           p = Path("android/app/src/main/AndroidManifest.xml")
