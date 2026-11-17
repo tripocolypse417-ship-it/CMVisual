@@ -1,6 +1,6 @@
 # WaveRadar Master Status and Task Register
 
-**Snapshot date:** 2026-10-30  
+**Snapshot date:** 2026-11-17  
 **Purpose:** One navigable status record for the WaveRadar application, Android build, physical validation, Research & Validation Institute, media, and outstanding company work.  
 **Evidence rule:** This register is a project-management summary. It does not convert design concepts, software checks, or historical observations into validated product capabilities.
 
@@ -10,12 +10,24 @@ WaveRadar is an early-stage, evidence-first spatial-awareness prototype for emer
 
 The project is not yet a validated life-safety product. No through-wall sensing, victim localization, spatial accuracy, or operational rescue-performance claim is established by the current phone-only build.
 
+### 1.1 Shared event pipeline update — 2026-11-17
+
+- WaveRadar Core v435 is live at https://waveradar-20.hatchable.site.
+- Added append-only `waveradar_event_envelopes` and `waveradar_event_quarantine` tables with database-level UPDATE/DELETE rejection.
+- Added device-token-authenticated `POST /api/events/device-ingest`, owner-scoped `GET /api/events/snapshot`, and owner-scoped `GET /api/events-token`.
+- Core checks envelope structure, source-clock semantics, payload byte length, canonical JSON SHA-256, device/token binding, duplicate IDs, and quarantine reasons. Session IDs are retained for later replay.
+- CMVisual branch `feat/shared-event-contract-v1` now wraps Android SensorManager and Android network snapshots in the shared envelope, persists them locally in IndexedDB, tracks upload acknowledgments separately, and uploads pending events when the existing guided-setup enrollment token is present.
+- WIS spatial workspace, WIS timeline panel, and HMD-style overlay now receive the same timeline cursor and shared Core event-stream status object.
+- API gate checks passed: no-token and invalid-token ingest requests are rejected; the owner event-token route and session-filtered snapshot route respond successfully. The Core event and quarantine tables remain empty; no synthetic sensor observations were written during verification.
+
+**Still unverified:** a valid event upload from the actual Moto G Play, latest CMVisual CI completion, APK install/run on-device, server-side scene fusion/revision, deterministic spatial replay from raw sensor envelopes, and synchronization to a separate physical helmet display. The HMD view is currently an in-app headset-style overlay, not a connected helmet device. A stored/hash-checked event is not independently validated.
+
 ### Current workspaces
 
 | Workspace | Current state | Notes |
 |---|---|---|
 | GitHub CMVisual repository | Active | Canonical source and Android CI workflow |
-| WaveRadar Core | Hosted, version 366 at last check | Diagnostics and validation APIs available |
+| WaveRadar Core | Hosted, version 435 deployed 2026-11-17 | Diagnostics, validation, append-only event ledger, device-token ingest, owner-scoped event snapshot, and realtime event grants |
 | Independent Validation Lab | Hosted, version 6 at last check | Researcher, tester, reviewer and admin workflows |
 | WaveRadar Cinematic Showcase | Existing project, version 13 at last check | Concept-media workspace; not product proof |
 | WaveRadar Studio | Existing project, version 4 at last check | Separate design workspace |
@@ -86,10 +98,10 @@ Important limitation: earlier CI runs used runner-generated debug signing keys t
 
 ## 3. Current validation facts
 
-Latest WaveRadar Core diagnostics checked on 2026-10-30:
+Latest WaveRadar Core diagnostics checked on 2026-11-17:
 - 4,021 historical observations.
 - 0 integrity-verified observations.
-- 8 registered devices.
+- 9 registered devices.
 - 0 validated devices.
 - 78 validation runs.
 - 0 passed runs.
