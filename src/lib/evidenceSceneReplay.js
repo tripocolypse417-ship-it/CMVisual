@@ -42,7 +42,7 @@ function normalizeSceneEntity(value, event) {
       floorId: clean(position.floorId),
       alignmentState: independentlyValidated ? 'ALIGNED' : 'UNVERIFIED',
     } : null,
-    spatialRegistration: independentlyValidated ? 'INDEPENDENTLY_VALIDATED' : (hasPosition ? 'CALIBRATION_UNVERIFIED' : 'UNREGISTERED'),
+    spatialRegistration: independentlyValidated ? 'VALIDATION_REFERENCED' : (hasPosition ? 'CALIBRATION_UNVERIFIED' : 'UNREGISTERED'),
     evidenceClass: event.evidenceClass,
     sourceId: event.sourceId,
     lastEventId: event.eventId,
@@ -181,7 +181,7 @@ export function projectEvidenceSceneView(snapshot, options = {}) {
     entities,
     hypotheses: snapshot.hypotheses,
     conflicts: snapshot.conflicts,
-    unlocatedEntityCount: snapshot.entities.filter(entity => entity.spatialRegistration !== 'INDEPENDENTLY_VALIDATED').length,
+    unlocatedEntityCount: snapshot.entities.filter(entity => entity.spatialRegistration !== 'VALIDATION_REFERENCED').length,
     untimedEvidenceCount: snapshot.untimedEvents.length,
     unalignedClockEvidenceCount: snapshot.unalignedClockEvents.length,
   };
