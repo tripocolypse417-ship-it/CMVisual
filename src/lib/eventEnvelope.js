@@ -3,7 +3,7 @@
  *
  * This helper preserves the original snapshot as payload data and hashes its
  * canonical JSON serialization. A hash is not durable raw-evidence storage:
- * raw_payload_ref remains null until an append-only evidence store is wired.
+ * raw_payload_ref remains null unless a concrete local or remote evidence reference is supplied.
  */
 const CLOCK_DOMAINS = Object.freeze({
   UTC_UNIX: 'UTC_UNIX',
@@ -118,7 +118,7 @@ export async function createWaveRadarEventEnvelope(input = {}) {
       parent_event_ids: [],
       validation_reference_ids: [],
       limitations: [
-        'Raw payload reference is null until append-only evidence storage is integrated.',
+        ...(input.rawPayloadRef ? [] : ['Raw payload reference is null because no evidence-store reference was supplied.']),
         ...(digest ? [] : ['SHA-256 unavailable in this runtime; integrity remains unassessed.']),
         ...(Array.isArray(input.limitations) ? input.limitations.filter((item) => typeof item === 'string' && item.trim()) : []),
       ],
@@ -128,7 +128,7 @@ export async function createWaveRadarEventEnvelope(input = {}) {
       data: snapshot,
     },
     evidence: {
-      raw_payload_ref: null,
+      raw_payload_ref: input.rawPayloadRef ?? null,
       raw_payload_sha256: digest,
       content_type: 'application/json',
       byte_length: new TextEncoder().encode(rawSerialized).length,
