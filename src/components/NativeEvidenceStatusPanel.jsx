@@ -86,7 +86,7 @@ export default function NativeEvidenceStatusPanel({ sessionId = null }) {
           <input
             type="password"
             value={bundleInput}
-            onChange={setBundleInput}
+            onChange={(event) => setBundleInput(event.target.value)}
             placeholder="Paste enrollment bundle or token"
             autoComplete="off"
             spellCheck={false}
