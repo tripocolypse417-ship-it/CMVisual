@@ -37,7 +37,7 @@ export default function NativeEvidenceStatusPanel({ sessionId = null }) {
         </div>
       </div>
       <p className="text-[9px] leading-relaxed text-slate-500">
-        Evidence is first stored locally, then sent to WaveRadar Core when the device enrollment token is available. Source monotonic timestamps remain separate from receive time. Server acknowledgment is not independent validation.
+        Evidence is first stored locally. When the signed-in owner session is available, the app registers this collector, provisions its scoped enrollment token, and uploads pending events to WaveRadar Core. Source monotonic timestamps remain separate from receive time. Server acknowledgment is not independent validation.
       </p>
       {state.lastError && <p className="text-[9px] leading-relaxed text-amber-200">{state.lastError}</p>}
     </section>
