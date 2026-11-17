@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, Bluetooth, Radio, RefreshCw, ShieldAlert, Wifi } from 'lucide-react';
+import { Radio, RefreshCw, ShieldAlert } from 'lucide-react';
 import useNativeNetworkDiscovery from '../hooks/useNativeNetworkDiscovery';
 
 const Status = ({ label, value }) => (
@@ -30,11 +30,12 @@ export default function NativeNetworkDiscoveryPanel() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
         <Status label="Adapter" value={state.native ? 'NATIVE ANDROID' : 'NOT CONNECTED'} />
         <Status label="Permission" value={state.permission} />
         <Status label="Wi-Fi cache" value={state.wifiStatus} />
         <Status label="Cellular" value={state.cellularStatus} />
+        <Status label="BLE" value={state.bluetoothStatus} />
       </div>
 
       {state.error && <div className="rounded-lg border border-amber-400/20 bg-amber-400/5 p-2 text-[10px] text-amber-200">{state.error}</div>}
@@ -45,6 +46,7 @@ export default function NativeNetworkDiscoveryPanel() {
             <Status label="Observations" value={state.observations.length} />
             <Status label="Wi-Fi" value={state.counts?.wifi ?? 0} />
             <Status label="Cellular" value={state.counts?.cellular ?? 0} />
+            <Status label="BLE" value={state.counts?.bluetooth ?? 0} />
           </div>
           <div className="max-h-48 space-y-1 overflow-auto">
             {state.observations.map((item, index) => (
