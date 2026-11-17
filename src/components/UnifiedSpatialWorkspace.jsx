@@ -27,6 +27,7 @@ export default function UnifiedSpatialWorkspace({
   physicalOutcomeForecast = [],
   worldTimeline = null,
   worldProjection = null,
+  sharedScene = null,
   scanMode,
   isScanning,
   cameraActive,
@@ -164,6 +165,9 @@ export default function UnifiedSpatialWorkspace({
 
   return (
     <section className="relative w-full h-[clamp(560px,72vh,820px)] min-h-[560px] overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl touch-manipulation" data-unified-spatial-workspace>
+      <div className="absolute top-2 left-1/2 -translate-x-1/2 z-40 max-w-[94%] rounded-lg border border-white/15 bg-black/80 px-2.5 py-1 font-mono text-[7px] tracking-wider text-white/70 pointer-events-none whitespace-nowrap">
+        {sharedScene?.live === false ? 'REPLAY' : 'LIVE'} · {sharedScene?.timelineEventCount || 0} EVENTS · {sharedScene?.trackCount || 0} TRACKS · CORE {String(sharedScene?.remoteStatus || 'UNAVAILABLE').replaceAll('_', ' ')} · {sharedScene?.remoteEventCount || 0} REMOTE EVENTS
+      </div>
       <DaredevilVisionHUD
         selectedDetection={selectedDetection}
         lockedTrackId={lockedTrackId}
