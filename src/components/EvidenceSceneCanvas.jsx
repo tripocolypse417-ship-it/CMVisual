@@ -86,7 +86,7 @@ export default function EvidenceSceneCanvas({ entities = [] }) {
       else object.material?.dispose?.();
     }
     for (const entity of entities) {
-      if (entity?.spatialRegistration !== 'ALIGNED' || !entity.position) continue;
+      if (entity?.spatialRegistration !== 'INDEPENDENTLY_VALIDATED' || !entity.position) continue;
       const { x, y, z } = entity.position;
       if (![x, y, z].every(Number.isFinite)) continue;
       const geometry = new THREE.SphereGeometry(0.13, 16, 12);
@@ -107,13 +107,13 @@ export default function EvidenceSceneCanvas({ entities = [] }) {
     <div className="relative overflow-hidden rounded-xl border border-cyan-900/60 bg-slate-950">
       <div ref={hostRef} className="h-[320px] w-full" />
       <div className="absolute left-3 top-3 rounded bg-slate-950/80 px-2 py-1 text-[10px] font-mono tracking-wider text-cyan-200">
-        REGISTERED GEOMETRY ONLY
+        INDEPENDENTLY VALIDATED GEOMETRY ONLY
       </div>
       {error && <div className="absolute inset-0 flex items-center justify-center bg-slate-950/90 p-4 text-center text-xs text-amber-200">{error}</div>}
-      {!error && entities.filter(entity => entity?.spatialRegistration === 'ALIGNED' && entity.position).length === 0 && (
+      {!error && entities.filter(entity => entity?.spatialRegistration === 'INDEPENDENTLY_VALIDATED' && entity.position).length === 0 && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <div className="rounded-lg border border-white/10 bg-slate-950/85 px-4 py-3 text-center text-xs text-slate-300">
-            No calibrated scene entities at this time cursor
+            No independently validated scene entities at this time cursor
             <div className="mt-1 text-[10px] text-slate-500">No positions are invented from unlocated sensor observations</div>
           </div>
         </div>
