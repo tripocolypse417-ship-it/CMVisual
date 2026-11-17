@@ -196,3 +196,36 @@ These were initially created as unsent drafts. Current send status is maintained
 - FEMA FP&S / USFA grants: https://www.usfa.fema.gov/a-z/grants/index.html
 - Missouri Division of Fire Safety mutual-aid contacts: https://dfs.dps.mo.gov/programs/resources/mutual-aid-contacts.php
 - Missouri State UAS/geospatial research instrumentation listing: https://science.missouristate.edu/Research/instrumentation.htm
+
+
+
+---
+
+## Current update — 2026-11-16
+
+### DOE FY26 Fall SBIR/STTR Phase I — Topic 14: Grid Innovations
+
+- **Status:** Active solicitation; pitch deadline **December 16, 2026 at 2:00 p.m. Eastern / 1:00 p.m. Central**.
+- **Submission path:** Request an AMP account, complete the pitch template and structured questions, and submit the initial pitch. Only successful pitches are invited to a full application. Up to three pitches per company are accepted; only the last three submitted pitches are reviewed.
+- **Award context:** DOE/ConnectWerx describes approximately 160 awards and up to $50 million across this opportunity; the Phase I full-application request is capped at $300,000 ($306,500 with TABA). These are program-level figures, not an expected award to WaveRadar.
+- **Topic fit:** Topic 14 includes secure grid communications, cyber-resilient frameworks/architectures, grid supply-chain security, grid-enhancing technologies, microgrids, and related grid operations tools.
+- **WaveRadar concept:** GridLink — an auditable, vendor-neutral control and assurance layer for communications-path selection, authenticated delivery, failover, timing/provenance, and independent performance evidence across qualified grid communication paths.
+- **Critical prior-art finding:** Do not claim novelty for PLC itself, hybrid PLC/radio communication, adaptive path selection, dual PLC/RF operation, or failover as such. IEEE 1901.3-2025 already specifies a hybrid PLC/RF PHY/MAC for smart-grid applications, and gridComm's GC8828 product describes adaptive PLC/LoRa routing, dual-mode operation, and redundancy. IEEE 1901.3.1-2026 adds test procedures. A differentiated WaveRadar contribution is **not yet established**.
+- **Potential research gap to investigate, not a novelty claim:** independently auditable, cross-vendor interoperability and security assurance for mixed PLC/RF/IP networks, including source-authenticated telemetry, policy explainability, failover under adversarial or degraded conditions, and reproducible evidence comparing hybrid operation with the best single-path baseline. This requires a qualified grid-communications reviewer and documented competitor/prior-art search before pitch submission.
+- **Technical readiness:** Current internal draft correctly states no WaveRadar PLC prototype, grid deployment, independent PLC results, confirmed PLC hardware, qualified grid engineer, independent test lab, utility partner, or customer demand evidence. Do not upgrade any of these statuses.
+- **Go/no-go:** Conditional only. Proceed to a pitch only if a qualified technical reviewer identifies a specific unmet need beyond existing hybrid PLC/RF products and standards, a feasible isolated bench-test plan is credible, and the team can meet DOE PI and work-performance requirements. Otherwise retain GridLink as a research concept and do not submit.
+- **Eligibility gates:** U.S. for-profit small-business status; at least 51% qualifying U.S. ownership/control; 500 or fewer employees including affiliates; all R&D performed in the U.S. For SBIR Phase I, the business must perform at least two-thirds of the R&D and the PI must be primarily employed by the business (>50% of total employment hours) at award and throughout the project. STTR requires a qualifying U.S. nonprofit research partner and written IP agreement, with at least 40% business effort and 30% institution effort.
+- **Registration gates:** SAM.gov registration and UEI; SBA Company Registry; DOE SBIR/STTR Application Hub (AMP). DOE states these are essential before an application can be submitted. The founder reports SAM.gov work is complete and the EIN application reached confirmation, but the UEI/active SAM status, EIN record, SBA registry, and AMP account have not been independently verified in this record.
+- **Next actions:** (1) complete a focused prior-art/competitor review; (2) obtain a qualified grid-communications reviewer; (3) define one measurable use case and isolated test fixture; (4) secure a credible technical team/lab route; (5) verify entity registrations and PI eligibility; (6) then decide whether to submit one pitch. Do not submit or create duplicate pitches.
+
+**Primary sources**
+- DOE/ConnectWerx FY26 Fall opportunity and pitch deadline: https://sbir-sttr.connectwerx.org/portfolio-items/fy26-fall-opportunity/
+- DOE SBIR/STTR eligibility: https://sbir-sttr.connectwerx.org/eligibility-criteria/
+- DOE required registrations: https://www.energy.gov/technologycommercialization/required-sbirsttr-registrations
+- IEEE 1901.3-2025 hybrid PLC/RF smart-grid standard: https://standards.ieee.org/ieee/1901.3/11262/
+- IEEE 1901.3.1-2026 test procedures: https://standards.ieee.org/ieee/1901.3.1/11862/
+- gridComm GC8828 hybrid PLC/LoRa product: https://www.gridcomm-plc.com/product/product_gc8828.htm
+
+### Entity and federal-registration status correction
+
+The older pipeline notes pre-date the Missouri LLC acceptance. The Missouri Articles of Organization were accepted November 15, 2026, per the founder's confirmation. On November 16 the founder reported that the SAM.gov task was done and that the EIN application reached its confirmation screen. These are founder-reported updates, not independently verified registration evidence. Keep the following separate until records are available: EIN issued/number recovered; SAM.gov entity registration active; UEI issued; SBA Company Registry complete; DOE AMP access approved. Do not claim an award-ready federal registration package based on a completed form or confirmation screen alone.
