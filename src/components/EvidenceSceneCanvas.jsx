@@ -12,7 +12,7 @@ export default function EvidenceSceneCanvas({ entities = [] }) {
   const cameraRef = useRef(null);
   const groupRef = useRef(null);
   const [error, setError] = useState(null);
-  const validatedEntities = entities.filter(entity => entity?.spatialRegistration === 'INDEPENDENTLY_VALIDATED' && entity.position);
+  const validatedEntities = entities.filter(entity => entity?.spatialRegistration === 'VALIDATION_REFERENCED' && entity.position);
   const coordinateFrames = new Set(validatedEntities.map(entity => entity.position.coordinateFrame));
   const frameMismatch = coordinateFrames.size > 1;
 
@@ -109,14 +109,14 @@ export default function EvidenceSceneCanvas({ entities = [] }) {
     <div className="relative overflow-hidden rounded-xl border border-cyan-900/60 bg-slate-950">
       <div ref={hostRef} className="h-[320px] w-full" />
       <div className="absolute left-3 top-3 rounded bg-slate-950/80 px-2 py-1 text-[10px] font-mono tracking-wider text-cyan-200">
-        INDEPENDENTLY VALIDATED GEOMETRY ONLY
+        VALIDATION-REFERENCED GEOMETRY ONLY
       </div>
       {error && <div className="absolute inset-0 flex items-center justify-center bg-slate-950/90 p-4 text-center text-xs text-amber-200">{error}</div>}
       {!error && frameMismatch && <div className="pointer-events-none absolute inset-0 flex items-center justify-center"><div className="rounded-lg border border-amber-400/30 bg-slate-950/90 px-4 py-3 text-center text-xs text-amber-200">Multiple coordinate frames detected<div className="mt-1 text-[10px] text-slate-400">A validated transform is required before these points can share one scene</div></div></div>}
       {!error && !frameMismatch && validatedEntities.length === 0 && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <div className="rounded-lg border border-white/10 bg-slate-950/85 px-4 py-3 text-center text-xs text-slate-300">
-            No independently validated scene entities at this time cursor
+            No validation-referenced scene entities at this time cursor
             <div className="mt-1 text-[10px] text-slate-500">No positions are invented from unlocated sensor observations</div>
           </div>
         </div>
