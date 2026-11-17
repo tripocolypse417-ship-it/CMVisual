@@ -41,5 +41,8 @@ jobs:
       - name: Test provider-neutral transport registry
         run: npm run test:network-transport-registry
 
+      - name: Test deterministic scene replay
+        run: npm run test:scene-replay
+
       - name: Build web application
         run: npm run build
