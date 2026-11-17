@@ -31,7 +31,7 @@ assert.equal(scene.synchronized, true);
 assert.equal(scene.replay.knowledgeTime, ms(base) + 6000);
 assert.equal(scene.snapshot.entities.length, 3);
 assert.equal(scene.snapshot.entities.find(entity => entity.entityId === 'door-1').spatialRegistration, 'UNREGISTERED');
-assert.equal(scene.snapshot.entities.find(entity => entity.entityId === 'possible-room-a').spatialRegistration, 'INDEPENDENTLY_VALIDATED');
+assert.equal(scene.snapshot.entities.find(entity => entity.entityId === 'possible-room-a').spatialRegistration, 'VALIDATION_REFERENCED');
 assert.equal(scene.snapshot.entities.find(entity => entity.entityId === 'possible-room-b').position, null);
 assert.equal(scene.snapshot.hypotheses.length, 2);
 assert.equal(scene.snapshot.hypothesisGroups[0].eventIds.length, 2);
