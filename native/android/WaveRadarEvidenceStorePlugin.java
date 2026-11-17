@@ -111,8 +111,8 @@ public class WaveRadarEvidenceStorePlugin extends Plugin {
       call.reject("incidentId is required");
       return;
     }
-    long afterSequence = Math.max(0L, call.getLong("afterSequence", 0L));
-    int limit = Math.max(1, Math.min(MAX_PAGE, call.getInt("limit", 100)));
+    long afterSequence = Math.max(0L, call.getData().optLong("afterSequence", 0L));
+    int limit = Math.max(1, Math.min(MAX_PAGE, call.getData().optInt("limit", 100)));
     JSArray output = new JSArray();
     SQLiteDatabase db = database.getReadableDatabase();
     Cursor cursor = db.query("evidence_events", new String[]{"row_id", "event_json"},
