@@ -6,6 +6,7 @@ import { createWaveRadarEventEnvelope } from '../lib/eventEnvelope';
 import { appendLocalEvidenceEvent, getLocalEvidenceStatus } from '../lib/localEvidenceStore';
 
 const POLL_INTERVAL_MS = 2000;
+const NETWORK_EVENT_NAME = 'waveradar:capability-observations';
 const SOURCE = Object.freeze({
   sourceType: 'ANDROID_SENSOR_MANAGER',
   adapterId: 'waveradar-android-sensors',
@@ -34,6 +35,57 @@ export default function useNativeEvidencePipeline(enabled = true) {
     let active = true;
     let timer;
     const deviceId = getStableDeviceId();
+
+    const onNetworkEvidence = async (customEvent) => {
+      const detail = customEvent?.detail || {};
+      const capturedAt = Number(detail.capturedAt);
+      if (!Number.isFinite(capturedAt) || capturedAt <= 0 || !detail.snapshot) return;
+      const sampleKey = [deviceId, 'android-network', capturedAt].join(':');
+      try {
+        const event = await createWaveRadarEventEnvelope({
+          snapshot: detail.snapshot,
+          source: {
+            ...SOURCE,
+            sourceType: 'ANDROID_NETWORK_PLATFORM_CACHE',
+            adapterId: 'waveradar-android-network',
+            sourceId: deviceId,
+            deviceId,
+            capabilityId: 'android.network.snapshot',
+          },
+          observedClockDomain: 'UTC_UNIX',
+          observedAt: capturedAt,
+          receivedAt: new Date().toISOString(),
+          evidenceClass: 'MEASURED',
+          collectionMethod: 'ANDROID_PLATFORM_WIFI_CELLULAR_BLE_APIS',
+          payloadSchema: 'waveradar.android.network-snapshot.v1',
+          retentionClass: 'DIAGNOSTIC',
+          limitations: [
+            'Wi-Fi scan results may be cached and are not a full radio scan.',
+            'Cellular metadata is platform/carrier controlled and may be stale or unavailable.',
+            'BLE observations are permission- and scan-window-limited.',
+          ],
+        });
+        const result = await appendLocalEvidenceEvent(event, sampleKey);
+        if (result.added) {
+          window.dispatchEvent(new CustomEvent('waveradar:event-envelope', { detail: event }));
+        }
+        const storageStatus = await getLocalEvidenceStatus();
+        if (active) setStatus((old) => ({
+          ...old,
+          storedEvents: storageStatus.count,
+          lastCaptureAt: new Date().toISOString(),
+          remoteIngestion: 'NOT_CONNECTED',
+        }));
+      } catch (error) {
+        if (active) setStatus((old) => ({
+          ...old,
+          phase: error?.name === 'QuotaExceededError' ? 'STORAGE_FULL' : 'ERROR',
+          lastError: error?.message || 'NETWORK_EVIDENCE_PERSIST_FAILED',
+        }));
+      }
+    };
+
+    window.addEventListener(NETWORK_EVENT_NAME, onNetworkEvidence);
 
     const poll = async () => {
       if (!active || runningRef.current) return;
@@ -124,6 +176,7 @@ export default function useNativeEvidencePipeline(enabled = true) {
     timer = window.setInterval(poll, POLL_INTERVAL_MS);
     return () => {
       active = false;
+      window.removeEventListener(NETWORK_EVENT_NAME, onNetworkEvidence);
       if (timer) window.clearInterval(timer);
     };
   }, [enabled]);
