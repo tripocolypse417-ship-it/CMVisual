@@ -70,13 +70,14 @@ public class WaveRadarNetworkPlugin extends Plugin {
     out.put("bleAdvertisementScan", getContext().getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE));
     out.put("blePermissionState", hasBleScanPermission() ? "GRANTED" : "NOT_GRANTED");
     out.put("permissionState", hasLocationPermission() ? "GRANTED" : "NOT_GRANTED");
+    out.put("phoneStatePermission", hasPhoneStatePermission() ? "GRANTED" : "NOT_GRANTED");
     out.put("dataClass", "CAPABILITY_STATUS");
     call.resolve(out);
   }
 
   @PluginMethod
   public void requestPermissions(PluginCall call) {
-    if (hasLocationPermission()) {
+    if (hasLocationPermission() && hasPhoneStatePermission()) {
       JSObject result = new JSObject();
       result.put("permissionState", "GRANTED");
       call.resolve(result);
@@ -89,6 +90,7 @@ public class WaveRadarNetworkPlugin extends Plugin {
   private void locationPermissionCallback(PluginCall call) {
     JSObject result = new JSObject();
     result.put("permissionState", hasLocationPermission() ? "GRANTED" : "DENIED");
+    result.put("phoneStatePermission", hasPhoneStatePermission() ? "GRANTED" : "DENIED");
     call.resolve(result);
   }
 
@@ -400,6 +402,10 @@ public class WaveRadarNetworkPlugin extends Plugin {
       return getContext().checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED;
     }
     return hasLocationPermission();
+  }
+
+  private boolean hasPhoneStatePermission() {
+    return getContext().checkSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED;
   }
 
   private boolean hasLocationPermission() {
