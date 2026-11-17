@@ -1,0 +1,403 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "WaveRadar Event Envelope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "schema_version",
+    "event_type",
+    "source",
+    "timing",
+    "provenance",
+    "payload",
+    "evidence"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "event_type": {
+      "enum": [
+        "OBSERVATION",
+        "DEVICE_STATUS",
+        "DISCOVERY_CANDIDATE",
+        "SCENE_ENTITY_UPSERT",
+        "SCENE_ENTITY_DELETE",
+        "SCENE_RELATION",
+        "PREDICTION",
+        "ANNOTATION",
+        "VALIDATION_RESULT"
+      ]
+    },
+    "incident_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "session_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "source_type",
+        "adapter_id",
+        "adapter_version"
+      ],
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "device_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "adapter_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "adapter_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "capability_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "authorization_scope_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "timing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observed_at",
+        "observed_clock_domain",
+        "received_at"
+      ],
+      "properties": {
+        "observed_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "observed_monotonic_ns": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "observed_clock_domain": {
+          "enum": [
+            "UTC_UNIX",
+            "DEVICE_MONOTONIC",
+            "SENSOR_HARDWARE",
+            "REMOTE_CLOCK",
+            "UNKNOWN"
+          ]
+        },
+        "received_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "clock_uncertainty_ms": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "measurement_age_ms": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_class",
+        "integrity_state",
+        "collection_method"
+      ],
+      "properties": {
+        "evidence_class": {
+          "enum": [
+            "MEASURED",
+            "DERIVED",
+            "INFERRED",
+            "PREDICTED",
+            "SIMULATED",
+            "UNKNOWN",
+            "UNAVAILABLE"
+          ]
+        },
+        "integrity_state": {
+          "enum": [
+            "UNASSESSED",
+            "CHECKSUMMED",
+            "VERIFIED",
+            "FAILED",
+            "QUARANTINED"
+          ]
+        },
+        "collection_method": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parent_event_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "uniqueItems": true
+        },
+        "validation_reference_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "spatial": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "frame_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "position": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "required": [
+            "x",
+            "y",
+            "z",
+            "unit"
+          ],
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            },
+            "z": {
+              "type": "number"
+            },
+            "unit": {
+              "enum": [
+                "m",
+                "cm",
+                "mm"
+              ]
+            }
+          }
+        },
+        "orientation_quaternion": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "required": [
+            "x",
+            "y",
+            "z",
+            "w"
+          ],
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            },
+            "z": {
+              "type": "number"
+            },
+            "w": {
+              "type": "number"
+            }
+          }
+        },
+        "uncertainty_m": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "pose_status": {
+          "enum": [
+            "AVAILABLE",
+            "PARTIAL",
+            "UNAVAILABLE",
+            "UNKNOWN"
+          ]
+        }
+      }
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "payload_schema",
+        "data"
+      ],
+      "properties": {
+        "payload_schema": {
+          "type": "string",
+          "minLength": 1
+        },
+        "data": {
+          "type": "object"
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "raw_payload_ref",
+        "raw_payload_sha256",
+        "retention_class",
+        "redaction_applied"
+      ],
+      "properties": {
+        "raw_payload_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "raw_payload_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+        "content_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "byte_length": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "retention_class": {
+          "enum": [
+            "INCIDENT_EVIDENCE",
+            "OPERATIONAL_TELEMETRY",
+            "DIAGNOSTIC",
+            "RESEARCH",
+            "EPHEMERAL"
+          ]
+        },
+        "redaction_applied": {
+          "type": "boolean"
+        }
+      }
+    },
+    "quality": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "NOT_ASSESSED",
+            "ACCEPTED",
+            "WARNING",
+            "REJECTED",
+            "QUARANTINED"
+          ]
+        },
+        "reason_codes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "unit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "calibration_reference": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sampling_interval_ms": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        }
+      }
+    }
+  }
+}
