@@ -31,6 +31,10 @@ export function createEvidenceStoreClient(plugin) {
       if (!plugin?.readEvents) return { available: false, events: [], nextSequence: afterSequence, reason: 'NATIVE_EVIDENCE_STORE_UNAVAILABLE' };
       return { available: true, ...await plugin.readEvents({ incidentId, afterSequence, limit }) };
     },
+    async listIncidents() {
+      if (!plugin?.listIncidents) return { available: false, incidents: [], reason: 'NATIVE_EVIDENCE_STORE_UNAVAILABLE' };
+      return { available: true, ...await plugin.listIncidents() };
+    },
     async status() {
       if (!plugin?.getStatus) return { available: false, storage: 'UNAVAILABLE' };
       return { available: true, ...await plugin.getStatus() };
