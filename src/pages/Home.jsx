@@ -390,7 +390,7 @@ export default function Home() {
     ...(Array.isArray(federatedWorld?.projectableEvents) ? federatedWorld.projectableEvents : []),
   ], [opportunisticLiveDetections, federatedWorld?.projectableEvents]);
   const worldTimeline = useWorldTimeline({ observations: timelineObservations, geo: geo?.pos, sessionId: sessionIdRef.current, enabled: isScanning });
-  const sharedEventStream = useSharedEventStream(sessionIdRef.current, true);
+  const sharedEventStream = useSharedEventStream();
   const sharedScene = useMemo(() => ({
     timelineEventCount: Number(worldTimeline?.timeline?.eventCount || 0),
     trackCount: Number(worldTimeline?.timeline?.trackCount || 0),
