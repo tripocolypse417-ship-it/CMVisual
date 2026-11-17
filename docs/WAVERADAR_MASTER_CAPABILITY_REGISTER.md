@@ -226,3 +226,64 @@ Passing software tests establishes implementation behavior only. It does not val
 Dependencies: current Phase 0 Android baseline and evidence contract; a versioned building/coordinate model; actual source hardware and authorization; qualified test equipment; and independent ground truth. Phone-only development may implement the registry, UI, provenance, and camera-visible workflows, but it cannot unlock RF sensing, through-wall claims, or validated room-level localization.
 
 **Release rule:** The Scanner Fusion Network remains a research/decision-support architecture until each contributing modality and each safety-relevant derived capability passes its own acceptance and independent-validation gates. No empty-room, all-clear, victim-location, or through-wall claim may be inferred from absence of detections or infrastructure telemetry.
+
+
+---
+
+## 7. Live program reconciliation — 2026-11-16 (Central)
+
+This section supersedes older status statements where later dated evidence exists. Repository records, user reports, tool results, and external validation remain distinct evidence classes.
+
+### 7.1 Verified engineering and infrastructure state
+
+- **Browserless architecture:** PR #78 is open and draft. Its branch now removes the Playwright MCP smoke workflow and launcher, removes the Playwright package script, adds `scripts/test-browserless-config.mjs`, and runs that check from the code-quality workflow. The test checks package dependencies/scripts, `.mcp.json`, and GitHub Actions workflow files. The current four workflow files, package manifest, and MCP configuration were statically inspected; no prohibited browser-control dependency/reference was found in those inspected surfaces.
+- **Test evidence:** The new browserless regression test passed in an isolated Node 22 fixture. It has not yet run in GitHub Actions on PR #78. PR #78 is currently non-mergeable (`mergeable_state=dirty`) and has no reported workflow runs. The branch must not be represented as merged or fully accepted.
+- **Application runtime boundary:** React/Vite, Capacitor, and Android System WebView remain the application rendering stack. They are not Chrome Remote Control and must not be removed without a separate native migration and compatibility tests.
+- **CI evidence on other active branches:** PR #77, #81, #82, #83, #84, and #93 have recorded successful Android build, runtime-safety, and/or code-quality workflows on their inspected heads. PR #83's two workflows were still running after the latest funding-document update; recheck before calling them passed. PRs remain unmerged. PR #77 is non-mergeable; #81 is stacked on #77; #82, #83, #84, and #93 were mergeable at the last inspection.
+- **Evidence-class safeguard:** PR #93's CI passed. The latest review follow-up reports strict evidence-class normalization, regression coverage for missing/unrecognized evidence labels, and preservation of a locked track's last-known snapshot as stale. This is software behavior, not physical sensing validation.
+- **Super/remote-device state:** No Android phone-farm device is currently connected to the Super account. Free Android device testing is therefore unavailable through that route. Chrome access requires a paid subscription and is not part of the WaveRadar architecture or a required path.
+- **Automation:** One consolidated WaveRadar Master Program daily automation is enabled for 9:00 a.m. Central; nine older overlapping automations are paused. This is a scheduled reporting workflow, not proof of a continuously running free host or durable autonomous execution.
+
+### 7.2 Legal and federal-registration readiness
+
+- **Missouri entity:** Missouri Articles of Organization for WaveRadar LLC were accepted November 15, 2026, according to the founder's confirmation.
+- **EIN:** The founder reports reaching the IRS EIN confirmation screen. The EIN number/official confirmation record has not been recovered into the accessible project records.
+- **SAM.gov:** The founder reports completing the SAM.gov task. Active entity registration, UEI, and current registration status have not been independently verified in the accessible records.
+- **Still unverified:** SBA Company Registry and DOE SBIR/STTR Application Hub (AMP) access. These are separate from SAM.gov and must not be inferred from it.
+- **Operating rule:** Treat the LLC as formed per the reported acceptance, but do not describe the federal registration package as complete until the EIN record, active SAM registration/UEI, SBA Company Registry, and relevant application-hub access are verified.
+
+### 7.3 Funding pipeline update
+
+- **DOE FY26 Fall SBIR/STTR Topic 14 — Grid Innovations:** Active pitch window; deadline December 16, 2026 at 2:00 p.m. Eastern / 1:00 p.m. Central. Pitch is a screening stage; only invited applicants may submit a full application. Program-wide award totals are not applicant-specific guarantees.
+- **GridLink prior-art gate:** IEEE 1901.3-2025 already defines hybrid PLC/RF PHY/MAC for smart-grid applications; gridComm GC8828 describes adaptive PLC/LoRa routing, dual-mode operation, and redundancy; IEEE 1901.3.1-2026 specifies test procedures. Therefore, basic hybrid PLC/radio, adaptive path selection, and failover are not defensible as novel WaveRadar inventions. A distinct vendor-neutral cross-vendor assurance/orchestration contribution remains only a hypothesis. Current recommendation: conditional no-go until a qualified grid-communications reviewer substantiates a technical gap and the team, isolated test fixture, and independent measurement path are credible.
+- **USDA-NIFA SBIR/STTR Phase II:** Closes November 17, 2026, but eligibility is limited to prior Phase I SBIR/STTR awardees. Do not pursue absent documentary proof of the required prior Phase I award.
+- **NIOSH R03 (RFA-OH-27-056):** Forecasted posting December 17, 2026 and due date February 16, 2027; not yet an open application as of this reconciliation. Treat dates as forecasts until the final NOFO is published.
+- **FEMA FP&S FY2025:** Closed; next cycle not confirmed. Future route likely requires an eligible fire-service or research-institution lead, subject to the next NOFO.
+- **No applications or pitches have been submitted** in the accessible records. Drafting and eligibility preparation do not equal submission or award.
+
+### 7.4 Validation, device, and safety status
+
+- The last historical diagnostic snapshot remains 4,021 observations, 0 integrity-verified, 8 registered devices, 0 validated devices, 78 runs, and 0 passed. These are historical values and must be rechecked against the live service before operational decisions.
+- A fresh Android native-sensor baseline with independent physical ground truth remains outstanding. The current Motorola phone alone does not provide independent ground truth.
+- Sensor support, permission, provider registration, sample arrival, freshness, timestamp integrity, calibration, pose availability, and independent validation remain separate states.
+- No through-wall victim detection, absolute indoor-positioning accuracy, reliable victim localization, structural safety prediction, or live-incident operational readiness is established.
+- The Research & Validation Lab must retain independent reviewer authority and must not certify WaveRadar's own claims solely from WaveRadar-generated software tests or models.
+
+### 7.5 Media and demonstration status
+
+- The five-minute WIS rescue demonstration remains at storyboard/script and concept stage; no completed rendered film or verified shareable production link is recorded.
+- A search of the connected Descript drives found no existing WaveRadar/WIS demonstration project. No paid video-generation credits or subscriptions are authorized by the zero-upfront-cost constraint.
+- Any eventual film must distinguish measured, derived, inferred, simulated, and demonstration-only visuals; it must not depict unvalidated through-wall detection or victim localization as real capability.
+
+### 7.6 Dependency-ordered next actions
+
+1. Resolve PR #78's merge conflict/dirty state without merging or overwriting unrelated branch work; run the new browserless CI check and a clean application build/test.
+2. Reconcile stacked PR order: native Android diagnostics (#77) → wireless interoperability (#81) → occupant track UI (#93). Recheck current mergeability and CI before any merge.
+3. Recheck PR #82 safety gate and PR #84 master register against the latest code and tests; keep safety-critical release blocked pending independent physical validation.
+4. Recover the EIN confirmation record and verify SAM.gov active status/UEI, SBA Company Registry, and DOE AMP separately.
+5. For GridLink, commission a prior-art review and technical reviewer before deciding whether a Topic 14 pitch is justified.
+6. Prepare the NIOSH R03 application package for the forecasted December 17 posting, but wait for the final NOFO and secure qualified research, fire-service, and independent measurement partners.
+7. Execute the fresh Android baseline only when a physical independent reference method is available; preserve raw evidence and all historical baselines.
+8. Complete the five-minute demonstration production package, then render only when suitable media assets and a genuinely no-cost/authorized production path are available.
+
+**Completion rule:** A branch commit, passing software test, drafted application, scheduled automation, or project storyboard is not equivalent to merge, deployment, physical validation, submission, award, continuous operation, or finished video.
