@@ -4,6 +4,7 @@
  * No position, clock alignment, identity or scene object is synthesized.
  */
 import { eventsKnownAt } from './evidenceLedger.js';
+import { parseTimestamp } from './dataContract.js';
 
 const clean = value => typeof value === 'string' && value.trim() ? value.trim() : null;
 const finite = value => value == null || value === '' ? null : Number.isFinite(Number(value)) ? Number(value) : null;
@@ -17,7 +18,8 @@ function normalizeSceneEntity(value, event) {
   const x = finite(position?.x), y = finite(position?.y), z = finite(position?.z);
   const hasPosition = x != null && y != null && z != null;
   const coordinateFrame = clean(position?.coordinateFrame);
-  const aligned = hasPosition && coordinateFrame && position?.alignmentState === 'ALIGNED';
+  const calibrationRef = clean(position?.calibrationRef);
+  const aligned = hasPosition && coordinateFrame && calibrationRef && position?.alignmentState === 'ALIGNED';
   return {
     ...value,
     entityId,
@@ -25,6 +27,7 @@ function normalizeSceneEntity(value, event) {
     position: hasPosition ? {
       x, y, z,
       coordinateFrame,
+      calibrationRef,
       floorId: clean(position.floorId),
       alignmentState: aligned ? 'ALIGNED' : 'UNVERIFIED',
     } : null,
@@ -65,7 +68,7 @@ export function prepareEvidenceSceneReplay(ledger, {
   );
   return Object.freeze({
     incidentId: incident,
-    knowledgeTime: knowledgeTime == null ? null : Number(knowledgeTime),
+    knowledgeTime: knowledgeTime == null ? null : parseTimestamp(knowledgeTime),
     clockDomain: domain,
     sceneEvents: alignedClockEvents,
     knowledgeTimeline,
