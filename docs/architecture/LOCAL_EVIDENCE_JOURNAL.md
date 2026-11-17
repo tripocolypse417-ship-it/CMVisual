@@ -24,8 +24,9 @@ The local device journal is the first durable write target. Sensor capture must 
 - The journal does not align clock domains, infer missing timestamps, assign spatial coordinates or change evidence classes.
 - No network transmission is implemented by this plugin.
 - A collision does not overwrite an existing record.
-- The plugin is app-private but **not encrypted at rest** in this first slice. Do not store sensitive personal identifiers or unredacted victim information in this database until an Android Keystore-backed encryption design and key recovery policy are implemented.
-- Android app uninstall/data-clear can remove app-private storage. Export, backup, retention, tamper-evidence and disaster recovery are separate requirements.
+- Event JSON payloads are encrypted with AES-256-GCM using a non-exportable Android Keystore key. A versioned additive migration encrypts pre-existing plaintext payload rows without deleting them.
+- Incident/event IDs and index metadata (including timestamps and clock-domain labels) remain plaintext for local querying. This is payload encryption, not whole-database encryption or tamper-evident storage.
+- Android backup is disabled for the generated app because the Keystore key is device-bound. App uninstall/data-clear can remove the database and key. Export, key rotation/recovery, retention, tamper-evidence and disaster recovery remain separate requirements.
 
 ## Integration and verification gates
 
