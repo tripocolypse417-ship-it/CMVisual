@@ -20,7 +20,8 @@
     "test:network-transport-registry": "node scripts/test-network-transport-registry.mjs",
     "test:scene-replay": "node scripts/test-scene-replay.mjs",
     "test:prediction-calibration": "node scripts/test-prediction-calibration.mjs",
-    "test": "npm run audit:data && npm run audit:runtime && npm run test:array-boundaries && npm run test:physical-validation-queue && npm run test:physical-validation-evidence && npm run test:native-sensor-lifecycle && npm run test:sensor-frame-contract && npm run test:prediction-calibration"
+    "test": "npm run audit:data && npm run audit:runtime && npm run test:array-boundaries && npm run test:physical-validation-queue && npm run test:physical-validation-evidence && npm run test:native-sensor-lifecycle && npm run test:sensor-frame-contract && npm run test:scene-replay && npm run test:scene-observation-adapter && npm run test:prediction-calibration",
+    "test:scene-observation-adapter": "node scripts/test-scene-observation-adapter.mjs"
   },
   "dependencies": {
     "@base44/sdk": "^0.8.52",
