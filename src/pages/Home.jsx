@@ -804,6 +804,9 @@ export default function Home() {
           <div className="glass-panel rounded-2xl p-3 relative corner-decoration">
             <NativeNetworkDiscoveryPanel />
           </div>
+          <div className="glass-panel rounded-2xl p-3 relative corner-decoration">
+            <NativeEvidenceStatusPanel />
+          </div>
         </div>
 
         {/* Analytics row: signal graph + detection charts */}
