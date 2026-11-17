@@ -161,7 +161,11 @@
             "PREDICTED",
             "SIMULATED",
             "UNKNOWN",
-            "UNAVAILABLE"
+            "UNAVAILABLE",
+            "ENVIRONMENTAL",
+            "GROUND_TRUTH_OPERATOR_MARKER",
+            "FEDERATED_MEASURED",
+            "CONFLICT"
           ]
         },
         "integrity_state": {
