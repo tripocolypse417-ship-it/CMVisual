@@ -18,6 +18,7 @@
     "audit:runtime": "node scripts/audit-operational-runtime.mjs",
     "test:sensor-frame-contract": "node scripts/test-sensor-frame-contract.mjs",
     "test:network-transport-registry": "node scripts/test-network-transport-registry.mjs",
+    "test:scene-replay": "node scripts/test-scene-replay.mjs",
     "test:prediction-calibration": "node scripts/test-prediction-calibration.mjs",
     "test": "npm run audit:data && npm run audit:runtime && npm run test:array-boundaries && npm run test:physical-validation-queue && npm run test:physical-validation-evidence && npm run test:native-sensor-lifecycle && npm run test:sensor-frame-contract && npm run test:prediction-calibration"
   },
