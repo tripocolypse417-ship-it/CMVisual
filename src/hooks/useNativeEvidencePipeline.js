@@ -11,7 +11,7 @@ const SOURCE = Object.freeze({
   sourceType: 'ANDROID_SENSOR_MANAGER',
   adapterId: 'waveradar-android-sensors',
   adapterVersion: '1.0.0',
-  authorizationScopeId: 'device-owner-granted-android-runtime-permissions',
+  authorizationScopeId: null,
 });
 
 export default function useNativeEvidencePipeline(enabled = true) {
@@ -52,8 +52,8 @@ export default function useNativeEvidencePipeline(enabled = true) {
             deviceId,
             capabilityId: 'android.network.snapshot',
           },
-          observedClockDomain: 'UTC_UNIX',
-          observedAt: capturedAt,
+          observedClockDomain: 'UNKNOWN',
+          observedAt: null,
           receivedAt: new Date().toISOString(),
           evidenceClass: 'MEASURED',
           collectionMethod: 'ANDROID_PLATFORM_WIFI_CELLULAR_BLE_APIS',
