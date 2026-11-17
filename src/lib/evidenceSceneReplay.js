@@ -21,8 +21,11 @@ function normalizeSceneEntity(value, event) {
   const calibrationRef = clean(position?.calibrationRef);
   const validationRef = clean(position?.validationRef);
   const validatorId = clean(position?.validatorId);
+  const units = clean(position?.units);
+  const transformVersion = clean(position?.transformVersion);
   const independentlyValidated = hasPosition && coordinateFrame && calibrationRef && validationRef && validatorId &&
-    position?.alignmentState === 'ALIGNED' && position?.validationState === 'INDEPENDENTLY_VALIDATED';
+    units === 'm' && transformVersion && position?.alignmentState === 'ALIGNED' &&
+    position?.validationState === 'INDEPENDENTLY_VALIDATED';
   return {
     ...value,
     entityId,
@@ -33,6 +36,8 @@ function normalizeSceneEntity(value, event) {
       calibrationRef,
       validationRef,
       validatorId,
+      units,
+      transformVersion,
       validationState: clean(position.validationState) ?? 'UNVERIFIED',
       floorId: clean(position.floorId),
       alignmentState: independentlyValidated ? 'ALIGNED' : 'UNVERIFIED',
