@@ -235,7 +235,7 @@ public class WaveRadarNetworkPlugin extends Plugin {
   private List<CellInfo> readCachedCells() {
     try {
       return telephonyManager == null ? null : telephonyManager.getAllCellInfo();
-    } catch (SecurityException | RuntimeException e) {
+    } catch (RuntimeException e) {
       return null;
     }
   }
