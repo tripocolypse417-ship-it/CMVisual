@@ -64,17 +64,23 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
       remoteRetryAfterRef.current = Date.now() + 5000;
       if (previousDeviceId && previousDeviceId !== nextDeviceId) {
         try {
-          const pending = await listPendingLocalEvidenceEvents({ limit: 1000 });
-          const mismatched = pending.filter(record => String(record.event?.source?.device_id || '') !== String(nextDeviceId));
-          for (const record of mismatched) {
-            await markLocalEvidenceDelivered(record.sample_key, {
-              status: 'QUARANTINED',
-              reason: 'DEVICE_ID_CHANGED_BEFORE_UPLOAD',
-              note: 'Original evidence retained locally; not rewritten to a different enrolled device identity.',
-            });
+          let localIdentityQuarantineCount = 0;
+          while (true) {
+            const pending = await listPendingLocalEvidenceEvents({ limit: 1000 });
+            const mismatched = pending.filter(record => String(record.event?.source?.device_id || '') !== String(nextDeviceId));
+            if (!mismatched.length) break;
+            for (const record of mismatched) {
+              await markLocalEvidenceDelivered(record.sample_key, {
+                status: 'QUARANTINED',
+                reason: 'DEVICE_ID_CHANGED_BEFORE_UPLOAD',
+                note: 'Original evidence retained locally; not rewritten to a different enrolled device identity.',
+              });
+              localIdentityQuarantineCount += 1;
+            }
+            if (pending.length < 1000) break;
           }
           window.dispatchEvent(new CustomEvent('waveradar:remote-evidence-status', {
-            detail: { localIdentityQuarantineCount: mismatched.length },
+            detail: { localIdentityQuarantineCount },
           }));
         } catch (error) {
           setStatus(old => ({ ...old, lastError: error?.message || 'LOCAL_IDENTITY_RECONCILIATION_FAILED' }));
