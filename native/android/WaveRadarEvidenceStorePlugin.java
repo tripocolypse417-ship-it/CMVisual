@@ -139,6 +139,32 @@ public class WaveRadarEvidenceStorePlugin extends Plugin {
   }
 
   @PluginMethod
+  public void listIncidents(PluginCall call) {
+    JSArray incidents = new JSArray();
+    SQLiteDatabase db = database.getReadableDatabase();
+    Cursor cursor = db.rawQuery(
+      "SELECT incident_id, COUNT(*), MAX(row_id), MIN(captured_at), MAX(captured_at) " +
+      "FROM evidence_events GROUP BY incident_id ORDER BY MAX(row_id) DESC LIMIT 100", null);
+    try {
+      while (cursor.moveToNext()) {
+        JSObject item = new JSObject();
+        item.put("incidentId", cursor.getString(0));
+        item.put("eventCount", cursor.getLong(1));
+        item.put("latestSequence", cursor.getLong(2));
+        item.put("firstCapturedAt", cursor.isNull(3) ? org.json.JSONObject.NULL : cursor.getLong(3));
+        item.put("lastCapturedAt", cursor.isNull(4) ? org.json.JSONObject.NULL : cursor.getLong(4));
+        incidents.put(item);
+      }
+    } finally {
+      cursor.close();
+    }
+    JSObject result = new JSObject();
+    result.put("incidents", incidents);
+    result.put("storage", "ANDROID_APP_PRIVATE_SQLITE");
+    call.resolve(result);
+  }
+
+  @PluginMethod
   public void getStatus(PluginCall call) {
     SQLiteDatabase db = database.getReadableDatabase();
     Cursor cursor = db.rawQuery("SELECT COUNT(*), COALESCE(MAX(row_id), 0) FROM evidence_events", null);
