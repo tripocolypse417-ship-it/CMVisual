@@ -72,7 +72,7 @@ export default function EvidenceReplay() {
   ).sort((a, b) => a.capturedAt - b.capturedAt || (a.sequence ?? 0) - (b.sequence ?? 0)) ?? [], [ledger, clockDomain]);
   const minTime = domainEvents.length ? domainEvents[0].capturedAt : 0;
   const maxTime = domainEvents.length ? domainEvents[domainEvents.length - 1].capturedAt : 0;
-  const safeCursor = cursorMs == null ? maxTime : Math.max(minTime, Math.min(maxTime, cursorMs));
+  const safeCursor = cursorMs == null ? (domainEvents.length ? maxTime : null) : Math.max(minTime, Math.min(maxTime, cursorMs));
 
   const scene = useMemo(() => {
     if (!ledger || !clockDomain || safeCursor == null) return null;
@@ -149,8 +149,8 @@ export default function EvidenceReplay() {
                   <button onClick={() => step(1)} disabled={!domainEvents.length} className="rounded border border-white/15 px-3 py-2 text-xs disabled:opacity-30">+1s</button>
                 </div>
               </div>
-              <input aria-label="Incident replay time cursor" type="range" min={minTime} max={Math.max(minTime, maxTime)} step="1" value={safeCursor} onChange={event => { setPlaying(false); setCursorMs(Number(event.target.value)); }} disabled={!domainEvents.length} className="mt-3 w-full accent-cyan-400" />
-              <div className="mt-1 flex justify-between font-mono text-[10px] text-slate-500"><span>{formatTime(minTime)}</span><span>{domainEvents.length} timed events in selected domain</span><span>{formatTime(maxTime)}</span></div>
+              <input aria-label="Incident replay time cursor" type="range" min={minTime} max={Math.max(minTime, maxTime)} step="1" value={safeCursor ?? minTime} onChange={event => { setPlaying(false); setCursorMs(Number(event.target.value)); }} disabled={!domainEvents.length} className="mt-3 w-full accent-cyan-400" />
+              <div className="mt-1 flex justify-between font-mono text-[10px] text-slate-500"><span>{formatTime(domainEvents.length ? minTime : null)}</span><span>{domainEvents.length} timed events in selected domain</span><span>{formatTime(domainEvents.length ? maxTime : null)}</span></div>
             </div>
           </div>
 
