@@ -25,6 +25,7 @@ src/lib/fusion/consensus.js is deliberately narrower than a full factor graph. I
 - finite coordinates, source IDs, timestamps, uncertainty, units, and coordinate frames;
 - freshness, duplicate-source, frame, unit, and time-skew gates;
 - robust residual screening followed by inverse-variance weighting;
+- descriptive leave-one-source-out sensitivity to expose dependence on a single input (not an integrity verdict);
 - a DERIVED candidate with lineage and an explicitly uncalibrated uncertainty heuristic;
 - fail-closed UNAVAILABLE outcomes.
 
