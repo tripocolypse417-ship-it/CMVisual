@@ -149,19 +149,20 @@ export async function listPendingLocalEvidenceEvents({ limit = 50 } = {}) {
 export async function getLocalEvidenceStatus() {
   const db = await openEvidenceDb();
   const tx = db.transaction([STORE_NAME, DELIVERY_STORE], 'readonly');
-  const [count, records, deliveries] = await Promise.all([
-    requestResult(tx.objectStore(STORE_NAME).count()),
-    requestResult(tx.objectStore(STORE_NAME).index('received_at').openCursor(null, 'prev')),
+  const [records, deliveries] = await Promise.all([
+    requestResult(tx.objectStore(STORE_NAME).getAll()),
     requestResult(tx.objectStore(DELIVERY_STORE).getAll()),
   ]);
-  const pending = deliveries.filter(item => !['ACKNOWLEDGED', 'QUARANTINED'].includes(item.status)).length;
-  const quarantined = deliveries.filter(item => item.status === 'QUARANTINED').length;
+  const statusByKey = new Map(deliveries.map(item => [item.sample_key, item.status]));
+  const pending = records.filter(record => !['ACKNOWLEDGED', 'QUARANTINED'].includes(statusByKey.get(record.sample_key))).length;
+  const quarantined = records.filter(record => statusByKey.get(record.sample_key) === 'QUARANTINED').length;
+  const newest = records.sort((a, b) => String(a.received_at).localeCompare(String(b.received_at))).at(-1);
   return {
     available: true,
-    count,
+    count: records.length,
     pending,
     quarantined,
-    newestReceivedAt: records?.value?.received_at || null,
+    newestReceivedAt: newest?.received_at || null,
     storage: 'INDEXED_DB_LOCAL_ONLY',
     remoteIngestion: pending ? 'PENDING' : quarantined ? 'QUARANTINED' : 'SYNCED',
   };
