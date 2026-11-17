@@ -25,7 +25,7 @@ function loadEventsClient() {
   return eventsClientScriptPromise;
 }
 
-export default function useSharedEventStream(enabled = true) {
+export default function useSharedEventStream(sessionId = null, enabled = true) {
   const [state, setState] = useState({
     status: 'IDLE',
     eventCount: 0,
@@ -42,7 +42,9 @@ export default function useSharedEventStream(enabled = true) {
     let channel;
 
     const refreshSnapshot = async () => {
-      const response = await fetch(apiBase() + '/events/snapshot?limit=500', {
+      const query = new URLSearchParams({ limit: '500' });
+      if (sessionId) query.set('sessionId', String(sessionId));
+      const response = await fetch(apiBase() + '/events/snapshot?' + query.toString(), {
         method: 'GET',
         credentials: 'include',
         headers: { Accept: 'application/json' },
@@ -93,6 +95,7 @@ export default function useSharedEventStream(enabled = true) {
         channel.on('event-stored', (message) => {
           if (!active) return;
           const data = message?.data || {};
+          if (sessionId && data.sessionId && String(data.sessionId) !== String(sessionId)) return;
           setState(old => ({
             ...old,
             status: 'CONNECTED',
@@ -126,7 +129,7 @@ export default function useSharedEventStream(enabled = true) {
       // workspace remains mounted for the app session; no transport internals
       // are assumed here.
     };
-  }, [enabled]);
+  }, [enabled, sessionId]);
 
   return state;
 }
