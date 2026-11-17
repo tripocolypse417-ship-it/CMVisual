@@ -7,7 +7,7 @@ import { Radio, Activity, Battery, Navigation, Compass } from 'lucide-react';
 // every HUD element lives inside a central "safe zone" and the focal reticle
 // stays dead-center. Text is oversized and high-contrast for close-up viewing
 // through lenses. pointer-events-none — never blocks the controls beneath.
-export default function HmdOverlay({ scanMode, color, targetCount, isScanning, battery, network, sensors }) {
+export default function HmdOverlay({ scanMode, color, targetCount, isScanning, battery, network, sensors, sharedScene }) {
   const [now, setNow] = useState(new Date());
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
@@ -38,6 +38,9 @@ export default function HmdOverlay({ scanMode, color, targetCount, isScanning, b
   const sensorStatus = sensors?.hasSensors ? 'ACTIVE' : sensors?.denied ? 'DENIED' : sensors?.needsPermission ? 'NEED PERM' : 'OFF';
   const sensorColor = sensors?.hasSensors ? color : '#ff4466';
   const modeLabel = (scanMode || 'sonar').toUpperCase();
+  const sceneCursor = sharedScene?.cursor ? new Date(sharedScene.cursor).toLocaleTimeString('en-US', { hour12: false }) : '—';
+  const sceneMode = sharedScene?.live === false ? 'REPLAY' : 'LIVE';
+  const coreStatus = String(sharedScene?.remoteStatus || 'UNAVAILABLE').replaceAll('_', ' ');
 
   return (
     <div className="fixed inset-0 pointer-events-none z-30 select-none">
@@ -115,6 +118,12 @@ export default function HmdOverlay({ scanMode, color, targetCount, isScanning, b
             style={{ color: isScanning ? `${color}dd` : '#ffffff80', textShadow: '0 0 2px #000, 1px 1px 1px #000, -1px 1px 1px #000, 1px -1px 1px #000, -1px -1px 1px #000, 0 2px 4px rgba(0,0,0,0.95)' }}>
             <Activity className="w-4 h-4" /> {isScanning ? 'ACTIVE' : 'STBY'}
           </span>
+        </div>
+
+        {/* Same timeline cursor and shared Core evidence status used by the WIS workspace. */}
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 rounded-lg px-3 py-1.5 font-mono text-[8px] tracking-wider whitespace-nowrap"
+          style={{ background: 'rgba(0,0,0,0.78)', border: `1px solid ${color}35`, color: `${color}dd`, textShadow: '0 1px 2px #000' }}>
+          {sceneMode} · {sharedScene?.timelineEventCount || 0} LOCAL EVENTS · {sharedScene?.trackCount || 0} TRACKS · {sceneCursor} · CORE {coreStatus} · {sharedScene?.remoteEventCount || 0} CORE EVENTS
         </div>
 
         {/* Top-left: clock */}
