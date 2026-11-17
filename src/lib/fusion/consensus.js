@@ -125,6 +125,27 @@ export function fusePositionObservations(observations, options = {}) {
     sum + (weights[index] / totalWeight) * item.residual ** 2, 0);
   const nominalVariance = 1 / totalWeight;
 
+  // Descriptive leave-one-source-out sensitivity: this exposes whether the
+  // candidate depends heavily on one provider. It is not an integrity verdict.
+  const leaveOneOutSensitivity = inliers.length >= 3
+    ? inliers.map(({ observation: omitted }, omittedIndex) => {
+      const remaining = inliers.filter((_, index) => index !== omittedIndex);
+      const remainingWeights = remaining.map(({ observation }) => 1 / (observation.uncertainty ** 2));
+      const remainingTotal = remainingWeights.reduce((sum, value) => sum + value, 0);
+      const estimate = { x: 0, y: 0, z: 0 };
+      for (let index = 0; index < remaining.length; index += 1) {
+        const weight = remainingWeights[index] / remainingTotal;
+        estimate.x += remaining[index].observation.position.x * weight;
+        estimate.y += remaining[index].observation.position.y * weight;
+        estimate.z += remaining[index].observation.position.z * weight;
+      }
+      return {
+        omittedSourceId: omitted.sourceId,
+        shift: Math.hypot(estimate.x - position.x, estimate.y - position.y, estimate.z - position.z),
+      };
+    })
+    : null;
+
   return {
     status: 'CANDIDATE',
     evidenceClass: 'DERIVED',
@@ -135,6 +156,8 @@ export function fusePositionObservations(observations, options = {}) {
     sourceIds: inliers.map(({ observation }) => observation.sourceId),
     excludedSourceIds: rejected.map(({ sourceId }) => sourceId).filter(Boolean),
     uncertainty: Math.sqrt(nominalVariance + residualVariance),
+    leaveOneOutSensitivity,
+    sensitivityKind: leaveOneOutSensitivity ? 'DESCRIPTIVE_NOT_VALIDATION' : 'INSUFFICIENT_SOURCES',
     uncertaintyKind: 'HEURISTIC_NOT_CALIBRATED',
     assumptions: [
       'Source errors are treated as independent for nominal weighting; correlation is not estimated.',
