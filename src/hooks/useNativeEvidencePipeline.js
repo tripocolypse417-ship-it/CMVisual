@@ -21,7 +21,7 @@ const SOURCE = Object.freeze({
 
 function apiBase() {
   const configured = typeof window !== 'undefined' ? window.__HATCHABLE__?.api : null;
-  return String(configured || '/api').replace(/\/+$/, '');
+  return String(configured || 'https://waveradar-20.hatchable.site/api').replace(/\/+$/, '');
 }
 
 function enrollmentToken() {
