@@ -37,6 +37,9 @@ jobs:
       - name: Test native evidence store bridge
         run: npm run test:native-evidence-store
 
+      - name: Test physical validation journal mapping
+        run: npm run test:physical-validation-journal
+
       - name: Check JavaScript and JSX lint
         run: npm run lint
 
