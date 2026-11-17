@@ -4,6 +4,9 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.security.keystore.KeyGenParameterSpec;
+import android.security.keystore.KeyProperties;
+import android.util.Base64;
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -11,6 +14,11 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import org.json.JSONObject;
+import java.security.KeyStore;
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
 
 /**
  * App-private, append-only local evidence journal.
@@ -23,6 +31,8 @@ public class WaveRadarEvidenceStorePlugin extends Plugin {
   private static final int MAX_BATCH = 500;
   private static final int MAX_EVENT_BYTES = 65536;
   private static final int MAX_PAGE = 500;
+  private static final String KEY_ALIAS = "waveradar_evidence_payload_v1";
+  private static final String ENCRYPTED_PREFIX = "wrenc:v1:";
 
   @Override
   public void load() {
@@ -66,7 +76,7 @@ public class WaveRadarEvidenceStorePlugin extends Plugin {
         try {
           if (existing.moveToFirst()) {
             exists = true;
-            prior = existing.getString(0);
+            prior = decryptPayload(getContext(), existing.getString(0));
           }
         } finally {
           existing.close();
@@ -82,7 +92,7 @@ public class WaveRadarEvidenceStorePlugin extends Plugin {
         values.put("captured_at", event.isNull("capturedAt") ? null : event.optLong("capturedAt"));
         values.put("received_at", event.isNull("receivedAt") ? null : event.optLong("receivedAt"));
         values.put("clock_domain", event.optString("clockDomain", null));
-        values.put("event_json", encoded);
+        values.put("event_json", encryptPayload(getContext(), encoded));
         db.insertOrThrow("evidence_events", null, values);
         inserted++;
       }
@@ -122,7 +132,7 @@ public class WaveRadarEvidenceStorePlugin extends Plugin {
     try {
       while (cursor.moveToNext()) {
         nextSequence = cursor.getLong(0);
-        output.put(new JSObject(cursor.getString(1)));
+        output.put(new JSObject(decryptPayload(getContext(), cursor.getString(1))));
       }
     } catch (Exception error) {
       call.reject("Could not read evidence journal: " + error.getMessage());
@@ -175,7 +185,12 @@ public class WaveRadarEvidenceStorePlugin extends Plugin {
       result.put("eventCount", cursor.getLong(0));
       result.put("latestSequence", cursor.getLong(1));
       result.put("storage", "ANDROID_APP_PRIVATE_SQLITE");
-      result.put("encryptedAtRest", false);
+      Cursor plaintext = db.rawQuery("SELECT COUNT(*) FROM evidence_events WHERE event_json NOT LIKE 'wrenc:v1:%'", null);
+      boolean payloadEncrypted = false;
+      try { plaintext.moveToFirst(); payloadEncrypted = plaintext.getLong(0) == 0L; } finally { plaintext.close(); }
+      result.put("payloadEncryptedAtRest", payloadEncrypted);
+      result.put("metadataEncryptedAtRest", false);
+      result.put("keyStorage", "ANDROID_KEYSTORE");
       result.put("networkTransfer", false);
       call.resolve(result);
     } finally {
@@ -183,9 +198,49 @@ public class WaveRadarEvidenceStorePlugin extends Plugin {
     }
   }
 
+  private static SecretKey getOrCreateKey(Context context) throws Exception {
+    KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
+    keyStore.load(null);
+    if (keyStore.containsAlias(KEY_ALIAS)) {
+      return (SecretKey) keyStore.getKey(KEY_ALIAS, null);
+    }
+    KeyGenerator generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore");
+    KeyGenParameterSpec spec = new KeyGenParameterSpec.Builder(
+      KEY_ALIAS, KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
+      .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+      .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+      .setKeySize(256)
+      .setRandomizedEncryptionRequired(true)
+      .build();
+    generator.init(spec);
+    return generator.generateKey();
+  }
+
+  private static String encryptPayload(Context context, String plaintext) throws Exception {
+    Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+    cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey(context));
+    byte[] iv = cipher.getIV();
+    byte[] encrypted = cipher.doFinal(plaintext.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    byte[] combined = new byte[iv.length + encrypted.length];
+    System.arraycopy(iv, 0, combined, 0, iv.length);
+    System.arraycopy(encrypted, 0, combined, iv.length, encrypted.length);
+    return ENCRYPTED_PREFIX + Base64.encodeToString(combined, Base64.NO_WRAP);
+  }
+
+  private static String decryptPayload(Context context, String stored) throws Exception {
+    if (stored == null || !stored.startsWith(ENCRYPTED_PREFIX)) return stored;
+    byte[] combined = Base64.decode(stored.substring(ENCRYPTED_PREFIX.length()), Base64.NO_WRAP);
+    if (combined.length <= 12) throw new IllegalStateException("Encrypted evidence payload is truncated");
+    byte[] iv = java.util.Arrays.copyOfRange(combined, 0, 12);
+    byte[] ciphertext = java.util.Arrays.copyOfRange(combined, 12, combined.length);
+    Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+    cipher.init(Cipher.DECRYPT_MODE, getOrCreateKey(context), new GCMParameterSpec(128, iv));
+    return new String(cipher.doFinal(ciphertext), java.nio.charset.StandardCharsets.UTF_8);
+  }
+
   private static final class EvidenceDb extends SQLiteOpenHelper {
     EvidenceDb(Context context) {
-      super(context, "waveradar_evidence.db", null, 1);
+      super(context, "waveradar_evidence.db", null, 2);
     }
     @Override public void onCreate(SQLiteDatabase db) {
       db.execSQL("CREATE TABLE evidence_events (" +
@@ -199,7 +254,26 @@ public class WaveRadarEvidenceStorePlugin extends Plugin {
       db.execSQL("CREATE INDEX evidence_incident_sequence ON evidence_events(incident_id, row_id)");
     }
     @Override public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-      // Never drop evidence. Future migrations must be additive and versioned.
+      // Additive migration: encrypt existing plaintext payloads in place; never drop evidence.
+      if (oldVersion < 2) {
+        Cursor cursor = db.query("evidence_events", new String[]{"row_id", "event_json"}, null, null, null, null, null);
+        try {
+          while (cursor.moveToNext()) {
+            String stored = cursor.getString(1);
+            if (stored != null && !stored.startsWith(ENCRYPTED_PREFIX)) {
+              android.content.ContentValues values = new android.content.ContentValues();
+              try {
+                values.put("event_json", encryptPayload(getContext(), stored));
+              } catch (Exception error) {
+                throw new IllegalStateException("Evidence encryption migration failed; existing row preserved", error);
+              }
+              db.update("evidence_events", values, "row_id = ?", new String[]{String.valueOf(cursor.getLong(0))});
+            }
+          }
+        } finally {
+          cursor.close();
+        }
+      }
     }
   }
 }
