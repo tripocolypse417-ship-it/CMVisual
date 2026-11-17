@@ -28,6 +28,9 @@ jobs:
       - name: Audit canonical data contract
         run: npm run audit:data
 
+      - name: Test capability knowledge graph
+        run: npm run test:capability-knowledge-graph
+
       - name: Check JavaScript and JSX lint
         run: npm run lint
 
