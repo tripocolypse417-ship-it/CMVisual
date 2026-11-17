@@ -101,3 +101,41 @@ WaveRadar could contribute a bounded technology and research-infrastructure work
 - Define primary endpoints, sample-size rationale, analysis plan, and project timeline.
 - Prepare realistic budget with no invented quotes or commitments.
 - Check IP/background IP and data rights before sharing technical materials.
+
+
+
+## Concept D — DOE FY26 Fall SBIR/STTR Topic 14: GridLink (conditional)
+
+**Status:** Working concept only. Not submitted. Technical novelty and execution capacity are not yet established.
+
+### Working title
+**Evidence-Grounded Interoperability and Resilience Assurance for Mixed Grid Communications**
+
+### Research premise
+A grid operator may use multiple communications media and vendors, but a claim that PLC plus radio is itself novel is not defensible. IEEE 1901.3-2025 already defines a hybrid PLC/RF physical and MAC layer for smart-grid applications. Commercial products such as gridComm GC8828 describe adaptive PLC/LoRa routing, dual-mode operation, and redundancy. IEEE 1901.3.1-2026 specifies test procedures. The proposal must not present basic PLC/RF hybridization, adaptive routing, or failover as a new WaveRadar invention.
+
+### Narrow hypothesis to investigate
+A vendor-neutral assurance and orchestration layer may be able to provide independently auditable cross-vendor path selection and failover decisions using authenticated link-health telemetry, explicit policy, source/time provenance, and reproducible test evidence. Whether this produces a material advantage over existing products and standards is unknown and must be tested.
+
+### Phase I feasibility study
+1. Select one bounded grid-relevant use case with a qualified utility, microgrid, or power-systems advisor.
+2. Identify at least two genuinely interoperable, commercially available communication paths and define a safe isolated bench fixture. No live utility connection.
+3. Establish PLC-only, radio-only, and existing-product hybrid baselines before evaluating any WaveRadar orchestration.
+4. Pre-register channel impairments and threat/degradation conditions; include noise, attenuation, topology changes, path loss, congestion, authentication failures, replay attempts, and recovery events where safe and relevant.
+5. Measure packet delivery, latency distributions, jitter, loss bursts, time to detect degradation, failover interruption, recovery, false failovers, security-policy violations, and evidence completeness.
+6. Preserve raw logs and device/firmware/configuration details; use independent time references and an independent reviewer.
+7. Compare the WaveRadar approach with the strongest relevant commercial/standards baseline, not merely with a deliberately weak single path.
+
+### Critical risks and gates
+- **Novelty:** No-go if a prior-art review finds the proposed orchestration/assurance function already materially supplied by incumbents or standards.
+- **Team:** No-go until qualified grid communications/power-systems engineering capability is committed and DOE PI/work-performance rules are met.
+- **Facilities:** No-go without suitable isolated PLC hardware, rated coupling/test fixtures, safety controls, and a credible independent measurement environment.
+- **Market:** No customer demand or utility adoption is established. Conduct documented customer discovery; do not invent letters of support or pilot commitments.
+- **Security:** A software-only policy layer cannot be described as cyber-secure without threat modeling, implementation evidence, and adversarial testing.
+- **Evidence:** Software tests and simulated impairments do not establish real-grid reliability or deployment readiness.
+
+### DOE Topic 14 application gate
+The active FY26 Fall pitch deadline is December 16, 2026 at 2:00 p.m. Eastern. The pitch is an initial screening stage; only successful pitches may submit a full application. The Phase I full-application request is capped at $300,000 ($306,500 with TABA). Eligibility and required registrations must be verified from current DOE/ConnectWerx guidance. The applicant must meet U.S. small-business ownership/size/location rules. For SBIR Phase I, the company performs at least two-thirds of the R&D and the PI is primarily employed by the company (>50% of total employment hours); STTR requires a qualifying nonprofit research partner and written IP agreement.
+
+### Current recommendation
+**Conditional no-go pending prior-art review and team/facility readiness.** Preserve the pitch draft, but do not submit merely to meet the deadline. The research question must be demonstrably distinct from IEEE 1901.3 and existing hybrid PLC/RF products, and WaveRadar must be able to execute the proposed study safely and credibly.
