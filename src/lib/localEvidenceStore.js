@@ -155,7 +155,7 @@ export async function markLocalEvidenceDelivered(sampleKey, serverAck) {
 
 export async function listPendingLocalEvidenceEvents({ limit = 50 } = {}) {
   const db = await openEvidenceDb();
-  const max = Math.max(1, Math.min(100, Number(limit) || 50));
+  const max = Math.max(1, Math.min(1000, Number(limit) || 50));
   return new Promise((resolve, reject) => {
     const tx = db.transaction([STORE_NAME, DELIVERY_STORE], 'readonly');
     const events = tx.objectStore(STORE_NAME);
