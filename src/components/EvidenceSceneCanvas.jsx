@@ -79,7 +79,8 @@ export default function EvidenceSceneCanvas({ entities = [] }) {
     const camera = cameraRef.current;
     if (!group || !scene || !renderer || !camera) return;
     while (group.children.length) {
-      const object = group.children.pop();
+      const object = group.children[group.children.length - 1];
+      group.remove(object);
       object.geometry?.dispose?.();
       if (Array.isArray(object.material)) object.material.forEach(material => material.dispose());
       else object.material?.dispose?.();
