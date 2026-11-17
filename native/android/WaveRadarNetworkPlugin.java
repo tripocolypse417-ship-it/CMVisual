@@ -45,6 +45,7 @@ import java.util.concurrent.Executor;
 public class WaveRadarNetworkPlugin extends Plugin {
   private WifiManager wifiManager;
   private TelephonyManager telephonyManager;
+  private BluetoothAdapter bluetoothAdapter;
   private BluetoothLeScanner bleScanner;
   private final Handler mainHandler = new Handler(Looper.getMainLooper());
   private boolean bleScanRunning = false;
@@ -55,8 +56,7 @@ public class WaveRadarNetworkPlugin extends Plugin {
     wifiManager = (WifiManager) app.getSystemService(Context.WIFI_SERVICE);
     telephonyManager = (TelephonyManager) app.getSystemService(Context.TELEPHONY_SERVICE);
     BluetoothManager bluetoothManager = (BluetoothManager) app.getSystemService(Context.BLUETOOTH_SERVICE);
-    BluetoothAdapter adapter = bluetoothManager == null ? null : bluetoothManager.getAdapter();
-    bleScanner = adapter == null ? null : adapter.getBluetoothLeScanner();
+    bluetoothAdapter = bluetoothManager == null ? null : bluetoothManager.getAdapter();
   }
 
   @PluginMethod
@@ -68,7 +68,7 @@ public class WaveRadarNetworkPlugin extends Plugin {
     out.put("telephony", getContext().getPackageManager().hasSystemFeature(PackageManager.FEATURE_TELEPHONY_RADIO_ACCESS));
     out.put("activeWifiScan", false);
     out.put("activeCellNetworkScan", false);
-    out.put("bleAdvertisementScan", bleScanner != null);
+    out.put("bleAdvertisementScan", getContext().getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE));
     out.put("blePermissionState", hasBleScanPermission() ? "GRANTED" : "NOT_GRANTED");
     out.put("permissionState", hasLocationPermission() ? "GRANTED" : "NOT_GRANTED");
     out.put("dataClass", "CAPABILITY_STATUS");
@@ -272,8 +272,8 @@ public class WaveRadarNetworkPlugin extends Plugin {
 
   @PluginMethod
   public void discoverBluetooth(PluginCall call) {
-    if (bleScanner == null) {
-      call.reject("Bluetooth LE scanning is not supported or Bluetooth is disabled");
+    if (!getContext().getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
+      call.reject("Bluetooth LE is not supported on this device");
       return;
     }
     if (Build.VERSION.SDK_INT >= 31) {
@@ -298,6 +298,16 @@ public class WaveRadarNetworkPlugin extends Plugin {
   }
 
   private void startBleScan(PluginCall call) {
+    try {
+      bleScanner = bluetoothAdapter == null ? null : bluetoothAdapter.getBluetoothLeScanner();
+    } catch (SecurityException e) {
+      call.reject("Bluetooth scan permission is required");
+      return;
+    }
+    if (bleScanner == null) {
+      call.reject("Bluetooth is disabled or its scanner is unavailable");
+      return;
+    }
     if (bleScanRunning) {
       call.reject("A Bluetooth discovery scan is already running");
       return;
@@ -361,14 +371,20 @@ public class WaveRadarNetworkPlugin extends Plugin {
     }
     List<Integer> manufacturerIds = new ArrayList<>();
     android.util.SparseArray<byte[]> manufacturerData = record.getManufacturerSpecificData();
-    for (int i = 0; i < manufacturerData.size(); i++) manufacturerIds.add(manufacturerData.keyAt(i));
+    if (manufacturerData != null) {
+      for (int i = 0; i < manufacturerData.size(); i++) manufacturerIds.add(manufacturerData.keyAt(i));
+    }
     java.util.Collections.sort(serviceUuids);
     java.util.Collections.sort(manufacturerIds);
     String signature = serviceUuids.toString() + "|" + manufacturerIds.toString();
     if (signature.equals("|")) signature = "unclassified-advertisement";
     JSObject item = new JSObject();
-    item.put("serviceUuids", new JSArray(serviceUuids));
-    item.put("manufacturerIds", new JSArray(manufacturerIds));
+    JSArray uuidArray = new JSArray();
+    for (String uuid : serviceUuids) uuidArray.put(uuid);
+    JSArray manufacturerArray = new JSArray();
+    for (Integer id : manufacturerIds) manufacturerArray.put(id);
+    item.put("serviceUuids", uuidArray);
+    item.put("manufacturerIds", manufacturerArray);
     item.put("rssiDbm", result.getRssi());
     item.put("txPowerLevel", record.getTxPowerLevel());
     item.put("advertiseFlags", record.getAdvertiseFlags());
