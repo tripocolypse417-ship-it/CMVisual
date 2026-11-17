@@ -387,7 +387,7 @@ public class WaveRadarNetworkPlugin extends Plugin {
     item.put("serviceUuids", uuidArray);
     item.put("manufacturerIds", manufacturerArray);
     item.put("rssiDbm", result.getRssi());
-    item.put("txPowerLevel", record.getTxPowerLevel());
+    item.put("txPowerLevel", Build.VERSION.SDK_INT >= 26 ? record.getTxPowerLevel() : Integer.MIN_VALUE);
     item.put("advertiseFlags", record.getAdvertiseFlags());
     item.put("sourceTimestampNanos", result.getTimestampNanos());
     item.put("clockDomain", "ANDROID_ELAPSED_REALTIME_NANOS");
