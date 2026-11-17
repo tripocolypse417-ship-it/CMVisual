@@ -1,6 +1,14 @@
 package com.waveradar.app;
 
 import android.Manifest;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothManager;
+import android.bluetooth.le.BluetoothLeScanner;
+import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanResult;
+import android.bluetooth.le.ScanRecord;
+import android.os.Handler;
+import android.os.Looper;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.net.wifi.ScanResult;
@@ -23,22 +31,32 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import java.util.List;
 import java.util.concurrent.Executor;
 
 @CapacitorPlugin(name = "WaveRadarNetwork", permissions = {
-  @Permission(alias = "location", strings = { Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.READ_PHONE_STATE })
+  @Permission(alias = "location", strings = { Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.READ_PHONE_STATE }),
+  @Permission(alias = "bleScan", strings = { Manifest.permission.BLUETOOTH_SCAN })
 })
 public class WaveRadarNetworkPlugin extends Plugin {
   private WifiManager wifiManager;
   private TelephonyManager telephonyManager;
+  private BluetoothLeScanner bleScanner;
+  private final Handler mainHandler = new Handler(Looper.getMainLooper());
+  private boolean bleScanRunning = false;
 
   @Override
   public void load() {
     Context app = getContext().getApplicationContext();
     wifiManager = (WifiManager) app.getSystemService(Context.WIFI_SERVICE);
     telephonyManager = (TelephonyManager) app.getSystemService(Context.TELEPHONY_SERVICE);
+    BluetoothManager bluetoothManager = (BluetoothManager) app.getSystemService(Context.BLUETOOTH_SERVICE);
+    BluetoothAdapter adapter = bluetoothManager == null ? null : bluetoothManager.getAdapter();
+    bleScanner = adapter == null ? null : adapter.getBluetoothLeScanner();
   }
 
   @PluginMethod
@@ -50,6 +68,8 @@ public class WaveRadarNetworkPlugin extends Plugin {
     out.put("telephony", getContext().getPackageManager().hasSystemFeature(PackageManager.FEATURE_TELEPHONY_RADIO_ACCESS));
     out.put("activeWifiScan", false);
     out.put("activeCellNetworkScan", false);
+    out.put("bleAdvertisementScan", bleScanner != null);
+    out.put("blePermissionState", hasBleScanPermission() ? "GRANTED" : "NOT_GRANTED");
     out.put("permissionState", hasLocationPermission() ? "GRANTED" : "NOT_GRANTED");
     out.put("dataClass", "CAPABILITY_STATUS");
     call.resolve(out);
@@ -247,6 +267,124 @@ public class WaveRadarNetworkPlugin extends Plugin {
     out.put("networks", new JSArray());
     out.put("cells", new JSArray());
     return out;
+  }
+
+
+  @PluginMethod
+  public void discoverBluetooth(PluginCall call) {
+    if (bleScanner == null) {
+      call.reject("Bluetooth LE scanning is not supported or Bluetooth is disabled");
+      return;
+    }
+    if (Build.VERSION.SDK_INT >= 31) {
+      if (getContext().checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+        requestPermissionForAlias("bleScan", call, "blePermissionCallback");
+        return;
+      }
+    } else if (!hasLocationPermission()) {
+      requestPermissionForAlias("location", call, "blePermissionCallback");
+      return;
+    }
+    startBleScan(call);
+  }
+
+  @com.getcapacitor.annotation.PermissionCallback
+  private void blePermissionCallback(PluginCall call) {
+    if (!hasBleScanPermission()) {
+      call.reject("Bluetooth scan permission was not granted");
+      return;
+    }
+    startBleScan(call);
+  }
+
+  private void startBleScan(PluginCall call) {
+    if (bleScanRunning) {
+      call.reject("A Bluetooth discovery scan is already running");
+      return;
+    }
+    final Map<String, JSObject> candidates = new LinkedHashMap<>();
+    final ScanCallback callback = new ScanCallback() {
+      @Override
+      public void onScanResult(int callbackType, ScanResult result) {
+        addBleCandidate(candidates, result);
+      }
+
+      @Override
+      public void onBatchScanResults(List<ScanResult> results) {
+        if (results != null) for (ScanResult result : results) addBleCandidate(candidates, result);
+      }
+
+      @Override
+      public void onScanFailed(int errorCode) {
+        bleScanRunning = false;
+        call.reject("Bluetooth LE scan failed with platform code " + errorCode);
+      }
+    };
+
+    try {
+      bleScanRunning = true;
+      bleScanner.startScan(callback);
+      mainHandler.postDelayed(() -> {
+        if (!bleScanRunning) return;
+        try {
+          bleScanner.stopScan(callback);
+        } catch (SecurityException ignored) {
+          // Permission may have been revoked while the scan was running.
+        }
+        bleScanRunning = false;
+        JSArray observations = new JSArray();
+        for (JSObject candidate : candidates.values()) observations.put(candidate);
+        JSObject out = new JSObject();
+        out.put("capturedAt", System.currentTimeMillis());
+        out.put("scanDurationMs", 6000);
+        out.put("scanMode", "PASSIVE_BLE_ADVERTISEMENT_DISCOVERY");
+        out.put("observations", observations);
+        out.put("candidateCount", observations.length());
+        out.put("provenance", "Android BluetoothLeScanner");
+        call.resolve(out);
+      }, 6000L);
+    } catch (SecurityException e) {
+      bleScanRunning = false;
+      call.reject("Bluetooth scan permission was not granted");
+    } catch (RuntimeException e) {
+      bleScanRunning = false;
+      call.reject("Bluetooth LE scan could not start");
+    }
+  }
+
+  private void addBleCandidate(Map<String, JSObject> candidates, ScanResult result) {
+    if (result == null || result.getScanRecord() == null) return;
+    ScanRecord record = result.getScanRecord();
+    List<String> serviceUuids = new ArrayList<>();
+    if (record.getServiceUuids() != null) {
+      for (android.os.ParcelUuid uuid : record.getServiceUuids()) serviceUuids.add(uuid.toString());
+    }
+    List<Integer> manufacturerIds = new ArrayList<>();
+    android.util.SparseArray<byte[]> manufacturerData = record.getManufacturerSpecificData();
+    for (int i = 0; i < manufacturerData.size(); i++) manufacturerIds.add(manufacturerData.keyAt(i));
+    java.util.Collections.sort(serviceUuids);
+    java.util.Collections.sort(manufacturerIds);
+    String signature = serviceUuids.toString() + "|" + manufacturerIds.toString();
+    if (signature.equals("|")) signature = "unclassified-advertisement";
+    JSObject item = new JSObject();
+    item.put("serviceUuids", new JSArray(serviceUuids));
+    item.put("manufacturerIds", new JSArray(manufacturerIds));
+    item.put("rssiDbm", result.getRssi());
+    item.put("txPowerLevel", record.getTxPowerLevel());
+    item.put("advertiseFlags", record.getAdvertiseFlags());
+    item.put("sourceTimestampNanos", result.getTimestampNanos());
+    item.put("clockDomain", "ANDROID_ELAPSED_REALTIME_NANOS");
+    item.put("evidenceState", "MEASURED");
+    item.put("classification", serviceUuids.isEmpty() && manufacturerIds.isEmpty() ? "UNKNOWN_DEVICE" : "POSSIBLE_SENSOR");
+    item.put("limitations", "Advertisement only; no device name, hardware address, GATT data, identity, or owner is collected");
+    candidates.put(signature, item);
+  }
+
+  private boolean hasBleScanPermission() {
+    if (Build.VERSION.SDK_INT >= 31) {
+      return getContext().checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED;
+    }
+    return hasLocationPermission();
   }
 
   private boolean hasLocationPermission() {
