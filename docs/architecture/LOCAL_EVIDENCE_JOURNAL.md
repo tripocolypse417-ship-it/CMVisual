@@ -34,7 +34,7 @@ The local device journal is the first durable write target. Sensor capture must 
 2. Run Android build and native plugin compilation.
 3. Instrumented tests: append, restart process, read, duplicate, collision, large batch, interrupted transaction, database migration.
 4. Device test on the Moto G Play; record Android build/API, app build SHA, device clock domain and test protocol.
-5. Add encrypted-at-rest storage before any sensitive incident deployment.
+5. Instrument and verify AES-GCM encryption, migration, backup exclusion and key-loss behavior on supported Android versions; define key rotation/recovery.
 6. Add authenticated store-and-forward synchronization only after server identity, authorization, idempotency, replay protection, and conflict semantics are specified.
 
 ## Sources
