@@ -117,3 +117,26 @@ The repository README describes an early React/Vite/Capacitor prototype, Base44 
 ## Definition of done
 
 For every adapter: documented capability contract; explicit permission and authorization behavior; source-attributed observations; safe failure states; automated contract and lifecycle tests; hardware-specific integration test; security/privacy review; transport recovery test; and independent measurement validation for any quantitative sensing claim.
+
+
+## 15. Observed implementation baseline (repository inspection, 2026-11-17)
+
+The existing `native/android/WaveRadarNetworkPlugin.java` is registered by `native/android/MainActivity.java` and copied into the generated Android project by `.github/workflows/build-android.yml`. The inspected source currently implements:
+
+- Wi-Fi scan-cache reads through `WifiManager.getScanResults()`; this is cached platform data, not a guaranteed fresh scan.
+- Cellular cell-info updates/cache reads through `TelephonyManager`, subject to Android permissions and carrier/platform behavior.
+- A bounded BLE advertisement scan through `BluetoothLeScanner`, collecting service UUIDs, manufacturer IDs, RSSI and elapsed-realtime timestamps.
+- A capability response that reports active Wi-Fi scanning and active cellular scanning as unavailable.
+
+The inspected source does **not** demonstrate working satellite/NTN, private 5G, LoRaWAN, mesh, UWB ranging, CSI/BFI or SDR adapters. Wi-Fi RTT is only enumerated in the separate sensor capability bridge; that is not evidence of a ranging session. The presence of a ranging plugin in the build is not evidence of validated UWB or RTT measurement.
+
+### Immediate code-review findings
+
+1. The current Wi-Fi snapshot includes raw SSID and BSSID values. Cellular snapshots include operator and cell identifiers. These can expose persistent infrastructure identifiers and should be gated by explicit collection scope, minimized/pseudonymized where operationally possible, and protected by role/retention controls.
+2. `getSnapshot` gates its initial path on fine-location permission, while phone-state permission is separately reported. Permission outcomes should be explicit per data source; Wi-Fi availability must not be conflated with cellular permission or vice versa.
+3. BLE scan candidates are deduplicated by service UUID/manufacturer-ID signature. Distinct devices sharing the same advertisement signature can collapse into one candidate; this is a capability-classification summary, not a unique device inventory.
+4. BLE scan completion uses a fixed six-second timer and must be tested for lifecycle cancellation, permission revocation, Bluetooth disablement and callback races.
+5. Current timestamps use more than one clock domain (wall-clock milliseconds and Android elapsed-realtime nanoseconds). The common event contract must retain the original clock domain and avoid treating receipt time as capture time.
+6. The current plugin exposes observations to the app but does not itself provide durable offline event storage, authenticated multi-device transport, mesh routing, a provider-neutral Linux service, or WIS helmet/command synchronization.
+
+These findings are source inspection, not a device execution or security audit. They are remediation candidates for the implementation phase; no existing evidence or identifiers should be silently rewritten.
