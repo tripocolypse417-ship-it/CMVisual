@@ -19,7 +19,8 @@ assert.equal(eventsKnownAt(ledger, '2026-11-17T10:00:03Z').length, 2);
 assert.equal(eventsKnownAt(ledger, '2026-11-17T10:00:06Z').length, 4);
 assert.equal(eventsAtCaptureTime(ledger, { clockDomain: 'device-monotonic-a' }).length, 1);
 assert.equal(eventsAtCaptureTime(ledger, { clockDomain: 'device-monotonic-b' }).length, 1);
-assert.equal(eventsAtCaptureTime(ledger).length, 5);
+assert.throws(() => eventsAtCaptureTime(ledger), /clockDomain is required/);
+assert.equal(eventsAtCaptureTime(ledger, { clockDomain: 'device-monotonic-a' }).length, 1);
 
 // No implicit arrival-time substitution; the original input remains unchanged.
 assert.equal(ledger.events.find(event => event.eventId === 'no-receipt').receivedAt, null);
