@@ -874,6 +874,8 @@ export default function Home() {
           <span className="w-px h-3 bg-border" />
           <Link to="/investors" className="font-mono text-[9px] text-muted-foreground hover:text-primary transition-colors">INVESTORS</Link>
           <span className="w-px h-3 bg-border" />
+          <Link to="/evidence-replay" className="font-mono text-[9px] text-cyan-300 hover:text-primary transition-colors">INCIDENT REPLAY</Link>
+          <span className="w-px h-3 bg-border" />
           <Link to="/admin" className="font-mono text-[9px] text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
             <Users className="w-3 h-3" /> TEAM
           </Link>
