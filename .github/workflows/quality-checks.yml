@@ -2,7 +2,7 @@ name: WaveRadar Code Quality Checks
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, feat/shared-event-contract-v1 ]
   pull_request:
   workflow_dispatch:
 
