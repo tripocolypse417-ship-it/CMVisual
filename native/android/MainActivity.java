@@ -7,6 +7,7 @@ public class MainActivity extends BridgeActivity {
   public void onCreate(android.os.Bundle savedInstanceState) {
     registerPlugin(WaveRadarSensorsPlugin.class);
     registerPlugin(WaveRadarRangingPlugin.class);
+    registerPlugin(WaveRadarNetworkPlugin.class);
     super.onCreate(savedInstanceState);
   }
 }
