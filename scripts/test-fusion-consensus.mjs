@@ -20,6 +20,7 @@ const fused = fusePositionObservations([
 assert.equal(fused.status, 'CANDIDATE');
 assert.equal(fused.evidenceClass, 'DERIVED');
 assert.equal(fused.uncertaintyKind, 'HEURISTIC_NOT_CALIBRATED');
+assert.equal(fused.sourceCorrelation, 'UNKNOWN_NOT_ESTIMATED');
 assert.equal(fused.sourceIds.length, 2);
 assert.ok(fused.position.x > 1 && fused.position.x < 1.1);
 assert.ok(fused.uncertainty > 0);
@@ -49,6 +50,7 @@ const duplicate = fusePositionObservations([
   observation('same-source', 1.1),
 ], { nowMs });
 assert.equal(duplicate.status, 'UNAVAILABLE');
+assert.equal(duplicate.reason, 'INSUFFICIENT_DISTINCT_SOURCES');
 assert.ok(duplicate.rejected.some((item) => item.reason === 'DUPLICATE_SOURCE'));
 
 const badEvidence = fusePositionObservations([
