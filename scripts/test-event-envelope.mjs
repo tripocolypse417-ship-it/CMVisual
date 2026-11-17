@@ -20,6 +20,7 @@ const snapshot = {
 const event = await createWaveRadarEventEnvelope({
   eventId: '2c5e8a9a-ccf4-4dcb-9b0a-52d3d1ed81ab',
   snapshot,
+  sessionId: 'session-contract-test-01',
   source: {
     sourceId: 'android-device-01',
     sourceType: 'ANDROID_SENSOR_MANAGER',
@@ -37,6 +38,7 @@ const event = await createWaveRadarEventEnvelope({
 
 assert.equal(event.schema_version, '1.0.0');
 assert.equal(event.event_type, 'OBSERVATION');
+assert.equal(event.session_id, 'session-contract-test-01');
 assert.equal(event.timing.observed_at, null);
 assert.equal(event.timing.observed_clock_domain, 'DEVICE_MONOTONIC');
 assert.equal(event.timing.observed_monotonic_ns, 9876543210);
