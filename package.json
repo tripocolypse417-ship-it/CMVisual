@@ -16,7 +16,8 @@
     "test:physical-validation-evidence": "node scripts/test-physical-validation-evidence.mjs",
     "test:native-sensor-lifecycle": "node scripts/test-native-sensor-lifecycle.mjs",
     "test:capability-intelligence": "node scripts/test-capability-intelligence.mjs",
-    "test:capability-knowledge-graph": "node scripts/test-capability-knowledge-graph.mjs"
+    "test:capability-knowledge-graph": "node scripts/test-capability-knowledge-graph.mjs",
+    "test:incident-event-contract": "node scripts/test-incident-event-contract.mjs"
   },
   "dependencies": {
     "@base44/sdk": "^0.8.52",
