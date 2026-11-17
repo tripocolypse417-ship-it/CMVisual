@@ -62,6 +62,7 @@ async function sha256Hex(value) {
  * @param {string} [input.evidenceClass]
  * @param {string} [input.collectionMethod]
  * @param {string} [input.retentionClass]
+ * @param {string} [input.rawPayloadRef]
  * @param {string} [input.eventId]
  */
 export async function createWaveRadarEventEnvelope(input = {}) {
