@@ -16,6 +16,7 @@ const ledger = createEvidenceLedger([
   { eventId: 'other-incident', incidentId: 'incident-b', eventType: 'OBSERVATION', sourceId: 'x', capturedAt: ms(base), receivedAt: ms(base), clockDomain: 'UTC', evidenceClass: 'MEASURED', payload: {} },
 ]);
 assert.throws(() => prepareEvidenceSceneReplay(ledger, { incidentId: 'incident-a' }), /clockDomain is required/);
+assert.equal(prepareEvidenceSceneReplay(ledger, { incidentId: 'incident-a', clockDomain: 'UTC' }).unknownReceiptEvents.length, 1);
 const replay = prepareEvidenceSceneReplay(ledger, { incidentId: 'incident-a', clockDomain: 'UTC', knowledgeTime: ms(base) + 3000 });
 assert.equal(replay.sceneEvents.some(event => event.eventId === 'late-event'), false);
 assert.equal(replay.unalignedClockEvents.length, 1);
