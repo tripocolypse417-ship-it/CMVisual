@@ -18,7 +18,7 @@ const median = (values) => {
 function validateObservation(observation, nowMs, maxAgeMs) {
   if (!observation || typeof observation !== 'object') return 'INVALID_OBSERVATION';
   if (typeof observation.sourceId !== 'string' || !observation.sourceId.trim()) return 'MISSING_SOURCE_ID';
-  if (!['MEASURED', 'DERIVED'].includes(String(observation.evidenceClass ?? '').toUpperCase())) return 'UNTRUSTED_EVIDENCE_CLASS';
+  if (!['MEASURED', 'DERIVED'].includes(String(observation.evidenceClass ?? '').trim().toUpperCase())) return 'UNTRUSTED_EVIDENCE_CLASS';
   if (!observation.position || !['x', 'y', 'z'].every((axis) => finite(observation.position[axis]))) return 'INVALID_POSITION';
   if (typeof observation.coordinateFrame !== 'string' || !observation.coordinateFrame.trim()) return 'MISSING_COORDINATE_FRAME';
   if (typeof observation.units !== 'string' || !observation.units.trim()) return 'MISSING_UNITS';
