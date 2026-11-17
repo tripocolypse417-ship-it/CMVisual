@@ -197,7 +197,7 @@ export default function EvidenceReplay() {
             {!ledger?.events.length && <div className="py-6 text-center text-xs text-slate-500">No local journal records are available. Start a physical-validation capture in the Android app first.</div>}
           </div>
         </section>
-        <footer className="text-[10px] text-slate-500">No fabricated floor plan, coordinates, victim identities or accuracy claims. The local SQLite journal is currently unencrypted at rest; do not use it for sensitive incident data.</footer>
+        <footer className="text-[10px] text-slate-500">No fabricated floor plan, coordinates, victim identities or accuracy claims. Event payloads are AES-GCM encrypted with an Android Keystore key. Index metadata remains plaintext; this is not tamper-evident storage.</footer>
       </div>
     </main>
   );
