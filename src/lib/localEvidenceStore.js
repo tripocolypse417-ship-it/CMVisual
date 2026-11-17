@@ -119,7 +119,7 @@ export async function markLocalEvidenceDelivered(sampleKey, serverAck) {
       found = true;
       store.put({
         ...current,
-        status: 'ACKNOWLEDGED',
+        status: serverAck?.status === 'QUARANTINED' ? 'QUARANTINED' : 'ACKNOWLEDGED',
         attempts: Number(current.attempts || 0) + 1,
         updated_at: new Date().toISOString(),
         server_ack: serverAck || null,
@@ -141,7 +141,7 @@ export async function listPendingLocalEvidenceEvents({ limit = 50 } = {}) {
   ]);
   const statusByKey = new Map(deliveries.map(item => [item.sample_key, item]));
   return records
-    .filter(record => statusByKey.get(record.sample_key)?.status !== 'ACKNOWLEDGED')
+    .filter(record => !['ACKNOWLEDGED', 'QUARANTINED'].includes(statusByKey.get(record.sample_key)?.status))
     .sort((a, b) => String(a.received_at).localeCompare(String(b.received_at)))
     .slice(0, Math.max(1, Math.min(100, Number(limit) || 50)));
 }
@@ -154,14 +154,16 @@ export async function getLocalEvidenceStatus() {
     requestResult(tx.objectStore(STORE_NAME).index('received_at').openCursor(null, 'prev')),
     requestResult(tx.objectStore(DELIVERY_STORE).getAll()),
   ]);
-  const pending = deliveries.filter(item => item.status !== 'ACKNOWLEDGED').length;
+  const pending = deliveries.filter(item => !['ACKNOWLEDGED', 'QUARANTINED'].includes(item.status)).length;
+  const quarantined = deliveries.filter(item => item.status === 'QUARANTINED').length;
   return {
     available: true,
     count,
     pending,
+    quarantined,
     newestReceivedAt: records?.value?.received_at || null,
     storage: 'INDEXED_DB_LOCAL_ONLY',
-    remoteIngestion: pending ? 'PENDING' : 'SYNCED',
+    remoteIngestion: pending ? 'PENDING' : quarantined ? 'QUARANTINED' : 'SYNCED',
   };
 }
 
