@@ -7,6 +7,7 @@ const observation = (sourceId, x, overrides = {}) => ({
   evidenceClass: 'MEASURED',
   position: { x, y: 2, z: 0 },
   coordinateFrame: 'building-A/local-v1',
+  clockDomain: 'monotonic:session-1',
   units: 'm',
   timestampMs: nowMs - 50,
   uncertainty: 0.2,
@@ -21,6 +22,7 @@ assert.equal(fused.status, 'CANDIDATE');
 assert.equal(fused.evidenceClass, 'DERIVED');
 assert.equal(fused.uncertaintyKind, 'HEURISTIC_NOT_CALIBRATED');
 assert.equal(fused.sourceCorrelation, 'UNKNOWN_NOT_ESTIMATED');
+assert.equal(fused.clockDomain, 'monotonic:session-1');
 assert.equal(fused.sourceIds.length, 2);
 assert.ok(fused.position.x > 1 && fused.position.x < 1.1);
 assert.ok(fused.uncertainty > 0);
@@ -44,6 +46,21 @@ const skewed = fusePositionObservations([
   observation('clock-b', 1.1, { timestampMs: nowMs - 1000 }),
 ], { nowMs, maxSkewMs: 100 });
 assert.equal(skewed.reason, 'TIME_ALIGNMENT_OUTSIDE_LIMIT');
+
+const mixedClockDomains = fusePositionObservations([
+  observation('clock-domain-a', 1),
+  observation('clock-domain-b', 1.1, { clockDomain: 'monotonic:session-2' }),
+], { nowMs });
+assert.equal(mixedClockDomains.status, 'UNAVAILABLE');
+assert.equal(mixedClockDomains.reason, 'INCOMPATIBLE_CLOCK_DOMAINS');
+assert.ok(mixedClockDomains.rejected.every((item) => item.reason === 'CLOCK_DOMAIN_MISMATCH'));
+
+const missingClockDomain = fusePositionObservations([
+  observation('clock-domain-missing', 1, { clockDomain: undefined }),
+  observation('clock-domain-present', 1.1),
+], { nowMs });
+assert.equal(missingClockDomain.status, 'UNAVAILABLE');
+assert.ok(missingClockDomain.rejected.some((item) => item.reason === 'MISSING_CLOCK_DOMAIN'));
 
 const duplicate = fusePositionObservations([
   observation('same-source', 1),
@@ -82,4 +99,4 @@ assert.ok(sensitivity.leaveOneOutSensitivity.every((item) => item.shift >= 0));
 assert.throws(() => fusePositionObservations({}, { nowMs }), /array/);
 assert.throws(() => fusePositionObservations([], {}), /nowMs/);
 
-console.log('Fusion consensus contract passed: 10 scenarios.');
+console.log('Fusion consensus contract passed: 12 scenarios.');
