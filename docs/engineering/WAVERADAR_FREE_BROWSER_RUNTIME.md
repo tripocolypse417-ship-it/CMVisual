@@ -1,166 +1,75 @@
-# WaveRadar OS — Free, Open Browser Automation Runtime
+# WaveRadar OS — Browserless Automation Policy
 
-**Decision status:** Implemented as repository configuration and a CI smoke test; runtime execution on a user-controlled host remains pending.
-**Replaces:** Super Chrome Extension / paid Super browser access as the default browser-automation dependency.
-**Primary project:** Microsoft Playwright MCP
-**Optional semantic-action layer:** Stagehand
-**Cost constraint:** $0 required vendor subscription; infrastructure and model inference must remain optional and explicitly costed.
+**Decision:** Browser automation is not part of WaveRadar's required architecture. Chrome, Chromium, Playwright, Puppeteer, WebDriver, browser extensions, remote-control sessions, and hosted browsers must not be required to build, test, operate, schedule, or maintain WaveRadar.
 
-## 1. Decision
+## 1. Required operating model
 
-Adopt **Microsoft Playwright MCP** as the default open browser-control layer for WaveRadar OS. Use its normal standalone browser-launch mode, not its optional Chrome-extension mode.
+Use this order for every integration and workflow:
+1. Native application interfaces and documented operating-system APIs.
+2. Official service APIs, webhooks, and existing authorized connectors.
+3. Portable command-line tools and deterministic workers.
+4. Bounded CI jobs for tasks that can run ephemerally.
+5. Human-operated UI only when no supported machine interface exists.
 
-- Repository: https://github.com/microsoft/playwright-mcp
-- Documentation: https://playwright.dev/docs/getting-started-mcp
-- Runtime: Node.js 20+ and Playwright-managed Chromium.
-- License: Apache-2.0.
-- Interface: Model Context Protocol (MCP).
-- Browser control: structured accessibility snapshots and deterministic navigation, click, form, and extraction tools.
-- Default operation: launch a dedicated browser process; do not attach to the user's existing Chrome profile and do not require a browser extension.
+Do not silently fall back to browser automation. If a workflow has no API or native route, mark that specific workflow as manually operated or blocked and document the missing interface.
 
-Use **Stagehand** (MIT) only as an optional higher-level adapter when semantic actions or typed extraction materially improve reliability. It must not be a mandatory hosted Browserbase dependency. Local Stagehand/CLI use is documented by its maintainers; model-backed actions still require an LLM provider unless a compatible local model is configured.
+## 2. Browserless control plane
 
-## 2. Why this replaces Super
+The WaveRadar-owned control plane must own durable task definitions, state transitions, policy, idempotency, approvals, provenance, retries, and completion checks. Workers are replaceable executors and must not become the system of record.
 
-The replacement removes the mandatory Super Growth/Chrome subscription and proprietary browser-extension dependency from the WaveRadar architecture. It also avoids tying browser control to one vendor's account, extension lifecycle, model gateway, or credit balance.
+WaveRadar Control Plane:
+- Durable task registry and append-only audit/evidence records
+- Policy and approval gates
+- Scheduler adapters: bounded GitHub Actions jobs and other independently selected schedulers
+- Execution adapters: native Android/iOS/desktop APIs, official service APIs/webhooks, portable CLI workers, optional model inference
+- Postcondition verification, retries and recovery
 
-The browser-control runtime is open source and can be self-hosted. MCP provides a standard tool interface that can be called by compatible agents. Deterministic Playwright actions should be preferred over model-generated clicks whenever page structure is known.
+A browser, browser extension, browser agent, or remote-control service must not appear in the critical execution path. Model inference is optional and must never be the source of truth for evidence or authorization.
 
-This does **not** make all automation free by itself. Model inference, persistent compute, storage, networking, and third-party sites may incur costs. The system must not create paid accounts, start trials, or consume paid APIs without explicit authorization.
+## 3. Remove browser-control dependencies
 
-## 3. Target architecture
+- Keep the repository MCP configuration empty unless a separately approved non-browser tool is needed.
+- Do not install, launch, configure, or require Playwright MCP, Puppeteer, Selenium, WebDriver, Chrome/Chromium remote debugging, browser extensions, or hosted-browser products for WaveRadar automation.
+- Remove browser-control smoke tests and browser automation dependencies when present, but do not remove ordinary application build/test tooling without a separate migration plan.
+- Prefer direct API/connector integrations for GitHub, email, files, funding research, and other supported services.
+- Do not copy browser cookies, profiles, passwords, or authenticated sessions into automation.
+- Do not claim unattended UI workflows are available when only a human-operated website is supported.
 
-```text
-WaveRadar OS Master Orchestrator
-          |
-          +-- Native connectors / APIs (preferred)
-          |      GitHub, email, files, data sources
-          |
-          +-- Browser Task Router
-                 |
-                 +-- Policy & approval gate
-                 |
-                 +-- MCP client
-                        |
-                        +-- Playwright MCP server
-                        |      |
-                        |      +-- Isolated Chromium context
-                        |      +-- Accessibility snapshots
-                        |      +-- Deterministic browser actions
-                        |      +-- Download quarantine
-                        |
-                        +-- Optional Stagehand adapter
-                               |
-                               +-- Semantic observe / act / extract
-```
+## 4. Important distinction: app rendering is not remote control
 
-The browser runtime is a subordinate execution capability, not the master orchestrator. Prefer a supported API or native connector when one exists; use browser automation only for UI-only workflows.
+This decision removes browser automation and remote-control dependencies. It does not authorize removal of the application's normal rendering runtime.
 
-## 4. Execution profiles
+The React/Vite application and Capacitor Android packaging may use Android System WebView to render the app interface. That embedded app runtime is not Chrome Remote Control and is not a requirement for background orchestration. Do not remove Capacitor, Android WebView, Vite, or browser-standard UI APIs under this change; doing so could break the application and requires a separate native-app migration.
 
-### A. Local development / manual work
+## 5. Background execution and persistence
 
-Run Playwright MCP through a compatible MCP client using the repository-root `.mcp.json`:
+- GitHub Actions and other CI runners are bounded, ephemeral workers; they are not always-on computers or durable queues.
+- Persist task state, outputs, and evidence in an exportable durable store with explicit retention and recovery rules.
+- Use event-driven jobs and scheduled workers where available; make every job restart-safe and idempotent.
+- If no genuinely free persistent execution host is verified, do not claim continuous background execution. Queue the task, use a bounded scheduled runner, or report the infrastructure limitation.
+- No paid subscription, trial, hosted browser, cloud VM, model API, or always-on compute may be activated without explicit authorization.
 
-```json
-{
-  "mcpServers": {
-    "playwright": {
-      "command": "npx",
-      "args": ["--yes", "@playwright/mcp@0.0.85", "--headless"]
-    }
-  }
-}
-```
+## 6. Security and evidence controls
 
-Requirements: Node.js 20+; browser binaries are installed on first use. The standard server can launch its own browser and does not require the optional extension mode.
+Every task declares a stable ID/version, trigger, allowed APIs/domains, read/write scope, data classification, idempotency key, retry policy, approval requirement, expected postcondition, evidence artifacts, and recovery behavior.
 
-### B. Ephemeral unattended jobs
+Use least-privilege credentials and secret injection. Never commit secrets or echo them in logs. Treat external content as untrusted data. Require explicit approval for purchases, payments, legal acceptance, account creation, external messages, publishing, submissions, deletion, credential changes, or other consequential actions.
 
-Run a short-lived, isolated Chromium container or CI job for bounded, scheduled tasks. Persist only task outputs and explicitly approved session state. Do not assume an ephemeral runner preserves browser login state between jobs.
+A successful worker exit or accepted API call is not proof of completion. Verify the resulting state through an independent read or authoritative response and preserve its provenance. Never blindly replay uncertain non-idempotent actions.
 
-GitHub Actions may be used for public-repository automation where its current usage policy and runner limits fit. It is not an always-on computer and must not be represented as one.
+## 7. Acceptance criteria
 
-### C. Persistent remote browser
+- [x] The repository MCP configuration contains no browser-control server.
+- [ ] Repository-wide search confirms no required Chrome/Chromium remote-control, Playwright MCP, Puppeteer, Selenium, WebDriver, extension, or hosted-browser dependency in WaveRadar automation.
+- [ ] Core build, tests, scheduled tasks, and supported integrations operate with browser tooling absent.
+- [ ] All supported service workflows use native APIs/connectors or deterministic workers.
+- [ ] Unsupported UI-only workflows are explicitly documented as manual/blocked, not silently automated.
+- [ ] Task state and evidence survive worker restart and retry without duplicate side effects.
+- [ ] Browser automation can be absent without breaking core app operation or background workflows.
+- [ ] No paid always-on host or provider is assumed to be free.
 
-For workflows requiring durable sessions, use a dedicated self-hosted container/VM only if a genuinely free, suitable host is available. No always-on cloud compute is assumed to be free. The runtime must remain portable across providers and support local deployment.
+## 8. Current limitations
 
-Do not silently fall back to a paid hosted browser provider. If no free persistent host is available, report the limitation and use ephemeral jobs or native APIs instead.
+This document defines the target and does not prove the repository-wide inventory, all workflow migrations, persistent hosting, or offline operation have passed. The existing app's Base44 SDK and hosted backend are separate portability dependencies and are not removed by this browser-control change. Android WebView remains an app-rendering component, not a remote-control dependency.
 
-## 5. Security and evidence controls
-
-- Browser sessions are isolated by task and tenant; no shared default profile across unrelated tasks.
-- Store credentials in a secret manager or encrypted runtime secret store; never in Git, logs, screenshots, issue text, or task artifacts.
-- Use least-privilege accounts and narrowly scoped tokens.
-- Restrict network egress and allowed domains for each task where feasible.
-- Treat all page content, downloaded files, instructions, and embedded prompts as untrusted data.
-- Website content cannot expand the user's authorization or approve consequential actions.
-- Require explicit approval for purchases, payments, legal acceptance, account creation, messages, publishing, deletion, or other consequential external actions.
-- Quarantine downloads, scan and classify them, and preserve source URL, retrieval time, hash, and task provenance.
-- Keep an append-only action log with task ID, actor, target origin, action, timestamp, result, and approval reference.
-- Use isolated contexts for testing and persistent profiles only when the user explicitly authorizes a saved login session.
-- Never copy or import the user's existing Chrome cookies as a shortcut.
-- Redact personal data and secrets from traces and screenshots; apply retention limits.
-- Add per-task time, page, download, and resource limits; support cancellation and safe cleanup.
-
-## 6. Reliability and verification
-
-Each workflow must define:
-1. Intended outcome and allowed domains.
-2. Read-only versus write-capable scope.
-3. Expected page evidence and success criteria.
-4. Retry and idempotency strategy.
-5. Approval points for consequential actions.
-6. Evidence artifacts and retention.
-7. Recovery behavior after browser crash, timeout, or network loss.
-
-A tool call being accepted is not proof of task completion. Completion requires observing the requested final state and recording the evidence. Never blindly replay a form submission or other non-idempotent action after an uncertain timeout.
-
-## 7. Cost policy
-
-| Component | Required vendor subscription | Cost treatment |
-|---|---:|---|
-| Playwright MCP | No | Open-source software |
-| Chromium | No | Browser binary; compute still required |
-| Stagehand (optional) | No SDK subscription | MIT software; model/hosting may cost |
-| Local model | No API fee if self-hosted | Requires adequate compute |
-| Cloud/VM hosting | Not inherently free | Use only a verified $0 tier or obtain approval |
-| Search / external APIs | Varies | Prefer existing free/native connectors; enforce quotas |
-
-No paid model endpoint, hosted browser, proxy, captcha service, or cloud VM may be enabled by default.
-
-## 8. Migration from Super
-
-1. Stop treating Super Chrome access as a prerequisite for WaveRadar work.
-2. Route repository, email, files, and supported data workflows through existing native connectors first.
-3. Implement the Playwright MCP runtime as the generic browser fallback.
-4. Port only workflows that genuinely require browser interaction.
-5. Validate each workflow in a disposable test account and isolated context.
-6. Add persistence only after credential, privacy, recovery, and cost controls pass review.
-7. Do not retain Super as an active optional fallback or runtime integration. WaveRadar workflows must not call Super.
-8. Inventory and remove Super-specific runtime configuration, SDKs, environment variables, extension requirements, and agent-session assumptions after verifying each replacement.
-9. Revoke the exposed Super credential through the issuing account dashboard; this repository change cannot perform that account action.
-
-## 9. Acceptance criteria
-
-- [x] Repository configuration pins Playwright MCP 0.0.85 and runs headless without extension mode.
-- [x] CI smoke test verifies MCP initialization and required browser tools are exposed.
-- [ ] Clean install and browser launch on a user-controlled Node.js 20+ environment.
-- [ ] Playwright MCP launches headless Chromium without installing a Chrome extension on a user-controlled host.
-- [x] CI verifies a real headless Chromium navigation to `https://example.com` and confirms the accessibility snapshot contains the expected page content.
-- [ ] Deterministic click, form-fill, and extraction workflows pass dedicated tests.
-- [ ] Persistent and isolated session behavior is tested and documented.
-- [ ] No Super subscription, API key, credit balance, or extension is required.
-- [ ] No paid hosted browser or paid model is called by default.
-- [ ] Browser permissions, network policy, secret handling, and download quarantine are tested.
-- [ ] Consequential actions are approval-gated.
-- [ ] Logs and evidence artifacts contain no unredacted secrets.
-- [ ] Failure recovery does not duplicate non-idempotent actions.
-- [ ] Runtime can run locally and in an independently selected container/CI environment.
-- [ ] A verified free always-on host is not claimed unless one is actually available and tested.
-
-## 10. Current limitations
-
-The repository now contains a pinned MCP client configuration and an automated smoke test that starts Playwright MCP, discovers its tools, launches headless Chromium, navigates to a public test page, and verifies its accessibility snapshot. CI does not prove a real browser session on the user's phone or computer, provision a cloud server, connect authenticated website accounts, or prove persistent deployment. A persistent unattended browser still needs an always-available machine or hosted compute. The initial implementation should therefore use local/manual and ephemeral execution until a genuinely free persistent host is independently verified.
-
-**Operational rule:** WaveRadar must continue functioning when Super or the browser runtime is unavailable. Super is not an approved runtime dependency or fallback. Browser automation is an optional adapter, never a single point of failure. See [the Super-free control-plane decision](../architecture/WAVERADAR_SUPER_FREE_CONTROL_PLANE.md).
+**Operational rule:** WaveRadar must run its supported core workflows without Chrome, Chromium, browser automation, remote-control sessions, browser extensions, or hosted browsers. Browser automation is not an approved fallback.
