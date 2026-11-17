@@ -67,6 +67,16 @@ assert.equal(outlier.status, 'CANDIDATE');
 assert.ok(outlier.rejected.some((item) => item.sourceId === 'bad-source' && item.reason === 'ROBUST_OUTLIER'));
 assert.equal(outlier.sourceIds.length, 2);
 
+const sensitivity = fusePositionObservations([
+  observation('sensitivity-a', 1.0),
+  observation('sensitivity-b', 1.05),
+  observation('sensitivity-c', 1.1),
+], { nowMs });
+assert.equal(sensitivity.status, 'CANDIDATE');
+assert.equal(sensitivity.sensitivityKind, 'DESCRIPTIVE_NOT_VALIDATION');
+assert.equal(sensitivity.leaveOneOutSensitivity.length, 3);
+assert.ok(sensitivity.leaveOneOutSensitivity.every((item) => item.shift >= 0));
+
 assert.throws(() => fusePositionObservations({}, { nowMs }), /array/);
 assert.throws(() => fusePositionObservations([], {}), /nowMs/);
 
