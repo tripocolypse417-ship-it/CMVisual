@@ -60,6 +60,20 @@ assert.equal(unknownClock.timing.observed_clock_domain, 'UNKNOWN');
 assert.equal(unknownClock.timing.observed_at, null);
 assert.equal(unknownClock.provenance.evidence_class, 'UNKNOWN');
 
+const localStored = await createWaveRadarEventEnvelope({
+  eventId: 'f36c7b7c-a4aa-4e62-9a7b-1c3c29b52c8e',
+  snapshot: { sample: [1, 2, 3] },
+  source: { sourceId: 'device-01', sourceType: 'ANDROID_SENSOR_MANAGER', adapterId: 'sensor', adapterVersion: '1' },
+  observedClockDomain: 'UNKNOWN',
+  receivedAt: '2026-11-17T23:00:02.000Z',
+  evidenceClass: 'MEASURED',
+  rawPayloadRef: 'local-indexeddb://waveradar-evidence-v1/events/device-01%3Aaccelerometer%3A987',
+  limitations: ['Test-only limitation'],
+});
+assert.equal(localStored.evidence.raw_payload_ref, 'local-indexeddb://waveradar-evidence-v1/events/device-01%3Aaccelerometer%3A987');
+assert.ok(localStored.provenance.limitations.includes('Test-only limitation'));
+
+
 await assert.rejects(() => createWaveRadarEventEnvelope({
   snapshot: {}, source: { sourceId: 's' },
 }), /source.sourceType is required/);
