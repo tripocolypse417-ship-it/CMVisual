@@ -14,6 +14,7 @@ export default function EvidenceReplay() {
   const [ledger, setLedger] = useState(null);
   const [clockDomain, setClockDomain] = useState('');
   const [cursorMs, setCursorMs] = useState(null);
+  const [knowledgeTimeMs, setKnowledgeTimeMs] = useState(null);
   const [loading, setLoading] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [status, setStatus] = useState('CHECKING LOCAL EVIDENCE STORE');
@@ -57,6 +58,8 @@ export default function EvidenceReplay() {
       const domains = [...new Set(result.ledger.events.filter(event => event.capturedAt != null && event.clockDomain).map(event => event.clockDomain))];
       const firstDomain = domains[0] || '';
       setClockDomain(firstDomain);
+      const receiptTimes = result.ledger.events.map(event => event.receivedAt).filter(value => Number.isFinite(value));
+      setKnowledgeTimeMs(receiptTimes.length ? Math.max(...receiptTimes) : null);
       const times = result.ledger.events.filter(event => event.clockDomain === firstDomain && event.capturedAt != null).map(event => event.capturedAt);
       setCursorMs(times.length ? Math.max(...times) : null);
       setStatus(`LOADED ${result.loadedCount} EVENT(S)${result.hasMore ? ' · LOAD LIMIT REACHED' : ''}`);
@@ -70,6 +73,9 @@ export default function EvidenceReplay() {
   const domainEvents = useMemo(() => ledger?.events.filter(event =>
     event.clockDomain === clockDomain && event.capturedAt != null
   ).sort((a, b) => a.capturedAt - b.capturedAt || (a.sequence ?? 0) - (b.sequence ?? 0)) ?? [], [ledger, clockDomain]);
+  const receiptEvents = ledger?.events.filter(event => event.receivedAt != null) ?? [];
+  const minKnowledgeTime = receiptEvents.length ? Math.min(...receiptEvents.map(event => event.receivedAt)) : 0;
+  const maxKnowledgeTime = receiptEvents.length ? Math.max(...receiptEvents.map(event => event.receivedAt)) : 0;
   const minTime = domainEvents.length ? domainEvents[0].capturedAt : 0;
   const maxTime = domainEvents.length ? domainEvents[domainEvents.length - 1].capturedAt : 0;
   const safeCursor = cursorMs == null ? (domainEvents.length ? maxTime : null) : Math.max(minTime, Math.min(maxTime, cursorMs));
@@ -78,13 +84,13 @@ export default function EvidenceReplay() {
     if (!ledger || !clockDomain || safeCursor == null) return null;
     try {
       return buildSynchronizedEvidenceScene(ledger, {
-        incidentId, clockDomain, cursorMs: safeCursor,
+        incidentId, clockDomain, cursorMs: safeCursor, knowledgeTime: knowledgeTimeMs,
         command: {}, helmet: {},
       });
     } catch {
       return null;
     }
-  }, [ledger, incidentId, clockDomain, safeCursor]);
+  }, [ledger, incidentId, clockDomain, safeCursor, knowledgeTimeMs]);
 
   useEffect(() => {
     if (!playing || !domainEvents.length) return undefined;
@@ -105,6 +111,7 @@ export default function EvidenceReplay() {
     setIncidentId(value);
     setLedger(null);
     setCursorMs(null);
+    setKnowledgeTimeMs(null);
   };
 
   const step = direction => setCursorMs(current => Math.max(minTime, Math.min(maxTime, (current ?? maxTime) + direction * 1000)));
@@ -151,6 +158,11 @@ export default function EvidenceReplay() {
               </div>
               <input aria-label="Incident replay time cursor" type="range" min={minTime} max={Math.max(minTime, maxTime)} step="1" value={safeCursor ?? minTime} onChange={event => { setPlaying(false); setCursorMs(Number(event.target.value)); }} disabled={!domainEvents.length} className="mt-3 w-full accent-cyan-400" />
               <div className="mt-1 flex justify-between font-mono text-[10px] text-slate-500"><span>{formatTime(domainEvents.length ? minTime : null)}</span><span>{domainEvents.length} timed events in selected domain</span><span>{formatTime(domainEvents.length ? maxTime : null)}</span></div>
+              <div className="mt-4 border-t border-white/10 pt-3">
+                <div className="font-mono text-xs text-amber-200">KNOWLEDGE CUTOFF · {formatDateTime(knowledgeTimeMs)}</div>
+                <input aria-label="Incident replay knowledge time cutoff" type="range" min={minKnowledgeTime} max={Math.max(minKnowledgeTime, maxKnowledgeTime)} step="1" value={knowledgeTimeMs ?? maxKnowledgeTime} onChange={event => { setPlaying(false); setKnowledgeTimeMs(Number(event.target.value)); }} disabled={!receiptEvents.length} className="mt-2 w-full accent-amber-300" />
+                <div className="mt-1 flex justify-between font-mono text-[10px] text-slate-500"><span>{formatTime(receiptEvents.length ? minKnowledgeTime : null)}</span><span>What had arrived by this time</span><span>{formatTime(receiptEvents.length ? maxKnowledgeTime : null)}</span></div>
+              </div>
             </div>
           </div>
 
@@ -172,6 +184,7 @@ export default function EvidenceReplay() {
                 <div>Conflicts: {scene?.snapshot.conflicts.length ?? 0}</div>
                 <div>Untimed: {scene?.snapshot.untimedEvents.length ?? 0}</div>
                 <div>Other clocks: {scene?.snapshot.unalignedClockEvents.length ?? 0}</div>
+                <div>Unknown receipt: {scene?.snapshot.unknownReceiptEvents.length ?? 0}</div>
                 <div>Unlocated: {scene?.command.unlocatedEntityCount ?? 0}</div>
               </div>
               {hasMore && <div className="mt-2 text-[10px] text-amber-200">Journal read limit reached; this view is partial.</div>}
