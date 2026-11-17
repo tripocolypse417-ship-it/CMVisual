@@ -246,7 +246,12 @@ public class WaveRadarNetworkPlugin extends Plugin {
       if (cell instanceof CellInfoWcdma) return String.valueOf(((CellInfoWcdma) cell).getCellIdentity().getCid());
       if (cell instanceof CellInfoCdma) return String.valueOf(((CellInfoCdma) cell).getCellIdentity().getBasestationId());
       if (Build.VERSION.SDK_INT >= 29 && cell instanceof CellInfoTdscdma) return String.valueOf(((CellInfoTdscdma) cell).getCellIdentity().getCid());
-      if (Build.VERSION.SDK_INT >= 29 && cell instanceof android.telephony.CellInfoNr) return String.valueOf(((android.telephony.CellInfoNr) cell).getCellIdentity().getNci());
+      if (Build.VERSION.SDK_INT >= 29 && cell instanceof android.telephony.CellInfoNr) {
+        android.telephony.CellIdentity identity = ((android.telephony.CellInfoNr) cell).getCellIdentity();
+        if (identity instanceof android.telephony.CellIdentityNr) {
+          return String.valueOf(((android.telephony.CellIdentityNr) identity).getNci());
+        }
+      }
     } catch (RuntimeException ignored) {
       return null;
     }
