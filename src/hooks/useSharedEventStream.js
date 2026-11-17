@@ -29,6 +29,7 @@ export default function useSharedEventStream(sessionId = null, enabled = true) {
   const [state, setState] = useState({
     status: 'IDLE',
     eventCount: 0,
+    events: [],
     lastEventId: null,
     lastEventAt: null,
     channel: null,
@@ -61,6 +62,7 @@ export default function useSharedEventStream(sessionId = null, enabled = true) {
       if (active) setState(old => ({
         ...old,
         eventCount: Number(body.count || 0),
+        events: rows,
         lastEventId: last?.event_id || old.lastEventId,
         lastEventAt: last?.server_received_at || old.lastEventAt,
       }));
@@ -92,19 +94,40 @@ export default function useSharedEventStream(sessionId = null, enabled = true) {
         if (!active) return;
         client = window.hatchable.events.connect({ authUrl: apiBase() + '/events-token' });
         channel = client.channel(tokenBody.channel);
-        channel.on('event-stored', (message) => {
+        channel.on('event-stored', async (message) => {
           if (!active) return;
           const data = message?.data || {};
           if (sessionId && data.sessionId && String(data.sessionId) !== String(sessionId)) return;
-          setState(old => ({
-            ...old,
-            status: 'CONNECTED',
-            eventCount: old.eventCount + 1,
-            lastEventId: data.eventId || old.lastEventId,
-            lastEventAt: data.serverReceivedAt || old.lastEventAt,
-            error: null,
-          }));
-          window.dispatchEvent(new CustomEvent('waveradar:shared-event-stored', { detail: data }));
+          try {
+            const oneResponse = await fetch(apiBase() + '/events/snapshot?eventId=' + encodeURIComponent(data.eventId || ''), {
+              method: 'GET',
+              credentials: 'include',
+              headers: { Accept: 'application/json' },
+              cache: 'no-store',
+            });
+            const oneBody = await oneResponse.json().catch(() => ({}));
+            const row = Array.isArray(oneBody.events) ? oneBody.events[0] : null;
+            if (!oneResponse.ok) throw new Error(oneBody.error || 'EVENT_DETAIL_HTTP_' + oneResponse.status);
+            if (!row || (sessionId && String(row.session_id || '') !== String(sessionId))) return;
+            setState(old => {
+              const existing = old.events.some(item => item.event_id === row.event_id);
+              const rows = existing ? old.events : [...old.events, row].sort((a, b) =>
+                String(a.server_received_at).localeCompare(String(b.server_received_at))
+              ).slice(-500);
+              return {
+                ...old,
+                status: 'CONNECTED',
+                eventCount: existing ? old.eventCount : old.eventCount + 1,
+                events: rows,
+                lastEventId: row.event_id || old.lastEventId,
+                lastEventAt: row.server_received_at || old.lastEventAt,
+                error: null,
+              };
+            });
+            window.dispatchEvent(new CustomEvent('waveradar:shared-event-stored', { detail: data }));
+          } catch (error) {
+            if (active) setState(old => ({ ...old, status: 'DEGRADED', error: error.message }));
+          }
         });
         channel.on('$reset', () => {
           refreshSnapshot().catch(error => {
