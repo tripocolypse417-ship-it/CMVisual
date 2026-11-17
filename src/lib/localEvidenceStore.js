@@ -161,7 +161,7 @@ export async function listPendingLocalEvidenceEvents({ limit = 50 } = {}) {
     const events = tx.objectStore(STORE_NAME);
     const deliveries = tx.objectStore(DELIVERY_STORE);
     const records = [];
-    tx.oncomplete = () => resolve(records);
+    tx.oncomplete = () => resolve(records.sort((a, b) => String(a.received_at).localeCompare(String(b.received_at))));
     tx.onerror = () => reject(tx.error || new Error('INDEXED_DB_PENDING_READ_FAILED'));
     const cursor = deliveries.index('status').openCursor('PENDING');
     cursor.onsuccess = () => {
