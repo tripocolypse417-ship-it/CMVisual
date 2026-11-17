@@ -71,6 +71,12 @@ Helmet synchronization states: LIVE, DELAYED, OFFLINE, RESYNCING, CONFLICT, STAL
 - Command and helmet projections agree on the same accepted event sequence.
 - Append-only evidence and audit history survive restart and interrupted writes.
 
+## Implementation checkpoint — 2026-11-17
+
+A dependency-free client-side envelope validator and batch analyzer now exist in `src/lib/incidentEventContract.js`. They check schema/version, required identifiers, namespaced event types, explicit clock domains, capture/receipt timestamps, source authorization scope, provenance/integrity enums, bounded JSON payloads, local-pending version rules, duplicate IDs, altered duplicate content, version collisions, and sequence gaps.
+
+Automated checks are registered as `npm run test:incident-event-contract` and included in both the code-quality and Android build workflows. These checks establish deterministic validation behavior only; they do not establish server authorization, durable append-only persistence, cryptographic integrity, multi-device transport, or operational synchronization.
+
 ## Explicit non-claims
 
 This contract does not establish that the event service, durable synchronization, Android/Linux adapters, helmet hardware, spatial overlays, or any life-safety behavior are implemented or validated. Each requires code, automated conformance tests, hardware-specific tests, and independent review.
