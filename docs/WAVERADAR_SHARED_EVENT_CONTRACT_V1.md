@@ -21,6 +21,8 @@ Every authorized collector and downstream service uses one versioned event envel
 
 Machine-readable JSON Schema: `schemas/waveradar-event-envelope-v1.schema.json`.
 
+A dependency-free adapter helper is available at `src/lib/eventEnvelope.js`. It wraps an unmodified native snapshot, preserves source clock-domain distinctions, assigns a UUID, and calculates a SHA-256 digest when Web Crypto is available. It deliberately leaves `raw_payload_ref` null: hashing a serialized snapshot does not make it durably stored raw evidence. The helper is not yet connected to the live Android bridge or an ingestion service.
+
 The envelope contains event identity/type, source and adapter identity, authorization scope, observation and receive timestamps, clock domain and uncertainty, evidence class and integrity state, parent event IDs, optional spatial frame/pose and uncertainty, a versioned event-specific payload, immutable raw-evidence reference and SHA-256, retention class, and quality status.
 
 Nullable source time, pose, and raw-evidence references represent genuine platform limitations. Missing information must remain explicit and must never be fabricated.
@@ -80,4 +82,6 @@ Nullable source time, pose, and raw-evidence references represent genuine platfo
 
 ## Current implementation status
 
-This contract is documentation and schema only. It does not establish that ingestion, storage, synchronization, scene reconstruction, replay, or helmet subscription services are deployed. The existing Android plugin's Wi-Fi data is platform scan cache; cellular information is platform-provided; BLE discovery is limited by Android permissions and radio scope. Those limitations remain visible in every event and operator view.
+The v1 schema and adapter helper are committed on this feature branch. The helper has a focused regression test but remains disconnected from the live Android bridge. There is no verified durable evidence store, ingestion endpoint, replay service, shared WIS/helmet scene subscription, Android build, or independent validation from this change set.
+
+The existing Android plugin's Wi-Fi data is platform scan cache; cellular information is platform-provided; BLE discovery is limited by Android permissions and radio scope. Those limitations remain visible in every event and operator view.
