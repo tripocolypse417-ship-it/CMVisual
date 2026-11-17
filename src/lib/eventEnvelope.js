@@ -63,6 +63,7 @@ async function sha256Hex(value) {
  * @param {string} [input.collectionMethod]
  * @param {string} [input.retentionClass]
  * @param {string} [input.rawPayloadRef]
+ * @param {string} [input.sessionId]
  * @param {string} [input.eventId]
  */
 export async function createWaveRadarEventEnvelope(input = {}) {
@@ -93,6 +94,7 @@ export async function createWaveRadarEventEnvelope(input = {}) {
   return {
     event_id: eventId,
     schema_version: '1.0.0',
+    ...(typeof input.sessionId === 'string' && input.sessionId.trim() ? { session_id: input.sessionId.trim() } : {}),
     event_type: 'OBSERVATION',
     source: {
       source_id: source.sourceId,
