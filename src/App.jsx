@@ -9,6 +9,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
 import PhysicalValidation from './pages/PhysicalValidation';
+import EvidenceReplay from './pages/EvidenceReplay';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
@@ -63,6 +64,7 @@ const AuthenticatedApp = () => {
       <Route path="/" element={<Home />} />
       <Route path="/admin" element={<Admin />} />
       <Route path="/physical-validation" element={<PhysicalValidation />} />
+      <Route path="/evidence-replay" element={<EvidenceReplay />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
