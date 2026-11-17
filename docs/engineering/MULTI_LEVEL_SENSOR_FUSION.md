@@ -22,8 +22,9 @@ A single weighted average hides the most important failure modes in heterogeneou
 
 src/lib/fusion/consensus.js is deliberately narrower than a full factor graph. It provides a deterministic position-observation consensus baseline:
 - explicit MEASURED/DERIVED evidence only;
-- finite coordinates, source IDs, timestamps, uncertainty, units, and coordinate frames;
-- freshness, duplicate-source, frame, unit, and time-skew gates;
+- finite coordinates, source IDs, timestamps, uncertainty, units, coordinate frames, and explicit clock-domain identifiers;
+- freshness, duplicate-source, frame, unit, clock-domain, and time-skew gates;
+- timestamp comparisons only after callers normalize observations into a shared/synchronized clock domain; equal labels are not proof of synchronization;
 - robust residual screening followed by inverse-variance weighting;
 - descriptive leave-one-source-out sensitivity to expose dependence on a single input (not an integrity verdict);
 - a DERIVED candidate with lineage and an explicitly uncalibrated uncertainty heuristic;
