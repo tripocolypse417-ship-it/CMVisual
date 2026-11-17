@@ -79,4 +79,4 @@ Preserve original payloads append-only. Derived fusion products must link back t
 
 ## Current implementation boundary
 
-The Android network adapter currently reads platform-provided Wi-Fi scan cache and cellular cell information. It does not scan every LAN device, perform mDNS/SSDP discovery, read BLE sensors, cross VLANs, or persist observations to the remote WIS world model. Those require separate, explicitly authorized collectors and connectors.
+The Android network adapter currently reads platform-provided Wi-Fi scan cache and cellular cell information and includes a user-triggered, six-second Bluetooth LE advertisement scan that collects service UUIDs, manufacturer IDs, RSSI, and signal metadata without collecting device addresses or advertised names. These adapters are wired in source but remain subject to CI build and on-device verification. They do not scan every LAN device, perform mDNS/SSDP discovery, read protected GATT characteristics, cross VLANs, or persist observations to the remote WIS world model. Those require separate, explicitly authorized collectors and connectors.
