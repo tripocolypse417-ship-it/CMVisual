@@ -64,7 +64,7 @@ export default function NativeEvidenceStatusPanel({ sessionId = null }) {
         </div>
         <span className={`text-[9px] font-mono font-semibold ${statusColor(state.phase)}`}>{state.phase.replaceAll('_', ' ')}</span>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
         <div className="rounded-lg border border-white/10 bg-black/20 p-2">
           <div className="text-[9px] uppercase text-slate-500">Stored events</div>
           <div className="mt-1 text-xs font-semibold text-slate-100">{state.storedEvents ?? '—'}</div>
@@ -84,6 +84,10 @@ export default function NativeEvidenceStatusPanel({ sessionId = null }) {
         <div className="rounded-lg border border-white/10 bg-black/20 p-2">
           <div className="text-[9px] uppercase text-slate-500">Buffer drops</div>
           <div className={`mt-1 text-xs font-semibold ${state.droppedSamplesSinceLastAck ? 'text-amber-200' : 'text-slate-100'}`}>{state.droppedSamplesTotal ?? 0}</div>
+        </div>
+        <div className="rounded-lg border border-white/10 bg-black/20 p-2">
+          <div className="text-[9px] uppercase text-slate-500">Samples / batch</div>
+          <div className="mt-1 text-xs font-semibold text-slate-100">{state.samplesCapturedThisCycle ?? 0}</div>
         </div>
       </div>
       <p className="text-[9px] leading-relaxed text-slate-500">
