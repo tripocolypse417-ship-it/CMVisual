@@ -303,13 +303,19 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
     status.put("supported", sensor != null);
     status.put("registered", registeredSensorTypes.contains(type));
     // A prior sample may be stale; this flag indicates history only, not freshness.
-    status.put("hasSampleHistory", latest.containsKey(type));
-    long sourceTimestampNs = sensorTimestamps.getOrDefault(type, 0L);
+    long sourceTimestampNs;
+    long receivedAt;
+    boolean hasSampleHistory;
+    synchronized (this) {
+      hasSampleHistory = latest.containsKey(type);
+      sourceTimestampNs = sensorTimestamps.getOrDefault(type, 0L);
+      receivedAt = sampleReceiptTimes.getOrDefault(type, 0L);
+    }
+    status.put("hasSampleHistory", hasSampleHistory);
     long sampleAgeMs = sourceTimestampNs > 0L
       ? Math.max(0L, (SystemClock.elapsedRealtimeNanos() - sourceTimestampNs) / 1000000L)
       : -1L;
     status.put("sampleAgeMs", sampleAgeMs);
-    long receivedAt = sampleReceiptTimes.getOrDefault(type, 0L);
     status.put("sampleReceivedAt", receivedAt == 0L ? org.json.JSONObject.NULL : receivedAt);
     target.put(name, status);
   }
