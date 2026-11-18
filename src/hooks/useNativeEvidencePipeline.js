@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { getStableDeviceId } from '../lib/deviceIdentity';
-import { getNativeSensorSnapshot } from '../lib/nativeSensors';
+import { acknowledgeNativeSensorSamples, getNativeSensorSnapshot } from '../lib/nativeSensors';
 import { createWaveRadarEventEnvelope } from '../lib/eventEnvelope';
 import {
   appendLocalEvidenceEvent,
   getLocalEvidenceStatus,
   listPendingLocalEvidenceEvents,
+  listLocalEvidenceEvents,
   markLocalEvidenceDelivered,
 } from '../lib/localEvidenceStore';
 
@@ -46,6 +47,8 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
   const remoteRetryAfterRef = useRef(0);
   const remoteInFlightRef = useRef(false);
   const deviceIdRef = useRef(null);
+  const persistedSampleKeysRef = useRef(new Set());
+  const networkInFlightRef = useRef(0);
 
   useEffect(() => {
     if (!enabled || !Capacitor.isNativePlatform()) {
@@ -56,6 +59,178 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
     let active = true;
     let timer;
     deviceIdRef.current = getStableDeviceId();
+
+    const hydratePersistedSampleKeys = async (deviceId) => {
+      const records = await listLocalEvidenceEvents({ limit: 1000 });
+      for (const record of records) {
+        if (String(record.event?.source?.device_id || '') !== String(deviceId)) continue;
+        const data = record.event?.payload?.data || {};
+        const samples = Array.isArray(data.samples) ? data.samples : [];
+        for (const sample of samples) {
+          if (sample?.sequence == null) continue;
+          persistedSampleKeysRef.current.add([deviceId, data.capabilityId || sample.capabilityId || 'unknown', sample.sequence].join(':'));
+        }
+      }
+    };
+
+    const persistNativeSnapshot = async (snapshot, deviceId) => {
+      const samples = Array.isArray(snapshot?.samples) ? snapshot.samples : null;
+      if (samples) {
+        const groups = new Map();
+        let highestSequence = Number(snapshot.lastSampleSequence || 0);
+        for (const sample of samples) {
+          const capabilityId = sample?.capabilityId || ('sensorType-' + String(sample?.sensorType ?? 'unknown'));
+          const sequence = Number(sample?.sequence);
+          if (!Number.isSafeInteger(sequence) || sequence <= 0) continue;
+          highestSequence = Math.max(highestSequence, sequence);
+          const identity = [deviceId, capabilityId, sequence].join(':');
+          if (persistedSampleKeysRef.current.has(identity)) continue;
+          if (!groups.has(capabilityId)) groups.set(capabilityId, []);
+          groups.get(capabilityId).push(sample);
+        }
+
+        let added = 0;
+        for (const [capabilityId, group] of groups.entries()) {
+          group.sort((a, b) => Number(a.sequence) - Number(b.sequence));
+          const firstSequence = Number(group[0].sequence);
+          const lastSample = group[group.length - 1];
+          const lastSequence = Number(lastSample.sequence);
+          const sampleKey = [deviceId, capabilityId, firstSequence, lastSequence].join(':');
+          const sourceNs = Number(lastSample.sourceTimestampNs);
+          const event = await createWaveRadarEventEnvelope({
+            sessionId,
+            snapshot: {
+              capabilityId,
+              samples: group,
+              sampleCount: group.length,
+              droppedSamplesSinceLastAck: Number(snapshot.droppedSamplesSinceLastAck || 0),
+              droppedSamplesTotal: Number(snapshot.droppedSamplesTotal || 0),
+              pendingSampleCount: Number(snapshot.pendingSampleCount || samples.length),
+              sampleBufferCapacity: Number(snapshot.sampleBufferCapacity || 0),
+              nativeSnapshotCapturedAt: snapshot.lastSensorAt ?? null,
+              nativeBridgeVersion: snapshot.nativeBridgeVersion ?? null,
+            },
+            source: {
+              ...SOURCE,
+              sourceId: deviceId,
+              deviceId,
+              capabilityId: 'android.sensor.' + capabilityId,
+            },
+            observedClockDomain: lastSample.sourceClockDomain || 'ANDROID_ELAPSED_REALTIME_NANOS',
+            observedMonotonicNs: Number.isSafeInteger(sourceNs) && sourceNs > 0 ? sourceNs : null,
+            measurementAgeMs: Number.isFinite(Number(lastSample.sampleAgeMs))
+              ? Math.max(0, Number(lastSample.sampleAgeMs)) : null,
+            receivedAt: new Date().toISOString(),
+            evidenceClass: 'MEASURED',
+            collectionMethod: 'ANDROID_SENSOR_MANAGER_BUFFERED_SAMPLE_BATCH',
+            payloadSchema: 'waveradar.android.sensor-sample-batch.v1',
+            retentionClass: 'DIAGNOSTIC',
+            rawPayloadRef: 'local-indexeddb://waveradar-evidence-v1/events/' + encodeURIComponent(sampleKey),
+          });
+          const result = await appendLocalEvidenceEvent(event, sampleKey);
+          for (const sample of group) {
+            persistedSampleKeysRef.current.add([deviceId, capabilityId, sample.sequence].join(':'));
+          }
+          if (result.added) {
+            added += 1;
+            window.dispatchEvent(new CustomEvent('waveradar:event-envelope', { detail: event }));
+          }
+        }
+
+        const droppedSince = Number(snapshot.droppedSamplesSinceLastAck || 0);
+        const droppedTotal = Number(snapshot.droppedSamplesTotal || 0);
+        if (groups.size === 0 && droppedSince > 0) {
+          const sampleKey = [deviceId, 'android-sensor-buffer-overflow', droppedTotal].join(':');
+          const event = await createWaveRadarEventEnvelope({
+            eventType: 'DEVICE_STATUS',
+            sessionId,
+            snapshot: {
+              capabilityId: 'android.sensor.buffer',
+              status: 'SENSOR_SAMPLE_BUFFER_OVERFLOW',
+              droppedSamplesSinceLastAck: droppedSince,
+              droppedSamplesTotal: droppedTotal,
+              sampleBufferCapacity: Number(snapshot.sampleBufferCapacity || 0),
+              lastSampleSequence: highestSequence,
+            },
+            source: {
+              ...SOURCE,
+              sourceId: deviceId,
+              deviceId,
+              capabilityId: 'android.sensor.buffer',
+            },
+            observedClockDomain: 'UNKNOWN',
+            receivedAt: new Date().toISOString(),
+            evidenceClass: 'UNKNOWN',
+            collectionMethod: 'ANDROID_SENSOR_BUFFER_DIAGNOSTIC',
+            payloadSchema: 'waveradar.android.sensor-buffer-status.v1',
+            retentionClass: 'DIAGNOSTIC',
+            rawPayloadRef: 'local-indexeddb://waveradar-evidence-v1/events/' + encodeURIComponent(sampleKey),
+          });
+          const result = await appendLocalEvidenceEvent(event, sampleKey);
+          if (result.added) {
+            added += 1;
+            window.dispatchEvent(new CustomEvent('waveradar:event-envelope', { detail: event }));
+          }
+        }
+
+        if (samples.length > 0 || droppedSince > 0) {
+          await acknowledgeNativeSensorSamples(highestSequence, droppedTotal);
+        }
+        return {
+          added,
+          skippedNoSourceTime: 0,
+          pendingSampleCount: samples.length,
+          droppedSamplesSinceLastAck: droppedSince,
+          droppedSamplesTotal: droppedTotal,
+        };
+      }
+
+      let added = 0;
+      let skippedNoSourceTime = 0;
+      for (const [capabilityId, measurement] of Object.entries(snapshot?.measurements || {})) {
+        if (!measurement || !Array.isArray(measurement.values)) continue;
+        const sourceNs = Number(measurement.sourceTimestampNs);
+        if (!Number.isSafeInteger(sourceNs) || sourceNs <= 0) {
+          skippedNoSourceTime += 1;
+          continue;
+        }
+        const sampleKey = [deviceId, capabilityId, sourceNs].join(':');
+        if (seenRef.current.has(sampleKey)) continue;
+        const event = await createWaveRadarEventEnvelope({
+          sessionId,
+          snapshot: {
+            capabilityId,
+            measurement,
+            nativeSnapshotCapturedAt: snapshot.lastSensorAt ?? null,
+            nativeBridgeVersion: snapshot.nativeBridgeVersion ?? null,
+          },
+          source: {
+            ...SOURCE,
+            sourceId: deviceId,
+            deviceId,
+            capabilityId: 'android.sensor.' + capabilityId,
+          },
+          observedClockDomain: measurement.sourceClockDomain || 'ANDROID_ELAPSED_REALTIME_NANOS',
+          observedMonotonicNs: sourceNs,
+          measurementAgeMs: Number.isFinite(Number(measurement.sampleAgeMs))
+            ? Math.max(0, Number(measurement.sampleAgeMs)) : null,
+          receivedAt: new Date().toISOString(),
+          evidenceClass: 'MEASURED',
+          collectionMethod: 'ANDROID_SENSOR_MANAGER_SENSOR_EVENT',
+          payloadSchema: 'waveradar.android.sensor-sample.v1',
+          retentionClass: 'DIAGNOSTIC',
+          rawPayloadRef: 'local-indexeddb://waveradar-evidence-v1/events/' + encodeURIComponent(sampleKey),
+        });
+        const result = await appendLocalEvidenceEvent(event, sampleKey);
+        seenRef.current.add(sampleKey);
+        if (result.added) {
+          added += 1;
+          window.dispatchEvent(new CustomEvent('waveradar:event-envelope', { detail: event }));
+        }
+      }
+      return { added, skippedNoSourceTime, pendingSampleCount: 0, droppedSamplesSinceLastAck: 0, droppedSamplesTotal: 0 };
+    };
+
     const onEnrollmentBundleUpdated = async () => {
       const previousDeviceId = deviceIdRef.current;
       const nextDeviceId = getStableDeviceId();
