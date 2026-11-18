@@ -108,6 +108,11 @@ export default function NativeEvidenceReplayPanel({ stream, color = '#32d9ff' })
                 </button>
               );
             })}
+            {stream?.hasMore && (
+              <button type="button" disabled={stream.loadingMore} onClick={() => stream.loadMore?.()} className="w-full px-3 py-3 font-mono text-[7px] font-semibold tracking-wider text-cyan-200 disabled:opacity-40">
+                {stream.loadingMore ? 'LOADING NEXT EVENT PAGE…' : 'LOAD NEXT 500 CORE EVENTS'}
+              </button>
+            )}
           </div>
           <div className="min-w-0 p-3">
             {selected ? (
