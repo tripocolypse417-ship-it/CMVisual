@@ -316,6 +316,11 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
 
     const onNetworkEvidence = async (customEvent) => {
       const detail = customEvent?.detail || {};
+      if (pairingInFlightRef.current) {
+        deferredNetworkEventsRef.current.push(detail);
+        return;
+      }
+      networkInFlightRef.current += 1;
       const capturedAt = Number(detail.capturedAt);
       if (!Number.isFinite(capturedAt) || capturedAt <= 0 || !detail.snapshot) return;
       const sampleKey = [deviceIdRef.current, 'android-network', capturedAt].join(':');
@@ -363,6 +368,8 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
           phase: error?.name === 'QuotaExceededError' ? 'STORAGE_FULL' : 'ERROR',
           lastError: error?.message || 'NETWORK_EVIDENCE_PERSIST_FAILED',
         }));
+      } finally {
+        networkInFlightRef.current = Math.max(0, networkInFlightRef.current - 1);
       }
     };
 
