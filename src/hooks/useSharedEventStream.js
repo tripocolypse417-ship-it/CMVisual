@@ -73,17 +73,24 @@ export default function useSharedEventStream(sessionId = null, enabled = true) {
         throw error;
       }
       const rows = Array.isArray(body.events) ? body.events : [];
-      const last = rows[rows.length - 1] || null;
-      if (active) setState(old => ({
-        ...old,
-        eventCount: Number(body.count || 0),
-        events: rows,
-        lastEventId: last?.event_id || old.lastEventId,
-        lastEventAt: last?.server_received_at || old.lastEventAt,
-        nextCursor: body.nextCursor || null,
-        hasMore: rows.length === 500 && !!body.nextCursor,
-        loadingMore: false,
-      }));
+      if (active) setState(old => {
+        const known = new Set(old.events.map(item => item.event_id));
+        const merged = [...old.events, ...rows.filter(item => !known.has(item.event_id))]
+          .sort((a, b) => String(a.server_received_at).localeCompare(String(b.server_received_at)))
+          .slice(-5000);
+        const last = merged[merged.length - 1] || null;
+        const preserveLoadedCursor = old.events.length > rows.length && old.nextCursor;
+        return {
+          ...old,
+          eventCount: merged.length,
+          events: merged,
+          lastEventId: last?.event_id || old.lastEventId,
+          lastEventAt: last?.server_received_at || old.lastEventAt,
+          nextCursor: preserveLoadedCursor ? old.nextCursor : (body.nextCursor || null),
+          hasMore: Boolean(old.hasMore || (rows.length === 500 && body.nextCursor)),
+          loadingMore: false,
+        };
+      });
     };
 
     const start = async () => {
