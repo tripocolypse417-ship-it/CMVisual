@@ -388,9 +388,35 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
         setStatus((old) => ({ ...old, remoteIngestion: 'ENROLLMENT_BUNDLE_REQUIRED' }));
         return;
       }
-      const pending = await listPendingLocalEvidenceEvents({ limit: 50 });
+      const pending = await listPendingLocalEvidenceEvents({ limit: 100 });
       if (!pending.length) {
         setStatus((old) => ({ ...old, remoteIngestion: 'SYNCED' }));
+        return;
+      }
+      const currentDeviceId = String(deviceIdRef.current || '');
+      const uploadable = [];
+      let identityHeld = 0;
+      for (const record of pending) {
+        const eventDeviceId = String(record.event?.source?.device_id || '');
+        if (eventDeviceId && eventDeviceId === currentDeviceId) {
+          uploadable.push(record);
+        } else {
+          await markLocalEvidenceDelivered(record.sample_key, {
+            status: 'QUARANTINED',
+            reason: 'DEVICE_ID_MISMATCH_LOCAL_HOLD',
+            note: 'Evidence retained locally; event device identity does not match the currently paired collector.',
+          });
+          identityHeld += 1;
+        }
+      }
+      if (!uploadable.length) {
+        const storageStatus = await getLocalEvidenceStatus();
+        setStatus(old => ({
+          ...old,
+          pendingEvents: storageStatus.pending,
+          quarantinedEvents: storageStatus.quarantined,
+          remoteIngestion: identityHeld ? 'LOCAL_IDENTITY_HOLD' : 'SYNCED',
+        }));
         return;
       }
 
@@ -404,7 +430,7 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
             'Accept': 'application/json',
             'Authorization': 'Bearer ' + token,
           },
-          body: JSON.stringify({ events: pending.map(record => record.event) }),
+          body: JSON.stringify({ events: uploadable.map(record => record.event) }),
         });
         const body = await response.json().catch(() => ({}));
         if (!response.ok) {
@@ -423,7 +449,7 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
           throw error;
         }
 
-        const byEventId = new Map(pending.map(record => [record.event.event_id, record]));
+        const byEventId = new Map(uploadable.map(record => [record.event.event_id, record]));
         let acknowledged = 0;
         for (const ack of Array.isArray(body.acknowledgments) ? body.acknowledgments : []) {
           const record = byEventId.get(ack.eventId);
