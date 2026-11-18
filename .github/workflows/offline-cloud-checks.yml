@@ -1,0 +1,48 @@
+name: WaveRadar Offline Cloud Checks
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 13 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: waveradar-cloud-checks
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Evidence-safe build and contract checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Data contract audit
+        run: npm run audit:data
+      - name: Physical validation queue tests
+        run: npm run test:physical-validation-queue
+      - name: Physical validation evidence tests
+        run: npm run test:physical-validation-evidence
+      - name: Native sensor lifecycle tests
+        run: npm run test:native-sensor-lifecycle
+      - name: Capability intelligence tests
+        run: npm run test:capability-intelligence
+      - name: Capability knowledge graph tests
+        run: npm run test:capability-knowledge-graph
+      - name: Production web build
+        run: npm run build
+      - name: Preserve build for review
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: waveradar-web-build
+          path: dist/
+          retention-days: 7
