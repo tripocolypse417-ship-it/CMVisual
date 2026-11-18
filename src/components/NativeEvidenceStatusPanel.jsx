@@ -3,7 +3,7 @@ import useNativeEvidencePipeline from '../hooks/useNativeEvidencePipeline';
 
 const statusColor = (phase) => {
   if (phase === 'CAPTURING_LOCAL') return 'text-emerald-300';
-  if (phase === 'STORAGE_FULL' || phase === 'ERROR' || phase === 'STORAGE_UNAVAILABLE') return 'text-amber-300';
+  if (phase === 'STORAGE_FULL' || phase === 'ERROR' || phase === 'STORAGE_UNAVAILABLE' || phase === 'BUFFER_OVERFLOW') return 'text-amber-300';
   return 'text-slate-300';
 };
 
@@ -64,7 +64,7 @@ export default function NativeEvidenceStatusPanel({ sessionId = null }) {
         </div>
         <span className={`text-[9px] font-mono font-semibold ${statusColor(state.phase)}`}>{state.phase.replaceAll('_', ' ')}</span>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
         <div className="rounded-lg border border-white/10 bg-black/20 p-2">
           <div className="text-[9px] uppercase text-slate-500">Stored events</div>
           <div className="mt-1 text-xs font-semibold text-slate-100">{state.storedEvents ?? '—'}</div>
@@ -81,10 +81,15 @@ export default function NativeEvidenceStatusPanel({ sessionId = null }) {
           <div className="text-[9px] uppercase text-slate-500">Core ingestion</div>
           <div className="mt-1 text-xs font-semibold text-amber-200">{state.remoteIngestion || 'UNKNOWN'}</div>
         </div>
+        <div className="rounded-lg border border-white/10 bg-black/20 p-2">
+          <div className="text-[9px] uppercase text-slate-500">Buffer drops</div>
+          <div className={`mt-1 text-xs font-semibold ${state.droppedSamplesSinceLastAck ? 'text-amber-200' : 'text-slate-100'}`}>{state.droppedSamplesTotal ?? 0}</div>
+        </div>
       </div>
       <p className="text-[9px] leading-relaxed text-slate-500">
         Evidence is stored locally first. Android WebView storage is separate from the browser used for guided setup, so a one-time enrollment-bundle transfer may be required. Source monotonic timestamps remain separate from receive time. Server acknowledgment is not independent validation.
       </p>
+      {state.droppedSamplesSinceLastAck > 0 && <p className="text-[8px] text-amber-200">Sensor buffer overflow recorded: {state.droppedSamplesSinceLastAck} sample(s) have been dropped since the last acknowledged batch. The count is retained in the evidence stream.</p>}
       {needsPairing && (
         <div className="rounded-lg border border-amber-300/20 bg-amber-300/5 p-3 space-y-2">
           <div className="font-mono text-[8px] font-semibold tracking-wider text-amber-200">PAIR THIS APP WITH WAVELRADAR CORE</div>
