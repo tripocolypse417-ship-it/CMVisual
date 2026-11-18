@@ -508,8 +508,19 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
     };
 
     setStatus((old) => ({ ...old, phase: 'INITIALIZING', native: true }));
-    poll();
-    timer = window.setInterval(poll, POLL_INTERVAL_MS);
+    const start = async () => {
+      try {
+        await hydratePersistedSampleKeys(deviceIdRef.current);
+        let pendingBundle = null;
+        try { pendingBundle = JSON.parse(localStorage.getItem('waveradar.pending-enrollment-bundle') || 'null'); } catch {}
+        if (pendingBundle) await onEnrollmentBundleUpdated({ detail: pendingBundle });
+        if (active) await poll();
+      } catch (error) {
+        if (active) setStatus(old => ({ ...old, phase: 'ERROR', lastError: error?.message || 'NATIVE_EVIDENCE_INITIALIZATION_FAILED' }));
+      }
+      if (active) timer = window.setInterval(poll, POLL_INTERVAL_MS);
+    };
+    start();
     return () => {
       active = false;
       window.removeEventListener(NETWORK_EVENT_NAME, onNetworkEvidence);
