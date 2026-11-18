@@ -20,7 +20,7 @@ assert.ok(source.includes('o.put("sensorRegistration", sensorRegistration);'));
 assert.match(source, /sourceTimestampNs/);
 assert.match(source, /ANDROID_ELAPSED_REALTIME_NANOS/);
 assert.match(source, /timestampEstimateMethod/);
-assert.match(source, /sampleReceiptTimes\\.put\\(type, receivedAt\\)/);
+assert.match(source, /sampleReceiptTimes\.put\(type, receivedAt\)/);
 assert.match(source, /status\.put\("sampleAgeMs", sampleAgeMs\)/);
 assert.match(source, /status\.put\("sampleReceivedAt", receivedAt == 0L \? org\.json\.JSONObject\.NULL : receivedAt\)/);
 assert.match(source, /item\.put\("sampleAgeMs", ageMs\)/);
