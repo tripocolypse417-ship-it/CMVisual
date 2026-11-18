@@ -19,3 +19,13 @@ export async function getNativeSensorCapabilities() {
     return null;
   }
 }
+
+export async function acknowledgeNativeSensorSamples(throughSequence, droppedSamplesTotal) {
+  if (!Number.isSafeInteger(Number(throughSequence)) || Number(throughSequence) < 0) {
+    throw new TypeError('A valid throughSequence is required');
+  }
+  return WaveRadarSensors.acknowledgeSamples({
+    throughSequence: Number(throughSequence),
+    droppedSamplesTotal: Number(droppedSamplesTotal || 0),
+  });
+}
