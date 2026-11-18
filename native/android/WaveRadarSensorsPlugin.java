@@ -20,6 +20,7 @@ import java.util.Set;
 @CapacitorPlugin(name = "WaveRadarSensors")
 public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListener {
   private static final int MAX_PENDING_SAMPLES = 10000;
+  private static final int MAX_SAMPLES_PER_SNAPSHOT = 2000;
 
   private static final class SensorSample {
     final long sequence;
@@ -164,7 +165,10 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
   private void addPendingSamples(JSObject out) {
     org.json.JSONArray samples = new org.json.JSONArray();
     synchronized (pendingSamples) {
+      int returned = 0;
+      long lastReturnedSequence = 0L;
       for (SensorSample sample : pendingSamples) {
+        if (returned >= MAX_SAMPLES_PER_SNAPSHOT) break;
         JSObject item = new JSObject();
         item.put("sequence", sample.sequence);
         item.put("sensorType", sample.sensorType);
@@ -176,10 +180,15 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
         item.put("sampleAgeMs", Math.max(0L, (SystemClock.elapsedRealtimeNanos() - sample.sourceTimestampNs) / 1000000L));
         item.put("accuracy", sample.accuracy);
         samples.put(item);
+        returned += 1;
+        lastReturnedSequence = sample.sequence;
       }
       out.put("samples", samples);
+      out.put("returnedSampleCount", returned);
       out.put("pendingSampleCount", pendingSamples.size());
       out.put("sampleBufferCapacity", MAX_PENDING_SAMPLES);
+      out.put("sampleSnapshotLimit", MAX_SAMPLES_PER_SNAPSHOT);
+      out.put("lastReturnedSequence", lastReturnedSequence);
       out.put("lastSampleSequence", nextSampleSequence);
       out.put("droppedSamplesTotal", droppedSamplesTotal);
       out.put("droppedSamplesSinceLastAck", Math.max(0L, droppedSamplesTotal - droppedSamplesAcknowledged));
@@ -286,6 +295,7 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
     o.put("sensorCount", sensorManager == null ? 0 : sensorManager.getSensorList(Sensor.TYPE_ALL).size());
     o.put("registeredSensorCount", registeredSensorTypes.size());
     o.put("sampleBufferCapacity", MAX_PENDING_SAMPLES);
+    o.put("sampleSnapshotLimit", MAX_SAMPLES_PER_SNAPSHOT);
     JSObject sensorRegistration = new JSObject();
     addSensorRegistration(sensorRegistration, Sensor.TYPE_ACCELEROMETER, "accelerometer");
     addSensorRegistration(sensorRegistration, Sensor.TYPE_GYROSCOPE, "gyroscope");
