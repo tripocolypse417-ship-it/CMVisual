@@ -38,6 +38,9 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
     storedEvents: null,
     pendingEvents: null,
     quarantinedEvents: 0,
+    pendingNativeSamples: 0,
+    droppedSamplesTotal: 0,
+    droppedSamplesSinceLastAck: 0,
     lastCaptureAt: null,
     lastError: null,
     remoteIngestion: 'NOT_CONFIGURED',
@@ -360,6 +363,9 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
           storedEvents: storageStatus.count,
           pendingEvents: storageStatus.pending,
           quarantinedEvents: storageStatus.quarantined,
+          pendingNativeSamples: capture.pendingSampleCount || 0,
+          droppedSamplesTotal: capture.droppedSamplesTotal || 0,
+          droppedSamplesSinceLastAck: capture.droppedSamplesSinceLastAck || 0,
           lastCaptureAt: new Date().toISOString(),
         }));
       } catch (error) {
@@ -465,51 +471,9 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
           return;
         }
 
-        let addedThisCycle = 0;
-        let skippedNoSourceTime = 0;
-        for (const [capabilityId, measurement] of Object.entries(snapshot.measurements)) {
-          if (!measurement || !Array.isArray(measurement.values)) continue;
-          const sourceNs = Number(measurement.sourceTimestampNs);
-          if (!Number.isSafeInteger(sourceNs) || sourceNs <= 0) {
-            skippedNoSourceTime += 1;
-            continue;
-          }
-          const sampleKey = [deviceIdRef.current, capabilityId, sourceNs].join(':');
-          if (seenRef.current.has(sampleKey)) continue;
-
-          const event = await createWaveRadarEventEnvelope({
-            sessionId,
-            snapshot: {
-              capabilityId,
-              measurement,
-              nativeSnapshotCapturedAt: snapshot.lastSensorAt ?? null,
-              nativeBridgeVersion: snapshot.nativeBridgeVersion ?? null,
-            },
-            source: {
-              ...SOURCE,
-              sourceId: deviceIdRef.current,
-              deviceId: deviceIdRef.current,
-              capabilityId: 'android.sensor.' + capabilityId,
-            },
-            observedClockDomain: measurement.sourceClockDomain || 'ANDROID_ELAPSED_REALTIME_NANOS',
-            observedMonotonicNs: sourceNs,
-            measurementAgeMs: Number.isFinite(Number(measurement.sampleAgeMs))
-              ? Math.max(0, Number(measurement.sampleAgeMs)) : null,
-            receivedAt: new Date().toISOString(),
-            evidenceClass: 'MEASURED',
-            collectionMethod: 'ANDROID_SENSOR_MANAGER_SENSOR_EVENT',
-            payloadSchema: 'waveradar.android.sensor-sample.v1',
-            retentionClass: 'DIAGNOSTIC',
-            rawPayloadRef: 'local-indexeddb://waveradar-evidence-v1/events/' + encodeURIComponent(sampleKey),
-          });
-          const result = await appendLocalEvidenceEvent(event, sampleKey);
-          seenRef.current.add(sampleKey);
-          if (result.added) {
-            addedThisCycle += 1;
-            window.dispatchEvent(new CustomEvent('waveradar:event-envelope', { detail: event }));
-          }
-        }
-
+        const capture = await persistNativeSnapshot(snapshot, deviceIdRef.current);
+        const addedThisCycle = capture.added || 0;
+        const skippedNoSourceTime = capture.skippedNoSourceTime || 0;
         const storageStatus = await getLocalEvidenceStatus();
         if (!active) return;
         setStatus((old) => ({
@@ -524,7 +488,7 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
           addedThisCycle,
         }));
         window.dispatchEvent(new CustomEvent('waveradar:local-evidence-status', {
-          detail: { ...storageStatus, addedThisCycle, skippedNoSourceTime },
+          detail: { ...storageStatus, ...capture, addedThisCycle, skippedNoSourceTime },
         }));
         await flushRemoteQueue();
       } catch (error) {
