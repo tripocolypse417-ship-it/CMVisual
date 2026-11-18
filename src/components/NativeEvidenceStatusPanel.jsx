@@ -83,6 +83,7 @@ export default function NativeEvidenceStatusPanel({ sessionId = null }) {
         <div className="rounded-lg border border-amber-300/20 bg-amber-300/5 p-3 space-y-2">
           <div className="font-mono text-[8px] font-semibold tracking-wider text-amber-200">PAIR THIS APP WITH WAVELRADAR CORE</div>
           <p className="text-[8px] leading-relaxed text-slate-400">On the Core guided-setup page, copy the native-app enrollment bundle, then paste it here. The bundle contains the matching device ID and scoped upload token.</p>
+          <a href="https://waveradar-20.hatchable.site/guided-setup.html" target="_blank" rel="noopener noreferrer" className="inline-flex rounded-md border border-white/15 px-2 py-1 font-mono text-[7px] text-cyan-200">OPEN CORE GUIDED SETUP</a>
           <input
             type="password"
             value={bundleInput}
