@@ -504,13 +504,16 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
         if (!active) return;
         setStatus((old) => ({
           ...old,
-          phase: storageStatus.available ? 'CAPTURING_LOCAL' : 'STORAGE_UNAVAILABLE',
+          phase: !storageStatus.available ? 'STORAGE_UNAVAILABLE' : capture.droppedSamplesSinceLastAck > 0 ? 'BUFFER_OVERFLOW' : 'CAPTURING_LOCAL',
           native: true,
           storedEvents: storageStatus.count,
           pendingEvents: storageStatus.pending,
           quarantinedEvents: storageStatus.quarantined,
+          pendingNativeSamples: capture.pendingSampleCount || 0,
+          droppedSamplesTotal: capture.droppedSamplesTotal || 0,
+          droppedSamplesSinceLastAck: capture.droppedSamplesSinceLastAck || 0,
           lastCaptureAt: new Date().toISOString(),
-          lastError: skippedNoSourceTime ? 'Some samples had no source monotonic timestamp and were not assigned fabricated times.' : old.lastError,
+          lastError: skippedNoSourceTime ? 'Some samples had no source monotonic timestamp and were not assigned fabricated times.' : capture.droppedSamplesSinceLastAck > 0 ? 'Native sample buffer overflow: dropped sample count is recorded in the evidence stream.' : old.lastError,
           addedThisCycle,
         }));
         window.dispatchEvent(new CustomEvent('waveradar:local-evidence-status', {
