@@ -49,6 +49,8 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
   const deviceIdRef = useRef(null);
   const persistedSampleKeysRef = useRef(new Set());
   const networkInFlightRef = useRef(0);
+  const pairingInFlightRef = useRef(false);
+  const deferredNetworkEventsRef = useRef([]);
 
   useEffect(() => {
     if (!enabled || !Capacitor.isNativePlatform()) {
@@ -231,18 +233,43 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
       return { added, skippedNoSourceTime, pendingSampleCount: 0, droppedSamplesSinceLastAck: 0, droppedSamplesTotal: 0 };
     };
 
-    const onEnrollmentBundleUpdated = async () => {
-      const previousDeviceId = deviceIdRef.current;
-      const nextDeviceId = getStableDeviceId();
-      deviceIdRef.current = nextDeviceId;
-      seenRef.current.clear();
+    const onEnrollmentBundleUpdated = async (customEvent) => {
+      let bundle = customEvent?.detail || null;
+      if (!bundle) {
+        try { bundle = JSON.parse(localStorage.getItem('waveradar.pending-enrollment-bundle') || 'null'); } catch {}
+      }
+      const token = typeof bundle?.enrollmentToken === 'string' ? bundle.enrollmentToken.trim() : '';
+      const nextDeviceId = (typeof bundle?.deviceId === 'string' && bundle.deviceId.trim()) || deviceIdRef.current;
+      if (!token || !nextDeviceId) {
+        setStatus(old => ({ ...old, remoteIngestion: 'ENROLLMENT_BUNDLE_REQUIRED', lastError: 'BUNDLE_MISSING_DEVICE_ID_OR_TOKEN' }));
+        return;
+      }
+      pairingInFlightRef.current = true;
       remoteRetryAfterRef.current = Date.now() + 5000;
-      if (previousDeviceId && previousDeviceId !== nextDeviceId) {
-        try {
-          let localIdentityQuarantineCount = 0;
+      while (runningRef.current || networkInFlightRef.current > 0) {
+        await new Promise(resolve => window.setTimeout(resolve, 25));
+      }
+      runningRef.current = true;
+      let localIdentityQuarantineCount = 0;
+      try {
+        const previousDeviceId = deviceIdRef.current;
+        if (previousDeviceId) {
+          await hydratePersistedSampleKeys(previousDeviceId);
+          const pendingSnapshot = await getNativeSensorSnapshot();
+          await persistNativeSnapshot(pendingSnapshot, previousDeviceId);
+        }
+        localStorage.setItem('waveradar.device.id.v1', nextDeviceId);
+        localStorage.setItem('waveradar.enrollment.token', token);
+        localStorage.setItem('waveradar.device.registered', 'true');
+        localStorage.removeItem('waveradar.pending-enrollment-bundle');
+        deviceIdRef.current = getStableDeviceId();
+
+        if (previousDeviceId && previousDeviceId !== nextDeviceId) {
           while (true) {
             const pending = await listPendingLocalEvidenceEvents({ limit: 1000 });
-            const mismatched = pending.filter(record => String(record.event?.source?.device_id || '') !== String(nextDeviceId));
+            const mismatched = pending.filter(record =>
+              String(record.event?.source?.device_id || '') === String(previousDeviceId)
+            );
             if (!mismatched.length) break;
             for (const record of mismatched) {
               await markLocalEvidenceDelivered(record.sample_key, {
@@ -254,14 +281,36 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
             }
             if (pending.length < 1000) break;
           }
-          window.dispatchEvent(new CustomEvent('waveradar:remote-evidence-status', {
-            detail: { localIdentityQuarantineCount },
-          }));
-        } catch (error) {
-          setStatus(old => ({ ...old, lastError: error?.message || 'LOCAL_IDENTITY_RECONCILIATION_FAILED' }));
         }
+        persistedSampleKeysRef.current.clear();
+        await hydratePersistedSampleKeys(deviceIdRef.current);
+        seenRef.current.clear();
+        remoteRetryAfterRef.current = 0;
+        setStatus(old => ({
+          ...old,
+          remoteIngestion: 'PENDING',
+          lastError: localIdentityQuarantineCount
+            ? localIdentityQuarantineCount + ' pre-pairing event(s) retained locally under the previous device identity.'
+            : null,
+        }));
+        window.dispatchEvent(new CustomEvent('waveradar:enrollment-bundle-applied', {
+          detail: { deviceId: deviceIdRef.current, localIdentityQuarantineCount },
+        }));
+        window.dispatchEvent(new CustomEvent('waveradar:remote-evidence-status', {
+          detail: { localIdentityQuarantineCount },
+        }));
+      } catch (error) {
+        setStatus(old => ({
+          ...old,
+          remoteIngestion: 'PAIRING_RECONCILIATION_FAILED',
+          lastError: error?.message || 'LOCAL_IDENTITY_RECONCILIATION_FAILED',
+        }));
+      } finally {
+        runningRef.current = false;
+        pairingInFlightRef.current = false;
       }
-      remoteRetryAfterRef.current = 0;
+      const deferred = deferredNetworkEventsRef.current.splice(0);
+      for (const detail of deferred) await onNetworkEvidence({ detail });
     };
     window.addEventListener('waveradar:enrollment-token-updated', onEnrollmentBundleUpdated);
 
