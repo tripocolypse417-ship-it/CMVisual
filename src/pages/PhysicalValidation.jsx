@@ -3,6 +3,8 @@ import useDeviceSensors from '@/hooks/useDeviceSensors';
 import { getStableDeviceId, getDeviceIdentityStatus } from '@/lib/deviceIdentity';
 import { base44 } from '@/api/base44Client';
 import { getNativeSensorSnapshot, getNativeSensorCapabilities } from '@/lib/nativeSensors';
+import { nativeEvidenceStore } from '@/lib/nativeEvidenceStore';
+import { toPhysicalValidationEvidenceEvent } from '@/lib/physicalValidationJournal';
 import { buildPhysicalValidationSample } from '@/lib/physicalValidationEvidence';
 import {
   enqueuePhysicalValidationRecord,
@@ -45,6 +47,9 @@ export default function PhysicalValidation() {
   const [queueStatus, setQueueStatus] = useState(() => getPhysicalValidationQueueStatus());
   const [nativeSnapshot, setNativeSnapshot] = useState(null);
   const [nativeCapabilities, setNativeCapabilities] = useState(null);
+  const [nativeJournalStatus, setNativeJournalStatus] = useState('CHECKING');
+  const sessionIdRef = useRef(null);
+  const sampleSequenceRef = useRef(0);
   const start = useRef(0);
   const timer = useRef(null);
   const sampler = useRef(null);
@@ -103,6 +108,26 @@ export default function PhysicalValidation() {
       });
       data.current = [...data.current, sample];
       setSamples([...data.current]);
+      sampleSequenceRef.current += 1;
+      const journalEvent = toPhysicalValidationEvidenceEvent({
+        sample,
+        deviceId,
+        sessionId: sessionIdRef.current,
+        sequence: sampleSequenceRef.current,
+        receivedAt: Date.now(),
+      });
+      try {
+        const persisted = await nativeEvidenceStore.append([journalEvent]);
+        if (!persisted.available) setNativeJournalStatus('NATIVE SQLITE UNAVAILABLE · BROWSER QUEUE ONLY');
+        else if ((persisted.collisions?.length ?? 0) > 0 || (persisted.invalidIndexes?.length ?? 0) > 0) {
+          setNativeJournalStatus('LOCAL JOURNAL CONFLICT · REVIEW REQUIRED');
+        } else {
+          setNativeJournalStatus('LOCAL SQLITE · ' + sampleSequenceRef.current + ' SAMPLE(S) COMMITTED');
+        }
+      } catch (journalError) {
+        console.warn('[WaveRadar] native evidence journal write failed', journalError);
+        setNativeJournalStatus('LOCAL JOURNAL WRITE FAILED · EXPORT REQUIRED');
+      }
     } catch (error) {
       console.warn('[WaveRadar] sensor sample skipped', error);
     } finally {
@@ -120,6 +145,8 @@ export default function PhysicalValidation() {
   };
 
   const begin = () => {
+    sessionIdRef.current = makeId('validation');
+    sampleSequenceRef.current = 0;
     data.current = [];
     pendingValidationRecord.current = null;
     savedCapture.current = false;
@@ -202,7 +229,7 @@ export default function PhysicalValidation() {
         );
 
         const sessionPayload = {
-          session_id: makeId('validation'),
+          session_id: sessionIdRef.current || makeId('validation'),
           started_at: new Date(start.current).toISOString(),
           ended_at: new Date(start.current + elapsed).toISOString(),
           status: elapsed >= DURATION_MS ? 'COMPLETE' : 'STOPPED',
@@ -389,6 +416,11 @@ export default function PhysicalValidation() {
   useEffect(() => {
     void checkCamera();
     void getNativeSensorCapabilities().then(setNativeCapabilities);
+    void nativeEvidenceStore.status().then(status => {
+      setNativeJournalStatus(status.available
+        ? `LOCAL SQLITE READY · ${status.eventCount ?? 0} STORED EVENT(S)`
+        : 'NATIVE SQLITE UNAVAILABLE · BROWSER QUEUE ONLY');
+    }).catch(() => setNativeJournalStatus('NATIVE JOURNAL STATUS UNKNOWN'));
 
   return () => {
       clearInterval(timer.current);
@@ -402,6 +434,7 @@ export default function PhysicalValidation() {
         <header className="rounded-xl border border-white/10 bg-slate-900 p-4">
           <div className="text-xs tracking-widest text-emerald-300">WAVERADAR · PHYSICAL VALIDATION</div>
           <h1 className="text-xl font-semibold mt-2">Real-device validation</h1>
+          <a href="/evidence-replay" className="mt-3 inline-flex rounded border border-cyan-400/40 px-3 py-2 text-xs text-cyan-200">OPEN INCIDENT REPLAY</a>
           <p className="text-xs text-slate-400 mt-1">
             Measured sensor data, camera capability, and operator ground truth remain separate.
           </p>
@@ -497,6 +530,9 @@ export default function PhysicalValidation() {
           </div>
           <div className="font-mono text-[10px] text-slate-500 mt-2">
             CAPTURE: {captureState} · STORAGE: {saveState}
+          </div>
+          <div className="font-mono text-[10px] text-slate-300 mt-2">
+            NATIVE EVIDENCE JOURNAL: {nativeJournalStatus}
           </div>
           <div className="font-mono text-[10px] text-slate-400 mt-2">
             OFFLINE QUEUE: {queueStatus.ok ? `${queueStatus.pendingCount} pending · ${queueStatus.ambiguousCount} require review` : `UNAVAILABLE · ${queueStatus.error}`}
