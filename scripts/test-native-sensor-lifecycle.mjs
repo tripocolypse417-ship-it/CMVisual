@@ -25,4 +25,12 @@ assert.match(source, /status\.put\("sampleAgeMs", sampleAgeMs\)/);
 assert.match(source, /status\.put\("sampleReceivedAt", receivedAt == 0L \? org\.json\.JSONObject\.NULL : receivedAt\)/);
 assert.match(source, /item\.put\("sampleAgeMs", ageMs\)/);
 
+assert.match(source, /MAX_PENDING_SAMPLES = 10000/);
+assert.match(source, /pendingSamples\.addLast\(new SensorSample/);
+assert.match(source, /droppedSamplesTotal/);
+assert.match(source, /sampleReceivedAt/);
+assert.match(source, /public void acknowledgeSamples/);
+assert.match(source, /pendingSamples\.peekFirst\(\)\.sequence <= throughSequence/);
+assert.match(source, /droppedSamplesSinceLastAck/);
+
 console.log('Native sensor lifecycle source-contract checks passed (physical-device validation still required).');
