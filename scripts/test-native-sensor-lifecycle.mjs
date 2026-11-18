@@ -26,6 +26,7 @@ assert.match(source, /status\.put\("sampleReceivedAt", receivedAt == 0L \? org\.
 assert.match(source, /item\.put\("sampleAgeMs", ageMs\)/);
 
 assert.match(source, /MAX_PENDING_SAMPLES = 10000/);
+assert.match(source, /MAX_SAMPLES_PER_SNAPSHOT = 2000/);
 assert.match(source, /pendingSamples\.addLast\(new SensorSample/);
 assert.match(source, /droppedSamplesTotal/);
 assert.match(source, /sampleReceivedAt/);
