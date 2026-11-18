@@ -82,7 +82,7 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
       const samples = Array.isArray(snapshot?.samples) ? snapshot.samples : null;
       if (samples) {
         const groups = new Map();
-        let highestSequence = Number(snapshot.lastSampleSequence || 0);
+        let highestSequence = Number(snapshot.lastReturnedSequence || snapshot.lastSampleSequence || 0);
         for (const sample of samples) {
           const capabilityId = sample?.capabilityId || ('sensorType-' + String(sample?.sensorType ?? 'unknown'));
           const sequence = Number(sample?.sequence);
