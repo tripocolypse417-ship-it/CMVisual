@@ -11,7 +11,7 @@ import {
   markLocalEvidenceDelivered,
 } from '../lib/localEvidenceStore';
 
-const POLL_INTERVAL_MS = 2000;
+const POLL_INTERVAL_MS = 1000;
 const NETWORK_EVENT_NAME = 'waveradar:capability-observations';
 const SOURCE = Object.freeze({
   sourceType: 'ANDROID_SENSOR_MANAGER',
@@ -38,7 +38,7 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
     storedEvents: null,
     pendingEvents: null,
     quarantinedEvents: 0,
-    pendingNativeSamples: 0,
+    samplesCapturedThisCycle: 0,
     droppedSamplesTotal: 0,
     droppedSamplesSinceLastAck: 0,
     lastCaptureAt: null,
@@ -363,7 +363,7 @@ export default function useNativeEvidencePipeline(enabled = true, sessionId = nu
           storedEvents: storageStatus.count,
           pendingEvents: storageStatus.pending,
           quarantinedEvents: storageStatus.quarantined,
-          pendingNativeSamples: capture.pendingSampleCount || 0,
+          samplesCapturedThisCycle: capture.pendingSampleCount || 0,
           droppedSamplesTotal: capture.droppedSamplesTotal || 0,
           droppedSamplesSinceLastAck: capture.droppedSamplesSinceLastAck || 0,
           lastCaptureAt: new Date().toISOString(),
