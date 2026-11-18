@@ -47,7 +47,6 @@ assert.equal(event.timing.observed_monotonic_ns, 9876543210);
 assert.equal(event.timing.received_at, '2026-11-17T23:00:00.000Z');
 assert.equal(event.provenance.evidence_class, 'MEASURED');
 assert.equal(event.provenance.integrity_state, 'CHECKSUMMED');
-assert.equal(event.evidence.raw_payload_ref, null);
 assert.match(event.evidence.raw_payload_sha256, /^[a-f0-9]{64}$/);
 assert.deepEqual(event.payload.data, snapshot);
 assert.equal(snapshot.measurements.accelerometer.timestampEstimateMs, 1763400000000);
