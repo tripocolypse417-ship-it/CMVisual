@@ -34,6 +34,9 @@ export default function useSharedEventStream(sessionId = null, enabled = true) {
     lastEventId: null,
     lastEventAt: null,
     channel: null,
+    nextCursor: null,
+    hasMore: false,
+    loadingMore: false,
     error: null,
   });
 
@@ -77,6 +80,9 @@ export default function useSharedEventStream(sessionId = null, enabled = true) {
         events: rows,
         lastEventId: last?.event_id || old.lastEventId,
         lastEventAt: last?.server_received_at || old.lastEventAt,
+        nextCursor: body.nextCursor || null,
+        hasMore: rows.length === 500 && !!body.nextCursor,
+        loadingMore: false,
       }));
     };
 
@@ -125,7 +131,7 @@ export default function useSharedEventStream(sessionId = null, enabled = true) {
               const existing = old.events.some(item => item.event_id === row.event_id);
               const rows = existing ? old.events : [...old.events, row].sort((a, b) =>
                 String(a.server_received_at).localeCompare(String(b.server_received_at))
-              ).slice(-500);
+              ).slice(-5000);
               return {
                 ...old,
                 status: 'CONNECTED',
@@ -166,5 +172,44 @@ export default function useSharedEventStream(sessionId = null, enabled = true) {
     };
   }, [enabled, sessionId, retrySignal]);
 
-  return state;
+  const loadMore = async () => {
+    if (!state.hasMore || !state.nextCursor || state.loadingMore) return;
+    setState(old => ({ ...old, loadingMore: true, error: null }));
+    try {
+      const query = new URLSearchParams({
+        limit: '500',
+        afterReceivedAt: String(state.nextCursor.afterReceivedAt || ''),
+        afterEventId: String(state.nextCursor.afterEventId || ''),
+      });
+      if (sessionId) query.set('sessionId', String(sessionId));
+      const response = await fetch(apiBase() + '/events/snapshot?' + query.toString(), {
+        method: 'GET',
+        credentials: 'include',
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || 'EVENT_PAGE_HTTP_' + response.status);
+      const rows = Array.isArray(body.events) ? body.events : [];
+      setState(old => {
+        const known = new Set(old.events.map(item => item.event_id));
+        const merged = [...old.events, ...rows.filter(item => !known.has(item.event_id))]
+          .sort((a, b) => String(a.server_received_at).localeCompare(String(b.server_received_at)))
+          .slice(-5000);
+        return {
+          ...old,
+          events: merged,
+          eventCount: merged.length,
+          nextCursor: body.nextCursor || old.nextCursor,
+          hasMore: rows.length === 500 && !!body.nextCursor,
+          loadingMore: false,
+          error: null,
+        };
+      });
+    } catch (error) {
+      setState(old => ({ ...old, loadingMore: false, error: error.message, status: 'DEGRADED' }));
+    }
+  };
+
+  return { ...state, loadMore };
 }
