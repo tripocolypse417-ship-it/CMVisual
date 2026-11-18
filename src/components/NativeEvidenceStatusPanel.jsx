@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import useNativeEvidencePipeline from '../hooks/useNativeEvidencePipeline';
 
 const statusColor = (phase) => {
@@ -16,7 +16,14 @@ export default function NativeEvidenceStatusPanel({ sessionId = null }) {
     'TOKEN_INVALID_OR_EXPIRED',
     'DEVICE_TOKEN_MISMATCH',
     'AUTH_REQUIRED',
+    'PAIRING_RECONCILIATION_FAILED',
   ].includes(state.remoteIngestion);
+
+  useEffect(() => {
+    const onApplied = () => setBundleMessage('Device identity paired. Pending uploads will resume automatically.');
+    window.addEventListener('waveradar:enrollment-bundle-applied', onApplied);
+    return () => window.removeEventListener('waveradar:enrollment-bundle-applied', onApplied);
+  }, []);
 
   const saveBundle = () => {
     const raw = bundleInput.trim();
@@ -38,14 +45,13 @@ export default function NativeEvidenceStatusPanel({ sessionId = null }) {
       return;
     }
     try {
-      if (deviceId) localStorage.setItem('waveradar.device.id.v1', String(deviceId));
-      localStorage.setItem('waveradar.enrollment.token', token);
-      if (deviceId) localStorage.setItem('waveradar.device.registered', 'true');
+      const bundle = { deviceId: deviceId ? String(deviceId) : null, enrollmentToken: token };
+      localStorage.setItem('waveradar.pending-enrollment-bundle', JSON.stringify(bundle));
       setBundleInput('');
-      setBundleMessage('Enrollment bundle saved on this app. Pending uploads will resume automatically.');
-      window.dispatchEvent(new CustomEvent('waveradar:enrollment-token-updated'));
+      setBundleMessage('Bundle received. Preserving any pre-pairing samples before switching device identity…');
+      window.dispatchEvent(new CustomEvent('waveradar:enrollment-token-updated', { detail: bundle }));
     } catch {
-      setBundleMessage('Could not save the enrollment bundle in this app storage.');
+      setBundleMessage('Could not stage the enrollment bundle in this app storage.');
     }
   };
 
