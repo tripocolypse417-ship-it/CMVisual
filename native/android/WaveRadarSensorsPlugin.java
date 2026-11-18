@@ -123,7 +123,9 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
 
   @Override
   public void onAccuracyChanged(Sensor sensor, int accuracy) {
-    if (sensor != null) sensorAccuracies.put(sensor.getType(), accuracy);
+    if (sensor != null) {
+      synchronized (this) { sensorAccuracies.put(sensor.getType(), accuracy); }
+    }
   }
 
   @Override
