@@ -82,4 +82,17 @@ await assert.rejects(() => createWaveRadarEventEnvelope({
   snapshot: {}, source: { sourceId: 's' },
 }), /source.sourceType is required/);
 
+const overflow = await createWaveRadarEventEnvelope({
+  eventId: '2b7a7c8e-8b7e-4e6b-8d21-3d1d2f3a4b5c',
+  eventType: 'DEVICE_STATUS',
+  snapshot: { status: 'SENSOR_SAMPLE_BUFFER_OVERFLOW', droppedSamplesSinceLastAck: 3 },
+  source: { sourceId: 'android-device-01', sourceType: 'ANDROID_SENSOR_MANAGER', adapterId: 'waveradar-android-sensors', adapterVersion: '1.0.0' },
+  observedClockDomain: 'UNKNOWN',
+  receivedAt: '2026-11-17T23:00:02.000Z',
+  evidenceClass: 'UNKNOWN',
+});
+assert.equal(overflow.event_type, 'DEVICE_STATUS');
+assert.equal(overflow.provenance.evidence_class, 'UNKNOWN');
+assert.equal(overflow.timing.observed_at, null);
+
 console.log('WaveRadar event envelope adapter tests: PASS');
