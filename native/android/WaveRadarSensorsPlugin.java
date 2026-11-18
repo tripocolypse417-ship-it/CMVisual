@@ -11,6 +11,7 @@ import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.PluginMethod;
+import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -18,6 +19,26 @@ import java.util.Set;
 
 @CapacitorPlugin(name = "WaveRadarSensors")
 public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListener {
+  private static final int MAX_PENDING_SAMPLES = 10000;
+
+  private static final class SensorSample {
+    final long sequence;
+    final int sensorType;
+    final float[] values;
+    final long sourceTimestampNs;
+    final long sampleReceivedAt;
+    final int accuracy;
+
+    SensorSample(long sequence, int sensorType, float[] values, long sourceTimestampNs, long sampleReceivedAt, int accuracy) {
+      this.sequence = sequence;
+      this.sensorType = sensorType;
+      this.values = values;
+      this.sourceTimestampNs = sourceTimestampNs;
+      this.sampleReceivedAt = sampleReceivedAt;
+      this.accuracy = accuracy;
+    }
+  }
+
   private SensorManager sensorManager;
   private final Map<Integer, float[]> latest = new HashMap<>();
   private final Map<Integer, Long> sensorTimestamps = new HashMap<>();
@@ -25,6 +46,11 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
   private final Map<Integer, Integer> sensorAccuracies = new HashMap<>();
   private long lastSensorTimestamp = 0L;
   private final Set<Integer> registeredSensorTypes = new HashSet<>();
+  // Samples remain queued until JavaScript confirms IndexedDB persistence.
+  private final ArrayDeque<SensorSample> pendingSamples = new ArrayDeque<>();
+  private long nextSampleSequence = 0L;
+  private long droppedSamplesTotal = 0L;
+  private long droppedSamplesAcknowledged = 0L;
 
   @Override
   public void load() {
@@ -77,11 +103,22 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
   @Override
   public void onSensorChanged(SensorEvent event) {
     int type = event.sensor.getType();
-    latest.put(type, event.values.clone());
-    sensorTimestamps.put(type, event.timestamp);
-    sensorAccuracies.put(type, event.accuracy);
-    lastSensorTimestamp = System.currentTimeMillis();
-    sampleReceiptTimes.put(type, lastSensorTimestamp);
+    long receivedAt = System.currentTimeMillis();
+    float[] values = event.values.clone();
+    synchronized (this) {
+      latest.put(type, values);
+      sensorTimestamps.put(type, event.timestamp);
+      sensorAccuracies.put(type, event.accuracy);
+      lastSensorTimestamp = receivedAt;
+      sampleReceiptTimes.put(type, receivedAt);
+    }
+    synchronized (pendingSamples) {
+      if (pendingSamples.size() >= MAX_PENDING_SAMPLES) {
+        pendingSamples.removeFirst();
+        droppedSamplesTotal += 1L;
+      }
+      pendingSamples.addLast(new SensorSample(++nextSampleSequence, type, values, event.timestamp, receivedAt, event.accuracy));
+    }
   }
 
   @Override
@@ -113,17 +150,93 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
     addMeasurement(measurements, Sensor.TYPE_LIGHT, "ambientLight");
     addMeasurement(measurements, Sensor.TYPE_PROXIMITY, "proximity");
     out.put("measurements", measurements);
-    out.put("lastSensorAt", lastSensorTimestamp == 0L ? null : lastSensorTimestamp);
+    synchronized (this) {
+      out.put("lastSensorAt", lastSensorTimestamp == 0L ? null : lastSensorTimestamp);
+    }
+    addPendingSamples(out);
     out.put("evidenceClass", "MEASURED");
     out.put("provenance", "Android SensorManager");
     call.resolve(out);
   }
 
+  private void addPendingSamples(JSObject out) {
+    org.json.JSONArray samples = new org.json.JSONArray();
+    synchronized (pendingSamples) {
+      for (SensorSample sample : pendingSamples) {
+        JSObject item = new JSObject();
+        item.put("sequence", sample.sequence);
+        item.put("sensorType", sample.sensorType);
+        item.put("capabilityId", capabilityName(sample.sensorType));
+        item.put("values", toArray(sample.values));
+        item.put("sourceTimestampNs", sample.sourceTimestampNs);
+        item.put("sourceClockDomain", "ANDROID_ELAPSED_REALTIME_NANOS");
+        item.put("sampleReceivedAt", sample.sampleReceivedAt);
+        item.put("sampleAgeMs", Math.max(0L, (SystemClock.elapsedRealtimeNanos() - sample.sourceTimestampNs) / 1000000L));
+        item.put("accuracy", sample.accuracy);
+        samples.put(item);
+      }
+      out.put("samples", samples);
+      out.put("pendingSampleCount", pendingSamples.size());
+      out.put("sampleBufferCapacity", MAX_PENDING_SAMPLES);
+      out.put("lastSampleSequence", nextSampleSequence);
+      out.put("droppedSamplesTotal", droppedSamplesTotal);
+      out.put("droppedSamplesSinceLastAck", Math.max(0L, droppedSamplesTotal - droppedSamplesAcknowledged));
+    }
+  }
+
+  @PluginMethod
+  public void acknowledgeSamples(com.getcapacitor.PluginCall call) {
+    Long throughSequence = call.getLong("throughSequence");
+    Long droppedTotalAtSnapshot = call.getLong("droppedSamplesTotal");
+    if (throughSequence == null || throughSequence < 0L) {
+      call.reject("throughSequence is required");
+      return;
+    }
+    int removed = 0;
+    synchronized (pendingSamples) {
+      while (!pendingSamples.isEmpty() && pendingSamples.peekFirst().sequence <= throughSequence) {
+        pendingSamples.removeFirst();
+        removed += 1;
+      }
+      if (droppedTotalAtSnapshot != null && droppedTotalAtSnapshot >= droppedSamplesAcknowledged) {
+        droppedSamplesAcknowledged = Math.min(droppedSamplesTotal, droppedTotalAtSnapshot);
+      }
+      JSObject result = new JSObject();
+      result.put("acknowledgedThroughSequence", throughSequence);
+      result.put("removedSampleCount", removed);
+      result.put("remainingSampleCount", pendingSamples.size());
+      result.put("droppedSamplesAcknowledged", droppedSamplesAcknowledged);
+      call.resolve(result);
+    }
+  }
+
+  private String capabilityName(int type) {
+    switch (type) {
+      case Sensor.TYPE_ACCELEROMETER: return "accelerometer";
+      case Sensor.TYPE_GYROSCOPE: return "gyroscope";
+      case Sensor.TYPE_MAGNETIC_FIELD: return "magnetometer";
+      case Sensor.TYPE_ROTATION_VECTOR: return "rotationVector";
+      case Sensor.TYPE_GRAVITY: return "gravity";
+      case Sensor.TYPE_PRESSURE: return "barometer";
+      case Sensor.TYPE_LIGHT: return "ambientLight";
+      case Sensor.TYPE_PROXIMITY: return "proximity";
+      default: return "sensorType-" + type;
+    }
+  }
+
   private void addMeasurement(JSObject target, int type, String name) {
-    float[] v = latest.get(type);
+    float[] v;
+    long sensorElapsedNs;
+    long receiptAt;
+    int accuracy;
+    synchronized (this) {
+      v = latest.get(type);
+      sensorElapsedNs = sensorTimestamps.getOrDefault(type, 0L);
+      receiptAt = sampleReceiptTimes.getOrDefault(type, 0L);
+      accuracy = accuracy;
+    }
     if (v == null) return;
     JSObject item = new JSObject();
-    long sensorElapsedNs = sensorTimestamps.getOrDefault(type, 0L);
     long ageMs = sensorElapsedNs > 0L
       ? Math.max(0L, (SystemClock.elapsedRealtimeNanos() - sensorElapsedNs) / 1000000L)
       : 0L;
@@ -171,6 +284,7 @@ public class WaveRadarSensorsPlugin extends Plugin implements SensorEventListene
     o.put("externalPhysiology", false);
     o.put("sensorCount", sensorManager == null ? 0 : sensorManager.getSensorList(Sensor.TYPE_ALL).size());
     o.put("registeredSensorCount", registeredSensorTypes.size());
+    o.put("sampleBufferCapacity", MAX_PENDING_SAMPLES);
     JSObject sensorRegistration = new JSObject();
     addSensorRegistration(sensorRegistration, Sensor.TYPE_ACCELEROMETER, "accelerometer");
     addSensorRegistration(sensorRegistration, Sensor.TYPE_GYROSCOPE, "gyroscope");
