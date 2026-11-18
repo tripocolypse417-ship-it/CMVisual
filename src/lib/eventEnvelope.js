@@ -15,6 +15,8 @@ const CLOCK_DOMAINS = Object.freeze({
   UNKNOWN: 'UNKNOWN',
 });
 
+const EVENT_TYPES = new Set(['OBSERVATION', 'DEVICE_STATUS', 'DISCOVERY_CANDIDATE', 'SCENE_ENTITY_UPSERT', 'SCENE_ENTITY_DELETE', 'SCENE_RELATION', 'PREDICTION', 'ANNOTATION', 'VALIDATION_RESULT']);
+
 const EVIDENCE_CLASSES = new Set([
   'MEASURED', 'DERIVED', 'INFERRED', 'PREDICTED', 'SIMULATED',
   'UNKNOWN', 'UNAVAILABLE', 'ENVIRONMENTAL',
@@ -95,7 +97,7 @@ export async function createWaveRadarEventEnvelope(input = {}) {
     event_id: eventId,
     schema_version: '1.0.0',
     ...(typeof input.sessionId === 'string' && input.sessionId.trim() ? { session_id: input.sessionId.trim() } : {}),
-    event_type: 'OBSERVATION',
+    event_type: EVENT_TYPES.has(input.eventType) ? input.eventType : 'OBSERVATION',
     source: {
       source_id: source.sourceId,
       source_type: source.sourceType,
