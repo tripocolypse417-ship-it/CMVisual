@@ -55,6 +55,9 @@ jobs:
       - name: Test capability knowledge graph
         run: npm run test:capability-knowledge-graph
 
+      - name: Test WIS incident event contract
+        run: npm run test:incident-event-contract
+
       - name: Build web application
         run: npm run build
 
