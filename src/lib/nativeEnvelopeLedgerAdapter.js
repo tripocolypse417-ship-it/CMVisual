@@ -29,8 +29,11 @@ export function projectNativeEnvelopeToLedger(envelope, incidentId) {
   if (!receipt) return { accepted: false, reason: 'RECEIPT_TIME_REQUIRED' };
   const clockDomain = envelope.timing?.observed_clock_domain;
   const captured = clockDomain === 'UTC_UNIX' ? utc(envelope.timing?.observed_at) : null;
+  if (clockDomain === 'UTC_UNIX' && envelope.timing?.observed_at != null && !captured) return { accepted: false, reason: 'INVALID_UTC_CAPTURE_TIME' };
   const provenance = envelope.provenance || {};
-  const original = JSON.parse(JSON.stringify(envelope));
+  let original;
+  try { original = JSON.parse(JSON.stringify(envelope)); }
+  catch { return { accepted: false, reason: 'NON_SERIALIZABLE_ENVELOPE' }; }
   return {
     accepted: true,
     event: {
