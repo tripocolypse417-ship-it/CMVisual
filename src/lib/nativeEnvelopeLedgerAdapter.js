@@ -12,7 +12,7 @@ const TYPES = Object.freeze({
   VALIDATION_RESULT: 'OBSERVATION',
 });
 const isText = value => typeof value === 'string' && value.trim().length > 0;
-const utc = value => isText(value) && /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$/.test(value) && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
+const utc = value => isText(value) && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value) && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
 
 /**
  * @returns {{accepted:boolean, event?:object, reason?:string}}
