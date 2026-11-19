@@ -1,0 +1,28 @@
+name: WaveRadar Remote Desktop Contract
+
+on:
+  pull_request:
+    paths:
+      - 'src/lib/remoteDesktopSession.js'
+      - 'src/lib/remoteDesktopSession.test.mjs'
+      - '.github/workflows/remote-desktop-contract.yml'
+  push:
+    branches:
+      - feature/remote-ops-policy-v1
+
+permissions:
+  contents: read
+
+jobs:
+  consent-and-input-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Exercise remote desktop contract
+        run: node --test src/lib/remoteDesktopSession.test.mjs
