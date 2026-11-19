@@ -35,4 +35,10 @@ assert.deepEqual(projectNativeEnvelopeToLedger(unsupported, 'incident-test'), { 
 assert.equal(projectNativeEnvelopeToLedger(envelope, '').reason, 'INCIDENT_SCOPE_REQUIRED');
 assert.equal(projectNativeEnvelopeToLedger({ ...envelope, schema_version: '2.0.0' }, 'incident-test').reason, 'UNSUPPORTED_SCHEMA_VERSION');
 assert.equal(projectNativeEnvelopeToLedger({ ...envelope, timing: { received_at: 'not-a-date' } }, 'incident-test').reason, 'RECEIPT_TIME_REQUIRED');
-console.log('native-envelope-ledger adapter: 12 assertions passed');
+const badUtc = structuredClone(utc);
+badUtc.timing.observed_at = 'not-a-timestamp';
+assert.equal(projectNativeEnvelopeToLedger(badUtc, 'incident-test').reason, 'INVALID_UTC_CAPTURE_TIME');
+const cyclic = structuredClone(envelope);
+cyclic.self = cyclic;
+assert.equal(projectNativeEnvelopeToLedger(cyclic, 'incident-test').reason, 'NON_SERIALIZABLE_ENVELOPE');
+console.log('native-envelope-ledger adapter: safety regression assertions passed');
