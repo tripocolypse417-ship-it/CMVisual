@@ -12,7 +12,7 @@ const TYPES = Object.freeze({
   VALIDATION_RESULT: 'OBSERVATION',
 });
 const isText = value => typeof value === 'string' && value.trim().length > 0;
-const utc = value => isText(value) && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
+const utc = value => isText(value) && /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$/.test(value) && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
 
 /**
  * @returns {{accepted:boolean, event?:object, reason?:string}}
@@ -23,7 +23,7 @@ export function projectNativeEnvelopeToLedger(envelope, incidentId) {
   if (envelope.schema_version !== '1.0.0') return { accepted: false, reason: 'UNSUPPORTED_SCHEMA_VERSION' };
   if (!isText(incidentId)) return { accepted: false, reason: 'INCIDENT_SCOPE_REQUIRED' };
   if (!isText(envelope.event_id) || !isText(envelope.source?.source_id)) return { accepted: false, reason: 'IDENTITY_REQUIRED' };
-  const eventType = TYPES[envelope.event_type];
+  const eventType = Object.hasOwn(TYPES, envelope.event_type) ? TYPES[envelope.event_type] : null;
   if (!eventType) return { accepted: false, reason: 'UNSUPPORTED_EVENT_TYPE' };
   const receipt = utc(envelope.timing?.received_at);
   if (!receipt) return { accepted: false, reason: 'RECEIPT_TIME_REQUIRED' };
