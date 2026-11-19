@@ -1,0 +1,19 @@
+name: Native envelope ledger adapter
+on:
+  pull_request:
+    paths:
+      - 'src/lib/nativeEnvelopeLedgerAdapter.js'
+      - 'scripts/test-native-envelope-ledger-adapter.mjs'
+      - '.github/workflows/native-envelope-adapter.yml'
+  workflow_dispatch:
+jobs:
+  adapter-regression:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/test-native-envelope-ledger-adapter.mjs
