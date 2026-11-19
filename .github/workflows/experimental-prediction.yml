@@ -1,0 +1,21 @@
+name: Experimental prediction contract
+on:
+  push:
+    branches:
+      - waveradar/unified-release-blockers-20261119
+  pull_request:
+    paths:
+      - 'src/lib/experimentalPredictionEngine.js'
+      - 'scripts/test-experimental-prediction.mjs'
+      - 'package.json'
+      - '.github/workflows/experimental-prediction.yml'
+jobs:
+  prediction-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm run test:experimental-prediction
