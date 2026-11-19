@@ -16,7 +16,9 @@
     "test:physical-validation-evidence": "node scripts/test-physical-validation-evidence.mjs",
     "test:native-sensor-lifecycle": "node scripts/test-native-sensor-lifecycle.mjs",
     "test:evidence-class": "node scripts/test-evidence-class.mjs",
-    "test:wifi-rtt-evidence": "node scripts/test-wifi-rtt-evidence.mjs"
+    "test:wifi-rtt-evidence": "node scripts/test-wifi-rtt-evidence.mjs",
+    "test:fusion-consensus": "node scripts/test-fusion-consensus.mjs",
+    "test:range-multilateration": "node scripts/test-range-multilateration.mjs"
   },
   "dependencies": {
     "@base44/sdk": "^0.8.52",
