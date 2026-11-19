@@ -41,4 +41,10 @@ assert.equal(projectNativeEnvelopeToLedger(badUtc, 'incident-test').reason, 'INV
 const cyclic = structuredClone(envelope);
 cyclic.self = cyclic;
 assert.equal(projectNativeEnvelopeToLedger(cyclic, 'incident-test').reason, 'NON_SERIALIZABLE_ENVELOPE');
+const inheritedType = structuredClone(envelope);
+inheritedType.event_type = 'toString';
+assert.equal(projectNativeEnvelopeToLedger(inheritedType, 'incident-test').reason, 'UNSUPPORTED_EVENT_TYPE');
+const noTimezone = structuredClone(envelope);
+noTimezone.timing.received_at = '2026-11-19T10:00:02';
+assert.equal(projectNativeEnvelopeToLedger(noTimezone, 'incident-test').reason, 'RECEIPT_TIME_REQUIRED');
 console.log('native-envelope-ledger adapter: safety regression assertions passed');
