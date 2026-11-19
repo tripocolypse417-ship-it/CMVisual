@@ -86,7 +86,9 @@
     "vaul": "^1.1.2",
     "zod": "^3.24.2",
     "react-router-dom": "^6.30.6",
-    "recharts": "^2.15.4"
+    "recharts": "^2.15.4",
+    "react-leaflet": "^4.2.1",
+    "leaflet": "^1.9.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",
