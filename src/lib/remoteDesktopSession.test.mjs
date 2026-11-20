@@ -50,6 +50,12 @@ test('revoke, disconnect and projection stop terminate control irrevocably', () 
     assert.equal(authorizeRemoteDesktopCommand(ended,req('input.tap',{x:0.5,y:0.5}),ctx()).allowed,false);
   }
 });
+test('session expiry must remain within the safe integer timestamp range', () => {
+  assert.throws(() => createRemoteDesktopSession({id:'future',deviceId:'moto-g',operatorId:'owner',now:Number.MAX_SAFE_INTEGER - 1000,durationMs:5000}), /invalid-session-time/);
+  const valid = createRemoteDesktopSession({id:'future',deviceId:'moto-g',operatorId:'owner',now:Number.MAX_SAFE_INTEGER - 5000,durationMs:5000});
+  assert.equal(valid.expiresAt, Number.MAX_SAFE_INTEGER);
+});
+
 test('absolute expiration, inactivity, and clock rollback fail closed', () => {
   assert.equal(authorizeRemoteDesktopCommand(controlling(),req('input.tap',{x:0.5,y:0.5}),ctx(now+5*60_000)).allowed,false);
   assert.equal(authorizeRemoteDesktopCommand(controlling(),req('input.tap',{x:0.5,y:0.5}),ctx(now+91_000)).allowed,false);
