@@ -68,8 +68,11 @@ export function authorizeRemoteDesktopCommand(session, command, context) {
   const { now, authenticated, deviceId, operatorId, previouslySeenIds } = context;
   if (!validTime(now) || now < session.createdAt || now < session.lastActiveAt || now >= session.expiresAt || now - session.lastActiveAt > MAX_IDLE_MS) return deny('session-expired');
   if (authenticated !== true || deviceId !== session.deviceId || operatorId !== session.operatorId || command.sessionId !== session.id) return deny('unauthorized-controller');
-  if (typeof command.id !== 'string' || !IDENTIFIER.test(command.id) || !(previouslySeenIds instanceof Set)) return deny('replay-protection-unavailable');
-  if (previouslySeenIds.has(command.id)) return deny('replay-detected');
+  if (typeof command.id !== 'string' || !IDENTIFIER.test(command.id)) return deny('invalid-command-id');
+  // Synchronous checks are useful for preview/testing, but are never sufficient for dispatch.
+  // Production admission MUST call authorizeAndReserveRemoteDesktopCommand below.
+  if (!(previouslySeenIds instanceof Set) && typeof context.replayStore?.reserve !== 'function') return deny('replay-protection-unavailable');
+  if (previouslySeenIds instanceof Set && previouslySeenIds.has(command.id)) return deny('replay-detected');
   if (command.action === 'device.status.read') {
     return ['paired', 'viewing', 'controlling'].includes(session.status) ? { allowed: true, reason: 'admitted' } : deny('pairing-required');
   }
@@ -83,4 +86,27 @@ export function authorizeRemoteDesktopCommand(session, command, context) {
   if (command.action === 'input.tap' && p && Object.keys(p).sort().join(',') === 'x,y' && point(p.x, p.y)) return { allowed: true, reason: 'admitted' };
   if (command.action === 'input.swipe' && p && Object.keys(p).sort().join(',') === 'durationMs,x1,x2,y1,y2' && point(p.x1, p.y1) && point(p.x2, p.y2) && Number.isInteger(p.durationMs) && p.durationMs >= 100 && p.durationMs <= 1500) return { allowed: true, reason: 'admitted' };
   return deny('command-not-allowlisted');
+}
+
+/**
+ * Required production-facing admission boundary. The injected replayStore must
+ * implement a durable, atomic reserve(sessionId, commandId) operation that returns
+ * true ONLY when this command ID is newly and durably reserved. Returns false for
+ * duplicates and throws on persistence failures. Do not run input before this
+ * function returns allowed:true; native Android must re-check active OS consent,
+ * transport binding, and live session revocation at the actual dispatch boundary.
+ * This module never captures a screen or executes a gesture.
+ */
+export async function authorizeAndReserveRemoteDesktopCommand(session, command, context) {
+  const reserve = context?.replayStore?.reserve;
+  if (typeof reserve !== 'function') return deny('durable-replay-store-unavailable');
+  const admission = authorizeRemoteDesktopCommand(session, command, context);
+  if (!admission.allowed) return admission;
+  try {
+    const newlyReserved = await reserve.call(context.replayStore, session.id, command.id);
+    if (newlyReserved !== true) return deny(newlyReserved === false ? 'replay-detected' : 'replay-reservation-unconfirmed');
+  } catch {
+    return deny('replay-reservation-failed');
+  }
+  return { allowed: true, reason: 'admitted-and-reserved', replayReserved: true, commandId: command.id };
 }
