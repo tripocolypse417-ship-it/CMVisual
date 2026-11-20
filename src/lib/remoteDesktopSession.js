@@ -13,7 +13,7 @@ export function createRemoteDesktopSession({ id, deviceId, operatorId, now, dura
   if (![id, deviceId, operatorId].every((value) => typeof value === 'string' && IDENTIFIER.test(value))) {
     throw new TypeError('invalid-session-identity');
   }
-  if (!validTime(now) || !Number.isSafeInteger(durationMs) || durationMs < 1000 || durationMs > MAX_DURATION_MS) {
+  if (!validTime(now) || !Number.isSafeInteger(durationMs) || durationMs < 1000 || durationMs > MAX_DURATION_MS || !validTime(now + durationMs)) {
     throw new TypeError('invalid-session-time');
   }
   return Object.freeze({
