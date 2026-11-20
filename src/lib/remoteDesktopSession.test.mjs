@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createRemoteDesktopSession, advanceRemoteDesktopSession, authorizeRemoteDesktopCommand } from './remoteDesktopSession.js';
+import { createRemoteDesktopSession, advanceRemoteDesktopSession, authorizeRemoteDesktopCommand, authorizeAndReserveRemoteDesktopCommand } from './remoteDesktopSession.js';
 
 const now = 1_800_000_000_000;
 const fresh = () => createRemoteDesktopSession({ id: 'session-1', deviceId: 'moto-g', operatorId: 'owner', now });
@@ -54,4 +54,50 @@ test('absolute expiration, inactivity, and clock rollback fail closed', () => {
   assert.equal(authorizeRemoteDesktopCommand(controlling(),req('input.tap',{x:0.5,y:0.5}),ctx(now+5*60_000)).allowed,false);
   assert.equal(authorizeRemoteDesktopCommand(controlling(),req('input.tap',{x:0.5,y:0.5}),ctx(now+91_000)).allowed,false);
   assert.equal(advanceRemoteDesktopSession(controlling(),{type:'heartbeat',deviceAuthenticated:true},now+100).status,'stopped');
+});
+
+
+test('production command admission fails closed without a durable reservation store', async () => {
+  assert.deepEqual(await authorizeAndReserveRemoteDesktopCommand(controlling(), req('input.tap', {x:0.5,y:0.5}), ctx()), {allowed:false,reason:'durable-replay-store-unavailable'});
+});
+
+test('production admission atomically reserves before permitting dispatch, including concurrent duplicates', async () => {
+  const ids=new Set();
+  let attempts=0;
+  const replayStore={async reserve(sessionId, commandId) {
+    attempts++;
+    await Promise.resolve(); // makes concurrent callers compete for the same reservation
+    const key=sessionId + ':' + commandId;
+    if(ids.has(key)) return false;
+    ids.add(key);
+    return true;
+  }};
+  const context={...ctx(),previouslySeenIds:undefined,replayStore};
+  const results=await Promise.all(Array.from({length:8},()=>authorizeAndReserveRemoteDesktopCommand(controlling(),req('input.tap',{x:0.5,y:0.5}),context)));
+  assert.equal(results.filter(r=>r.allowed).length,1);
+  assert.equal(results.filter(r=>r.reason==='replay-detected').length,7);
+  assert.equal(attempts,8);
+});
+
+test('production command admission denies storage failures and unconfirmed writes', async () => {
+  const good=controlling();
+  const command=req('input.tap',{x:0.5,y:0.5});
+  for (const outcome of [undefined, null, 1]) {
+    const actual=await authorizeAndReserveRemoteDesktopCommand(good,command,{...ctx(),replayStore:{reserve:async()=>outcome}});
+    assert.equal(actual.allowed,false);
+    assert.equal(actual.reason,'replay-reservation-unconfirmed');
+  }
+  const failed=await authorizeAndReserveRemoteDesktopCommand(good,command,{...ctx(),replayStore:{reserve:async()=>{throw Error('disk failure')}}});
+  assert.deepEqual(failed,{allowed:false,reason:'replay-reservation-failed'});
+});
+
+test('production admission never reserves revoked, unpaired, or invalid commands', async () => {
+  let count=0;
+  const replayStore={reserve:async()=>{count++;return true;}};
+  const valid={...ctx(),replayStore};
+  const stopped=advanceRemoteDesktopSession(controlling(),{type:'stop'},now+400);
+  assert.equal((await authorizeAndReserveRemoteDesktopCommand(stopped,req('input.tap',{x:0.5,y:0.5}),valid)).allowed,false);
+  assert.equal((await authorizeAndReserveRemoteDesktopCommand(fresh(),req('input.tap',{x:0.5,y:0.5}),valid)).allowed,false);
+  assert.equal((await authorizeAndReserveRemoteDesktopCommand(controlling(),req('shell.execute'),valid)).allowed,false);
+  assert.equal(count,0);
 });
