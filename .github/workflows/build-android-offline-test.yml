@@ -1,0 +1,141 @@
+name: Build WaveRadar Offline Test APK
+
+on:
+  push:
+    branches: [ waveradar/offline-test-apk-20261120 ]
+
+permissions:
+  contents: read
+
+jobs:
+  android-debug:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Audit canonical data contract
+        run: npm run audit:data
+
+      - name: Test malformed array boundaries
+        run: npm run test:array-boundaries
+
+      - name: Test physical-validation queue safety
+        run: npm run test:physical-validation-queue
+
+      - name: Test physical-validation evidence provenance
+        run: npm run test:physical-validation-evidence
+
+      - name: Test native sensor registration lifecycle
+        run: npm run test:native-sensor-lifecycle
+
+      - name: Test capability intelligence normalization
+        run: npm run test:capability-intelligence
+
+      - name: Test capability knowledge graph
+        run: npm run test:capability-knowledge-graph
+
+      - name: Build web application
+        run: npm run build
+
+      - name: Generate Capacitor Android project
+        run: npx cap add android
+
+      - name: Set distinct test application ID and label
+        shell: bash
+        run: |
+          cat >> android/app/build.gradle <<'GRADLE'
+
+          android {
+              buildTypes {
+                  debug {
+                      applicationIdSuffix ".offlinetest"
+                  }
+              }
+          }
+          GRADLE
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          path = Path("android/app/src/main/res/values/strings.xml")
+          resources = ET.parse(path)
+          for name in ("app_name", "title_activity_main"):
+              label = resources.find(f"./string[@name='{name}']")
+              if label is None:
+                  raise SystemExit(f"Missing Android app label: {name}")
+              label.text = "WaveRadar Offline Test"
+          resources.write(path, encoding="utf-8", xml_declaration=True)
+          PY
+
+      - name: Install verified WaveRadar native sensor bridge
+        run: |
+          mkdir -p android/app/src/main/java/com/waveradar/app
+          cp native/android/MainActivity.java android/app/src/main/java/com/waveradar/app/MainActivity.java
+          cp native/android/WaveRadarSensorsPlugin.java android/app/src/main/java/com/waveradar/app/WaveRadarSensorsPlugin.java
+          cp native/android/WaveRadarRangingPlugin.java android/app/src/main/java/com/waveradar/app/WaveRadarRangingPlugin.java
+          cp native/android/WaveRadarNetworkPlugin.java android/app/src/main/java/com/waveradar/app/WaveRadarNetworkPlugin.java
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("android/app/src/main/AndroidManifest.xml")
+          s = p.read_text()
+          perms = [
+              '    <uses-permission android:name="android.permission.CAMERA" />',
+              '    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />',
+              '    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />',
+              '    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" />',
+              '    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />',
+              '    <uses-permission android:name="android.permission.READ_PHONE_STATE" />',
+              '    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />',
+              '    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />',
+              '    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />',
+          ]
+          marker = '</manifest>'
+          for perm in perms:
+              if perm not in s:
+                  s = s.replace(marker, perm + '\\n' + marker)
+          p.write_text(s)
+          PY
+
+      - name: Sync web assets and Capacitor plugins
+        run: npx cap sync android
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Verify APK identity, bundled assets and debug signature
+        shell: bash
+        run: |
+          apk=android/app/build/outputs/apk/debug/app-debug.apk
+          tools_dir="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          "$tools_dir/aapt" dump badging "$apk" > /tmp/waveradar-offline-apk-badging
+          grep -F "package: name='com.waveradar.app.offlinetest'" /tmp/waveradar-offline-apk-badging
+          grep -Fx "application-label:'WaveRadar Offline Test'" /tmp/waveradar-offline-apk-badging
+          unzip -p "$apk" assets/capacitor.config.json | python3 -c 'import json, sys; config = json.load(sys.stdin); assert not config.get("server", {}).get("url"), "Expected bundled web assets"'
+          unzip -p "$apk" assets/public/index.html > /tmp/waveradar-offline-index.html
+          test -s /tmp/waveradar-offline-index.html
+          "$tools_dir/apksigner" verify "$apk"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: WaveRadar-offline-test-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
