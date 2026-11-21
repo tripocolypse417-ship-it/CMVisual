@@ -34,11 +34,24 @@ const getAppParamValue = (paramName, { defaultValue = undefined, removeFromUrl =
 	return null;
 }
 
-const getAppParams = () => {
-	if (getAppParamValue("clear_access_token") === 'true') {
+const consumeAccessTokenReset = () => {
+	if (isNode) return;
+
+	// Clean up flags persisted by older builds. Only the current URL can request a reset.
+	storage.removeItem('base44_clear_access_token');
+	const url = new URL(window.location.href);
+	if (url.searchParams.get('clear_access_token') === 'true') {
 		storage.removeItem('base44_access_token');
 		storage.removeItem('token');
 	}
+	if (url.searchParams.has('clear_access_token')) {
+		url.searchParams.delete('clear_access_token');
+		window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+	}
+}
+
+const getAppParams = () => {
+	consumeAccessTokenReset();
 	return {
 		appId: getAppParamValue("app_id", { defaultValue: import.meta.env.VITE_BASE44_APP_ID }),
 		token: getAppParamValue("access_token", { removeFromUrl: true }),
