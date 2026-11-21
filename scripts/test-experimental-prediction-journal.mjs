@@ -1,0 +1,15 @@
+import assert from "node:assert/strict";
+import { projectExperimentalForecast, replayExperimentalForecast } from "../src/lib/experimentalPredictionJournalProjection.js";
+const events=[0,1,2].map(i=>({kind:"sensor-observation",id:"obs-"+i,sourceId:"thermal-1",variable:"temperature",unit:"C",timeMs:97000+i*1000,value:20+i,clockDomain:"normalized-clock",calibrated:true,evidenceClass:"MEASURED"}));
+const original=JSON.stringify(events);
+const options={enabled:true,nowMs:100000,horizonMs:10000,sourceId:"thermal-1"};
+const output=projectExperimentalForecast(events,options);
+assert.equal(output.status,"EXPERIMENTAL_FORECAST");
+assert.equal(output.value,33);
+assert.equal(output.operationallyValidated,false);
+assert.deepEqual(replayExperimentalForecast(events,options),output);
+assert.equal(JSON.stringify(events),original);
+assert.equal(projectExperimentalForecast(events,{...options,enabled:false}).reason,"EXPERIMENT_DISABLED");
+assert.equal(projectExperimentalForecast([],options).reason,"INSUFFICIENT_INPUT");
+assert.equal(projectExperimentalForecast(events.map(e=>({...e,evidenceClass:"SIMULATED"})),options).reason,"INVALID_EVIDENCE");
+console.log("Offline journal prediction projection: passed");
