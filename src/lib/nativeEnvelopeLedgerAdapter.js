@@ -48,7 +48,7 @@ export function projectNativeEnvelopeToLedger(envelope, incidentId) {
       integrityState: 'UNASSESSED',
       rawEvidenceRef: envelope.evidence?.raw_payload_ref || null,
       rawEvidenceHash: envelope.evidence?.raw_payload_sha256 || null,
-      sourceEventIds: Array.isArray(original.provenance?.parent_event_ids) ? original.provenance.parent_event_ids : [],
+      sourceEventIds: Array.isArray(original.provenance?.parent_event_ids) ? [...original.provenance.parent_event_ids] : [],
       hypothesisGroupId: eventType === 'HYPOTHESIS' ? envelope.event_id : null,
       payload: { originalEnvelope: original },
       provenance: {
