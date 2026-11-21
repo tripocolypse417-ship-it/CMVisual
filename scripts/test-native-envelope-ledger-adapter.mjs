@@ -20,6 +20,14 @@ assert.equal(result.event.integrityState, 'UNASSESSED', 'checksum is not verific
 assert.equal(result.event.provenance.independentValidation, false);
 assert.deepEqual(result.event.payload.originalEnvelope, envelope);
 assert.equal(JSON.stringify(envelope), original, 'input must remain unchanged');
+// Replay projections must not expose mutable references back into original evidence.
+const withParent = structuredClone(envelope);
+withParent.provenance.parent_event_ids = ['parent-1'];
+const projected = projectNativeEnvelopeToLedger(withParent, 'incident-test');
+assert.equal(projected.accepted, true);
+projected.event.sourceEventIds.push('injected-parent');
+assert.deepEqual(withParent.provenance.parent_event_ids, ['parent-1'], 'ledger mutation must not rewrite source evidence');
+assert.deepEqual(projected.event.payload.originalEnvelope.provenance.parent_event_ids, ['parent-1'], 'original envelope copy remains unchanged');
 
 const utc = structuredClone(envelope);
 utc.timing.observed_clock_domain = 'UTC_UNIX';
