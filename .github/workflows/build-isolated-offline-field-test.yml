@@ -1,0 +1,78 @@
+name: WaveRadar Isolated Offline Field Test APK
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-android-field-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      WAVERADAR_ISOLATED_FIELD_TEST: '1'
+      VITE_WAVERADAR_ISOLATED_FIELD_TEST: '1'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install dependencies
+        run: npm install
+      - name: Build bundled offline research screen
+        run: npm run build
+      - name: Generate independent Android application
+        run: npx cap add android
+      - name: Register WaveRadar native sensor plugins on separate application ID
+        run: |
+          mkdir -p android/app/src/main/java/com/waveradar/app
+          mkdir -p android/app/src/main/java/com/waveradar/fieldtest
+          cp native/android/WaveRadarSensorsPlugin.java android/app/src/main/java/com/waveradar/app/WaveRadarSensorsPlugin.java
+          cp native/android/WaveRadarRangingPlugin.java android/app/src/main/java/com/waveradar/app/WaveRadarRangingPlugin.java
+          cp native/android/WaveRadarNetworkPlugin.java android/app/src/main/java/com/waveradar/app/WaveRadarNetworkPlugin.java
+          python3 - <<'PY'
+          from pathlib import Path
+          source = Path('native/android/MainActivity.java').read_text()
+          source = source.replace(
+              'package com.waveradar.app;',
+              'package com.waveradar.fieldtest;\n'
+              'import com.waveradar.app.WaveRadarSensorsPlugin;\n'
+              'import com.waveradar.app.WaveRadarRangingPlugin;\n'
+              'import com.waveradar.app.WaveRadarNetworkPlugin;'
+          )
+          Path('android/app/src/main/java/com/waveradar/fieldtest/MainActivity.java').write_text(source)
+          p = Path('android/app/src/main/AndroidManifest.xml')
+          text = p.read_text()
+          permissions = [
+              '    <uses-permission android:name="android.permission.CAMERA" />',
+              '    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />',
+              '    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />',
+              '    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" />',
+              '    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />',
+              '    <uses-permission android:name="android.permission.READ_PHONE_STATE" />',
+              '    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />',
+              '    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />',
+              '    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />',
+          ]
+          for permission in permissions:
+              if permission not in text:
+                  text = text.replace('</manifest>', permission + '\n</manifest>')
+          p.write_text(text)
+          PY
+      - name: Sync local assets and native plugins
+        run: npx cap sync android
+      - name: Build test APK (independent app ID)
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+      - name: Upload isolated APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: WaveRadar-Isolated-Offline-FieldTest-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
