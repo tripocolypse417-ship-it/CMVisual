@@ -1,14 +1,15 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
-// WAVERADAR_HOSTED_URL is set only by the connected pilot APK workflow.
-// This keeps the APK aligned with the live WaveRadar UI while native Android
-// sensor plugins remain available through Capacitor. It requires internet and
-// is not an offline/production deployment configuration.
-const hostedUrl = process.env.WAVERADAR_HOSTED_URL?.trim();
+// The normal connected pilot uses a hosted WebView and therefore requires
+// network access. The isolated field-test build uses packaged assets and its
+// own app ID to protect existing WaveRadar installs and evidence.
+// This does not establish offline completeness of the production application.
+const isolatedFieldTest = process.env.WAVERADAR_ISOLATED_FIELD_TEST === '1';
+const hostedUrl = isolatedFieldTest ? undefined : process.env.WAVERADAR_HOSTED_URL?.trim();
 
 const config: CapacitorConfig = {
-  appId: 'com.waveradar.app',
-  appName: 'WaveRadar',
+  appId: isolatedFieldTest ? 'com.waveradar.fieldtest' : 'com.waveradar.app',
+  appName: isolatedFieldTest ? 'WaveRadar Field Test' : 'WaveRadar',
   webDir: 'dist',
   ...(hostedUrl
     ? {
