@@ -101,6 +101,10 @@ assert.equal(collision.quarantine[0].reasonCodes[0], 'EVENT_ID_CONTENT_COLLISION
 const independentDrone = make('b2', 'drone-b');
 assert.equal(planDfrFrameAnalysis({
   ...base, envelopes: [originals[0], independentDrone],
+  trustedMediaByEventId: {
+    ...verified,
+    b2: { sha256: SHA, ref: 'core-evidence://synthetic/b2' },
+  },
 }).counts.eligibleUniqueComputations, 2);
 
 // Safety/evidence gates: failed permission, invalid hash, non-verified bytes,
