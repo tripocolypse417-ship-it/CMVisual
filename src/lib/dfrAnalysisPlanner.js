@@ -74,7 +74,9 @@ export function planDfrFrameAnalysis({
   const skipping = [];
   const candidates = [];
   const reused = [];
-  const found = new Set(previousCacheKeys);
+  const coalesced = [];
+  const priorResults = new Set(previousCacheKeys);
+  const plannedOwners = new Map();
   for (const acceptedObservation of admitted.projected) {
     const original = originals.get(acceptedObservation.eventId);
     const observationId = acceptedObservation.eventId;
@@ -124,11 +126,22 @@ export function planDfrFrameAnalysis({
         noFlightControl: true, notSafetyValidated: true,
       },
     };
-    if (found.has(key)) {
-      reused.push({ eventId: observationId, cacheKey: key, reason: 'EXACT_CONTEXT_CACHE_CANDIDATE' });
+    // A cache hit is a previously COMPLETED result candidate supplied by the
+    // trusted upstream registry. A repeated frame within this new batch is
+    // merely coalesced with a still-pending job, never called "completed".
+    if (priorResults.has(key)) {
+      reused.push({ eventId: observationId, cacheKey: key, reason: 'PREVIOUS_EXACT_CONTEXT_CACHE_CANDIDATE' });
       continue;
     }
-    found.add(key);
+    if (plannedOwners.has(key)) {
+      coalesced.push({
+        eventId: observationId, cacheKey: key,
+        waitingForEventId: plannedOwners.get(key),
+        reason: 'SAME_BATCH_JOB_DEPENDENCY_NOT_COMPLETED',
+      });
+      continue;
+    }
+    plannedOwners.set(key, observationId);
     candidates.push(proposal);
   }
 
@@ -165,6 +178,7 @@ export function planDfrFrameAnalysis({
     dataContract: 'waveradar-event-envelope-v1',
     jobs,
     reused,
+    coalesced,
     deferred,
     skipped: skipping,
     quarantine: admitted.quarantine,
@@ -173,13 +187,14 @@ export function planDfrFrameAnalysis({
       distinctAdmitted: admitted.counts.independentlyAdmitted,
       eligibleUniqueComputations: ordered.length,
       queued: jobs.length, deferred: deferred.length,
-      exactContextReuse: reused.length, metadataOnly: skipping.length,
+      exactContextReuse: reused.length, sameBatchCoalesced: coalesced.length,
+      metadataOnly: skipping.length,
       quarantined: admitted.quarantine.length,
     },
     limitations: [
       'No vendor API connection, media decoding, AI inference, flight control or drone credential use.',
       'Attestation and access rights MUST be validated by Core or an authorized gateway upstream.',
-      'Cache reuse is merely proposed; cached inference remains unverified until separately evaluated.',
+      'A prior-result cache hit is not independent validation; same-batch coalescing waits for an uncompleted job.',
       'All original observations remain independent and immutable, including cached or skipped ones.',
       'No detections, victim positions, hazards or live safety guidance are produced here.',
     ],
