@@ -101,7 +101,6 @@ export function assessDfrEvidence(envelope, policy = {}) {
   const canProjectAssetInValidatedFrame = canDisplaySourceReportedAssetPose &&
     frameTrusted && calibrationReported && integrityVerified;
   const data = envelope?.payload?.data || {};
-  const isAuthorized = reasons.length === 0;
   let original = null;
   try { original = clone(envelope); }
   catch { reasons.push('NON_SERIALIZABLE_SOURCE'); }
