@@ -107,6 +107,23 @@ assert.equal(planDfrFrameAnalysis({
   },
 }).counts.eligibleUniqueComputations, 2);
 
+// Same media context in the SAME new batch must be coalesced as a still
+// pending job, not misrepresented as an already completed cached inference.
+const sameContext = make('a3', 'drone-a');
+const sameContextPlan = planDfrFrameAnalysis({
+  ...base, envelopes: [originals[0], sameContext],
+  trustedMediaByEventId: {
+    ...verified, a3: { sha256: SHA, ref: 'core-evidence://synthetic/a3' },
+  },
+  maxJobs: 0,
+});
+assert.equal(sameContextPlan.reused.length, 0);
+assert.equal(sameContextPlan.coalesced.length, 1);
+assert.equal(sameContextPlan.coalesced[0].waitingForEventId, 'a1');
+assert.equal(sameContextPlan.deferred.length, 1,
+  'coalesced frame still waits for a deferred source computation');
+assert.equal(sameContextPlan.counts.sameBatchCoalesced, 1);
+
 // Safety/evidence gates: failed permission, invalid hash, non-verified bytes,
 // stale or unknown clock and simulated clips never trigger costly inference.
 const noScope = planDfrFrameAnalysis({ ...base, admissionPolicy: { ...policy, authorizedSourceIds: [] } });
