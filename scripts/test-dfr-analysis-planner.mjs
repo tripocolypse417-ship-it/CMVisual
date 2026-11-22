@@ -72,7 +72,8 @@ assert.equal(JSON.stringify(originals), snapshot, 'no original event mutation');
 // Reuse never means independently validated inference.
 const reused = planDfrFrameAnalysis({ ...base, previousCacheKeys: [plan.jobs[0].cacheKey] });
 assert.equal(reused.counts.exactContextReuse, 1);
-assert.equal(reused.jobs[0].sourceId, 'drone-b');
+assert.deepEqual(reused.jobs.slice(0, 2).map(j => j.eventId), ['a2', 'b1'],
+  'reusing the first frame must not suppress a second distinct frame from drone-a');
 assert.equal(reused.reused[0].eventId, 'a1');
 
 // Frame changes, time shifts, camera changes and model updates must invalidate.
