@@ -1,0 +1,24 @@
+name: WaveRadar One Incident / Three Views Contract
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  read-only-incident-convergence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Assert read-only cross-view incident convergence
+        run: node scripts/test-unified-incident-read-model.mjs
+      - name: Preserve predecessor native-adapter regression
+        run: node scripts/test-native-envelope-ledger-adapter.mjs
+      - name: Check existing synthetic rescue evidence journey
+        run: node scripts/test-rescue-evidence-journey.mjs
