@@ -132,11 +132,56 @@ const reorderedModel = buildUnifiedIncidentReadModel({
 assert.equal(reorderedModel.command.shared.length, 1);
 assert.equal(reorderedModel.quarantine.length, 0);
 
+// Preserve sub-millisecond acceptance boundaries and same-instant offsets.
+const later = make('event-micro-later', '2026-11-22T02:00:00Z');
+const earlier = make('event-micro-earlier', '2026-11-22T02:00:00Z');
+const precision = buildUnifiedIncidentReadModel({
+  incidentId,
+  coreEvents: [
+    { envelope: later, serverAcceptedAt: '2026-11-22T02:10:00.000001Z' },
+    { envelope: earlier, serverAcceptedAt: '2026-11-22T02:10:00Z' },
+  ],
+  asKnownAt: '2026-11-22T02:10:00.000Z',
+});
+assert.deepEqual(precision.command.shared.map(x => x.eventId), ['event-micro-earlier', 'event-micro-later']);
+assert.deepEqual(precision.replay.asKnownThen.map(x => x.eventId), ['event-micro-earlier']);
+assert.equal(precision.command.shared[1].serverAcceptedAt, '2026-11-22T02:10:00.000001Z');
+const boundary = buildUnifiedIncidentReadModel({
+  incidentId,
+  coreEvents: [
+    { envelope: later, serverAcceptedAt: '2026-11-22T02:10:00.000001Z' },
+    { envelope: later, serverAcceptedAt: '2026-11-21T20:10:00.000001-06:00' },
+  ],
+  asKnownAt: '2026-11-22T02:10:00.000001Z',
+});
+assert.equal(boundary.replay.asKnownThen.length, 1);
+assert.equal(boundary.quarantine.length, 0);
+const timeConflict = buildUnifiedIncidentReadModel({
+  incidentId,
+  coreEvents: [
+    { envelope: later, serverAcceptedAt: '2026-11-22T02:10:00.000001Z' },
+    { envelope: later, serverAcceptedAt: '2026-11-22T02:10:00.000002Z' },
+  ],
+});
+assert.equal(timeConflict.command.shared.length, 0);
+assert.equal(timeConflict.quarantine[0].reason, 'CORE_ID_CONTENT_OR_TIME_CONFLICT');
+for (const invalid of [
+  '2026-02-30T02:10:00Z', '2026-11-22T24:00:00Z',
+  '2026-11-22T02:10:00-00:00', '2026-11-22T02:10:00.0000001Z',
+  '2026-11-22T02:10:00+99:00', '0000-01-01T00:00:00Z',
+]) {
+  assert.equal(buildUnifiedIncidentReadModel({ incidentId, asKnownAt: invalid }).reason, 'INVALID_KNOWLEDGE_CUTOFF');
+  assert.equal(buildUnifiedIncidentReadModel({ incidentId, coreEvents: [
+    { envelope: first, serverAcceptedAt: invalid },
+  ] }).command.shared.length, 0);
+}
+
 console.log(JSON.stringify({
   result: 'PASS',
   scope: 'SYNTHETIC_READ_ONLY_PROJECTION_ONLY',
   fieldCommandReplayCanonicalSharedIds: true,
   delayedUploadNotBackdated: true,
+  microsecondCutoffAndCalendarValidation: true,
   clockDomainAndEvidenceTruthPreserved: true,
   collisionQuarantined: true,
   physicalSensorVerified: false,
