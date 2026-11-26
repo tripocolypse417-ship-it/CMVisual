@@ -15,11 +15,28 @@
 import { projectNativeEnvelopeToLedger } from './nativeEnvelopeLedgerAdapter.js';
 
 const isText = value => typeof value === 'string' && value.trim().length > 0;
+// Core timestamps use at most PostgreSQL microsecond precision. Keep the
+// original sub-millisecond significance instead of rounding through Date.
 function iso(value) {
-  if (!isText(value) ||
-      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value)) return null;
-  const millis = Date.parse(value);
-  return Number.isFinite(millis) ? new Date(millis).toISOString() : null;
+  if (!isText(value)) return null;
+  const match = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(\d{1,6}))?(Z|[+-]\d{2}:\d{2})$/.exec(value);
+  if (!match) return null;
+  const [, base, fraction = '', zone] = match;
+  if (base.startsWith('0000') || zone === '-00:00') return null;
+  const localMillis = Date.parse(base + 'Z');
+  if (!Number.isFinite(localMillis) || new Date(localMillis).toISOString().slice(0, 19) !== base) return null;
+  const millis = Date.parse(base + zone);
+  if (!Number.isFinite(millis)) return null;
+  const utc = new Date(millis).toISOString();
+  if (!/^\d{4}-/.test(utc) || utc.startsWith('0000')) return null;
+  const micros = fraction.padEnd(6, '0');
+  const normalized = micros.endsWith('000') ? micros.slice(0, 3) : micros;
+  return utc.slice(0, 19) + '.' + normalized + 'Z';
+}
+const knowledgeKey = time => time.slice(0, 19) + '.' + time.slice(20, -1).padEnd(6, '0') + 'Z';
+function compareKnowledgeTime(a, b) {
+  const left = knowledgeKey(a), right = knowledgeKey(b);
+  return left < right ? -1 : left > right ? 1 : 0;
 }
 function canonical(value) {
   if (Array.isArray(value)) return value.map(canonical);
@@ -150,14 +167,14 @@ export function buildUnifiedIncidentReadModel({
   }
 
   const eventOrder = (a, b) =>
-    a.serverAcceptedAt.localeCompare(b.serverAcceptedAt) || a.eventId.localeCompare(b.eventId);
+    compareKnowledgeTime(a.serverAcceptedAt, b.serverAcceptedAt) || a.eventId.localeCompare(b.eventId);
   shared.sort(eventOrder);
   localOnly.sort((a, b) =>
     a.receivedAt.localeCompare(b.receivedAt) || a.eventId.localeCompare(b.eventId));
 
   // These three displays use the SAME accepted incident records. Each has
   // its own copied read model so accidental rendering edits cannot propagate.
-  const knowledge = shared.filter(record => cutoff === null || record.serverAcceptedAt <= cutoff);
+  const knowledge = shared.filter(record => cutoff === null || compareKnowledgeTime(record.serverAcceptedAt, cutoff) <= 0);
   return {
     ok: true,
     incidentId,
