@@ -1,0 +1,19 @@
+name: Universal provider research checks
+on:
+  pull_request:
+    paths:
+      - 'src/lib/fusion/universalProviderPlanner.js'
+      - 'scripts/test-universal-provider-planner.mjs'
+      - '.github/workflows/universal-provider-research.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/test-universal-provider-planner.mjs
