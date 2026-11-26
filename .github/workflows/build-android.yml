@@ -52,6 +52,12 @@ jobs:
       - name: Test Wi-Fi RTT evidence contract
         run: npm run test:wifi-rtt-evidence
 
+      - name: Test provenance-aware fusion contract
+        run: npm run test:fusion-consensus
+
+      - name: Test range-only multilateration contract
+        run: npm run test:range-multilateration
+
       - name: Build web application
         run: npm run build
 
