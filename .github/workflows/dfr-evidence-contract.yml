@@ -1,0 +1,26 @@
+name: WaveRadar DFR Evidence and Compute Policy
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dfr-no-control-evidence-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Source authorization, spoofed scope, conflict, time and map gate
+        run: node scripts/test-dfr-evidence-policy.mjs
+      - name: Fair bounded analysis, exact-content cache, fail-closed review
+        run: node scripts/test-dfr-analysis-planner.mjs
+      - name: Preserve one Core incident / Field Command Replay parity
+        run: node scripts/test-unified-incident-read-model.mjs
+      - name: Preserve original evidence loss-and-retry regression
+        run: node scripts/test-rescue-evidence-journey.mjs
